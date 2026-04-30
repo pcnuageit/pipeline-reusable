@@ -7,8 +7,10 @@
 #   2. deploy   → Download artefato, S3 sync, CloudFront invalidation
 #   3. summary  → Resumo do deploy
 #
+# Actions: v5 (Node.js 24 runtime — compatível até set/2028+)
+#
 # Autor: Platform Team
-# Versão: 2.0.0
+# Versão: 2.1.0
 ##############################################################################
 
 name: "Reusable — Deploy S3 + CloudFront"
@@ -84,10 +86,10 @@ jobs:
     name: "📦 Build — ${{ inputs.client_name }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js ${{ inputs.node_version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ inputs.node_version }}
           cache: "yarn"
@@ -107,7 +109,7 @@ jobs:
           REACT_APP_DESCRIPTION: ${{ inputs.react_app_description }}
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-${{ inputs.client_name }}
           path: ${{ inputs.build_output }}/
@@ -124,7 +126,7 @@ jobs:
     name: "🚀 Deploy — ${{ inputs.client_name }}"
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: build-${{ inputs.client_name }}
           path: ${{ inputs.build_output }}/

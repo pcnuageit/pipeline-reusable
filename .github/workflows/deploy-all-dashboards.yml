@@ -1,0 +1,118 @@
+name: "Deploy ALL Dashboards"
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Digite DEPLOY para confirmar deploy de TODOS os clientes"
+        required: true
+        type: string
+
+jobs:
+  # ── Validação de segurança ──
+  validate:
+    runs-on: ubuntu-latest
+    name: "🔐 Validar confirmação"
+    steps:
+      - name: Validar
+        if: inputs.confirm != 'DEPLOY'
+        run: |
+          echo "❌ Confirmação inválida. Digite DEPLOY para continuar."
+          echo "   Recebido: '${{ inputs.confirm }}'"
+          exit 1
+      - name: Confirmado
+        if: inputs.confirm == 'DEPLOY'
+        run: echo "✅ Deploy de todos os clientes confirmado"
+
+  # ── Deploy paralelo de todos os clientes ──
+  aprobank:
+    needs: validate
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "aprobank"
+      s3_bucket: "dashboard-banco-aprobank"
+      cloudfront_distribution_id: "E2KC0ARSNST82D"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://d2b1r13l3o5i5x.cloudfront.net/api"
+      react_app_front_app: "aprobank"
+      react_app_title: "AproBank"
+      react_app_description: "AproBank - Dashboard do Banco AproBank"
+    secrets: inherit
+
+  bankzz:
+    needs: validate
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "bankzz"
+      s3_bucket: "dashboard-banco-bankzz"
+      cloudfront_distribution_id: "E1XU4LSM7OYXNT"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.bankzz.com.br/api"
+      react_app_front_app: "bankzz"
+      react_app_title: "Bankzz"
+      react_app_description: "BANKZZ - Dashboard do Banco Bankzz"
+    secrets: inherit
+
+  concorrencia:
+    needs: validate
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia"
+      s3_bucket: "dashboard-gf-concorrencia"
+      cloudfront_distribution_id: "E2QDU21R32SYWR"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
+      react_app_front_app: "concorrencia"
+      react_app_title: "Concorrencia"
+      react_app_description: "Concorrencia - Dashboard do Banco Concorrencia"
+    secrets: inherit
+
+  concorrencia-mt:
+    needs: validate
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia-mt"
+      s3_bucket: "dashboard-gf-concorrencia-mt"
+      cloudfront_distribution_id: "E3H2MZ44ZR9BTO"
+      aws_region: "us-east-1"
+      react_app_api_url: "https://api.mt.inttegrasocial.com.br/api"
+      react_app_front_app: "concorrencia"
+      react_app_title: "Concorrencia MT"
+      react_app_description: "Concorrencia MT - Dashboard"
+    secrets: inherit
+
+  amazonbank:
+    needs: validate
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "amazonbank"
+      s3_bucket: "dashboard-banco-abt"
+      cloudfront_distribution_id: "E2EZE3KQSR0SB2"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.amazonbankingtrust.com.br/api"
+      react_app_front_app: "amazonbank"
+      react_app_title: "AmazonBank"
+      react_app_description: "Amazon Banking Trust - Dashboard"
+    secrets: inherit
+
+  # ── Resumo final ──
+  summary:
+    needs: [aprobank, bankzz, concorrencia, concorrencia-mt, amazonbank]
+    if: always()
+    runs-on: ubuntu-latest
+    name: "📊 Resumo"
+    steps:
+      - name: Summary
+        run: |
+          echo "## 📊 Deploy ALL — Resumo" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Cliente | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| aprobank | \`${{ needs.aprobank.result }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| bankzz | \`${{ needs.bankzz.result }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| concorrencia | \`${{ needs.concorrencia.result }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| concorrencia-mt | \`${{ needs.concorrencia-mt.result }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| amazonbank | \`${{ needs.amazonbank.result }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Executado por:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

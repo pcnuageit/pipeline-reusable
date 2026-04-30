@@ -1,0 +1,56 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - "release/**"
+    types: [opened, synchronize, reopened]
+
+env:
+  CI: false
+  NODE_VERSION: "20"
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    name: "🔍 Lint & Build Check"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        id: lint
+        run: yarn run lint 2>&1 | tee lint-report.txt
+        continue-on-error: true
+
+      - name: Build check
+        run: yarn build
+
+      - name: Comment on PR if lint failed
+        if: steps.lint.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('lint-report.txt', 'utf8');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `⚠️ **Erros de lint encontrados:**\n\`\`\`\n${output.substring(0, 65000)}\n\`\`\`\nCorrija os erros acima e atualize a branch.`,
+            });
+
+      - name: Fail if lint failed
+        if: steps.lint.outcome == 'failure'
+        run: exit 1

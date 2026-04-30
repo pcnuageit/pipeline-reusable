@@ -1,0 +1,21 @@
+name: "Deploy Dashboard — AmazonBank"
+
+on:
+  push:
+    branches:
+      - "release/dashboard-amazonbank"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "amazonbank"
+      s3_bucket: "dashboard-banco-abt"
+      cloudfront_distribution_id: "E2EZE3KQSR0SB2"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.amazonbankingtrust.com.br/api"
+      react_app_front_app: "amazonbank"
+      react_app_title: "AmazonBank"
+      react_app_description: "Amazon Banking Trust - Dashboard"
+    secrets: inherit

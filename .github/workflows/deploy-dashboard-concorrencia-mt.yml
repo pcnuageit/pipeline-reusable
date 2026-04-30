@@ -1,0 +1,21 @@
+name: "Deploy Dashboard — Concorrência MT"
+
+on:
+  push:
+    branches:
+      - "release/dashboard-concorrencia-mt"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia-mt"
+      s3_bucket: "dashboard-gf-concorrencia-mt"
+      cloudfront_distribution_id: "E3H2MZ44ZR9BTO"
+      aws_region: "us-east-1"
+      react_app_api_url: "https://api.mt.inttegrasocial.com.br/api"
+      react_app_front_app: "concorrencia"
+      react_app_title: "Concorrencia MT"
+      react_app_description: "Concorrencia MT - Dashboard"
+    secrets: inherit

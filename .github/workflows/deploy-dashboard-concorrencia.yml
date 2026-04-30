@@ -1,11 +1,11 @@
-name: "Deploy Dashboard — Concorrência (individual)"
-
-# ══════════════════════════════════════════════════════════════════
-# Deploy INDIVIDUAL de 1 cliente — apenas via workflow_dispatch.
-# Para deploy automático de todos, use "Deploy ALL Dashboards".
-# ══════════════════════════════════════════════════════════════════
+name: "Deploy Dashboard — Concorrência"
 
 on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       environment:
@@ -18,28 +18,32 @@ on:
         default: sandbox
 
 jobs:
-  deploy:
+  sandbox:
+    if: inputs.environment == 'sandbox'
     uses: ./.github/workflows/_deploy-s3-cloudfront.yml
     with:
       client_name: "concorrencia"
-      environment: ${{ inputs.environment }}
-      s3_bucket: >-
-        ${{ inputs.environment == 'production'
-            && 'dashboard-gf-concorrencia-prod-385697366782'
-            || 'dashboard-gf-concorrencia-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ inputs.environment == 'production'
-            && 'E2EPGFGK32LGEA'
-            || 'EXXXXX_SBX_CONCORRENCIA' }}
+      environment: "sandbox"
+      s3_bucket: "dashboard-gf-concorrencia-sbx-118690287580"
+      cloudfront_distribution_id: "EXXXXX_SBX_CONCORRENCIA"
       aws_region: "sa-east-1"
-      react_app_api_url: >-
-        ${{ inputs.environment == 'production'
-            && 'https://drpzon9lew0kt.cloudfront.net/api'
-            || 'https://SBX_CONCORRENCIA.cloudfront.net/api' }}
+      react_app_api_url: "https://SBX_CONCORRENCIA.cloudfront.net/api"
       react_app_front_app: "concorrencia"
       react_app_title: "Concorrencia"
-      react_app_description: >-
-        ${{ inputs.environment == 'production'
-            && 'Concorrencia - Dashboard do Banco Concorrencia'
-            || 'Concorrencia - Dashboard [SANDBOX]' }}
+      react_app_description: "Concorrencia - Dashboard [SANDBOX]"
+    secrets: inherit
+
+  production:
+    if: inputs.environment == 'production'
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia"
+      environment: "production"
+      s3_bucket: "dashboard-gf-concorrencia-prod-385697366782"
+      cloudfront_distribution_id: "E2EPGFGK32LGEA"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://drpzon9lew0kt.cloudfront.net/api"
+      react_app_front_app: "concorrencia"
+      react_app_title: "Concorrencia"
+      react_app_description: "Concorrencia - Dashboard do Banco Concorrencia"
     secrets: inherit

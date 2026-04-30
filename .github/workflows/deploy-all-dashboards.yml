@@ -4,11 +4,6 @@ name: "Deploy ALL Dashboards"
 # SDLC:
 #   sandbox branch → deploy TODOS os clientes no SANDBOX
 #   main branch    → deploy TODOS os clientes em PRODUCTION
-#   manual  → escolhe ambiente + cliente específico ou todos
-#
-# Este é o workflow principal. Os callers individuais por cliente
-# (deploy-dashboard-concorrencia.yml, etc.) são para deploy
-# isolado via workflow_dispatch quando necessário.
 # ══════════════════════════════════════════════════════════════════
 
 on:
@@ -19,246 +14,55 @@ on:
     paths-ignore:
       - "**.md"
 
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Ambiente"
-        required: true
-        type: choice
-        options:
-          - sandbox
-          - production
-        default: sandbox
-      client:
-        description: "Cliente (ou 'all')"
-        required: true
-        type: choice
-        options:
-          - all
-          - concorrencia
-          - concorrencia-mt
-          - aprobank
-          - bankzz
-          - amazonbank
-        default: all
-
 jobs:
-  # ════════════════════════════════════════════════════════════════
-  # Resolve qual ambiente usar baseado no trigger
-  # ════════════════════════════════════════════════════════════════
   resolve:
     runs-on: ubuntu-latest
     name: "🔍 Resolve"
     outputs:
-      environment: ${{ steps.resolve.outputs.environment }}
-      deploy_concorrencia: ${{ steps.clients.outputs.concorrencia }}
-      deploy_concorrencia_mt: ${{ steps.clients.outputs.concorrencia_mt }}
-      deploy_aprobank: ${{ steps.clients.outputs.aprobank }}
-      deploy_bankzz: ${{ steps.clients.outputs.bankzz }}
-      deploy_amazonbank: ${{ steps.clients.outputs.amazonbank }}
+      environment: ${{ steps.env.outputs.environment }}
     steps:
       - name: Resolve environment
-        id: resolve
+        id: env
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            ENV="${{ inputs.environment }}"
-          elif [ "${{ github.ref_name }}" = "main" ]; then
-            ENV="production"
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "📍 Ambiente: production"
           else
-            ENV="sandbox"
+            echo "environment=sandbox" >> $GITHUB_OUTPUT
+            echo "📍 Ambiente: sandbox"
           fi
-          echo "environment=$ENV" >> $GITHUB_OUTPUT
-          echo "📍 Ambiente: $ENV"
-
-      - name: Resolve clients
-        id: clients
-        run: |
-          CLIENT="${{ inputs.client || 'all' }}"
-          if [ "$CLIENT" = "all" ]; then
-            echo "concorrencia=true" >> $GITHUB_OUTPUT
-            echo "concorrencia_mt=true" >> $GITHUB_OUTPUT
-            echo "aprobank=true" >> $GITHUB_OUTPUT
-            echo "bankzz=true" >> $GITHUB_OUTPUT
-            echo "amazonbank=true" >> $GITHUB_OUTPUT
-          else
-            for c in concorrencia concorrencia_mt aprobank bankzz amazonbank; do
-              CLEAN=$(echo "$CLIENT" | tr '-' '_')
-              if [ "$CLEAN" = "$c" ]; then
-                echo "$c=true" >> $GITHUB_OUTPUT
-              else
-                echo "$c=false" >> $GITHUB_OUTPUT
-              fi
-            done
-          fi
-
-  # ════════════════════════════════════════════════════════════════
-  # Deploy por cliente — executa em paralelo
-  # Cada job chama o reusable com params do ambiente correto
-  # ════════════════════════════════════════════════════════════════
 
   concorrencia:
     needs: resolve
-    if: needs.resolve.outputs.deploy_concorrencia == 'true'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    uses: ./.github/workflows/deploy-dashboard-concorrencia.yml
     with:
-      client_name: "concorrencia"
       environment: ${{ needs.resolve.outputs.environment }}
-      s3_bucket: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'dashboard-gf-concorrencia-prod-385697366782'
-            || 'dashboard-gf-concorrencia-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'E2EPGFGK32LGEA'
-            || 'EXXXXX_SBX_CONCORRENCIA' }}
-      aws_region: "sa-east-1"
-      react_app_api_url: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'https://drpzon9lew0kt.cloudfront.net/api'
-            || 'https://SBX_CONCORRENCIA.cloudfront.net/api' }}
-      react_app_front_app: "concorrencia"
-      react_app_title: "Concorrencia"
-      react_app_description: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'Concorrencia - Dashboard do Banco Concorrencia'
-            || 'Concorrencia - Dashboard [SANDBOX]' }}
     secrets: inherit
 
   concorrencia-mt:
     needs: resolve
-    if: needs.resolve.outputs.deploy_concorrencia_mt == 'true'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    uses: ./.github/workflows/deploy-dashboard-concorrencia-mt.yml
     with:
-      client_name: "concorrencia-mt"
       environment: ${{ needs.resolve.outputs.environment }}
-      s3_bucket: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'dashboard-gf-concorrencia-mt-prod-385697366782'
-            || 'dashboard-gf-concorrencia-mt-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'E3H2MZ44ZR9BTO'
-            || 'EXXXXX_SBX_CONCORRENCIA_MT' }}
-      aws_region: "us-east-1"
-      react_app_api_url: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'https://api.mt.inttegrasocial.com.br/api'
-            || 'https://SBX_CONCORRENCIA_MT.cloudfront.net/api' }}
-      react_app_front_app: "concorrencia"
-      react_app_title: "Concorrencia MT"
-      react_app_description: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'Concorrencia MT - Dashboard'
-            || 'Concorrencia MT - Dashboard [SANDBOX]' }}
     secrets: inherit
 
   aprobank:
     needs: resolve
-    if: needs.resolve.outputs.deploy_aprobank == 'true'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    uses: ./.github/workflows/deploy-dashboard-aprobank.yml
     with:
-      client_name: "aprobank"
       environment: ${{ needs.resolve.outputs.environment }}
-      s3_bucket: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'dashboard-banco-aprobank-prod-385697366782'
-            || 'dashboard-banco-aprobank-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'E2KC0ARSNST82D'
-            || 'EXXXXX_SBX_APROBANK' }}
-      aws_region: "sa-east-1"
-      react_app_api_url: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'https://d2b1r13l3o5i5x.cloudfront.net/api'
-            || 'https://SBX_APROBANK.cloudfront.net/api' }}
-      react_app_front_app: "aprobank"
-      react_app_title: "AproBank"
-      react_app_description: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'AproBank - Dashboard do Banco AproBank'
-            || 'AproBank - Dashboard [SANDBOX]' }}
     secrets: inherit
 
   bankzz:
     needs: resolve
-    if: needs.resolve.outputs.deploy_bankzz == 'true'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    uses: ./.github/workflows/deploy-dashboard-bankzz.yml
     with:
-      client_name: "bankzz"
       environment: ${{ needs.resolve.outputs.environment }}
-      s3_bucket: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'dashboard-banco-bankzz-prod-385697366782'
-            || 'dashboard-banco-bankzz-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'E1XU4LSM7OYXNT'
-            || 'EXXXXX_SBX_BANKZZ' }}
-      aws_region: "sa-east-1"
-      react_app_api_url: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'https://api.bankzz.com.br/api'
-            || 'https://SBX_BANKZZ.cloudfront.net/api' }}
-      react_app_front_app: "bankzz"
-      react_app_title: "Bankzz"
-      react_app_description: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'BANKZZ - Dashboard do Banco Bankzz'
-            || 'Bankzz - Dashboard [SANDBOX]' }}
     secrets: inherit
 
   amazonbank:
     needs: resolve
-    if: needs.resolve.outputs.deploy_amazonbank == 'true'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    uses: ./.github/workflows/deploy-dashboard-amazonbank.yml
     with:
-      client_name: "amazonbank"
       environment: ${{ needs.resolve.outputs.environment }}
-      s3_bucket: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'dashboard-banco-abt-prod-385697366782'
-            || 'dashboard-banco-abt-sbx-118690287580' }}
-      cloudfront_distribution_id: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'E2EZE3KQSR0SB2'
-            || 'EXXXXX_SBX_AMAZONBANK' }}
-      aws_region: "sa-east-1"
-      react_app_api_url: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'https://api.amazonbankingtrust.com.br/api'
-            || 'https://SBX_AMAZONBANK.cloudfront.net/api' }}
-      react_app_front_app: "amazonbank"
-      react_app_title: "AmazonBank"
-      react_app_description: >-
-        ${{ needs.resolve.outputs.environment == 'production'
-            && 'Amazon Banking Trust - Dashboard'
-            || 'AmazonBank - Dashboard [SANDBOX]' }}
     secrets: inherit
-
-  # ════════════════════════════════════════════════════════════════
-  # Resumo final
-  # ════════════════════════════════════════════════════════════════
-  summary:
-    needs: [resolve, concorrencia, concorrencia-mt, aprobank, bankzz, amazonbank]
-    if: always()
-    runs-on: ubuntu-latest
-    name: "📊 Summary"
-    steps:
-      - name: Summary
-        run: |
-          ENV="${{ needs.resolve.outputs.environment }}"
-          echo "## 📊 Deploy ALL Dashboards — $ENV" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Cliente | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| concorrencia | \`${{ needs.concorrencia.result }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| concorrencia-mt | \`${{ needs.concorrencia-mt.result }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| aprobank | \`${{ needs.aprobank.result }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| bankzz | \`${{ needs.bankzz.result }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| amazonbank | \`${{ needs.amazonbank.result }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Ambiente:** \`$ENV\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Trigger:** \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Autor:** \`${{ github.actor }}\`" >> $GITHUB_STEP_SUMMARY

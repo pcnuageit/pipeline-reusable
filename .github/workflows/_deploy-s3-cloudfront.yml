@@ -2,20 +2,13 @@
 # _deploy-s3-cloudfront.yml
 # Reusable workflow — Build React (CRA) + Deploy S3 + Invalidação CloudFront
 #
-# Este template contém TODA a lógica de build e deploy.
-# Os caller workflows (1 por cliente) apenas passam parâmetros.
-#
-# Recursos:
-#   - Node 20 LTS com cache de dependências (yarn)
-#   - Build com variáveis de ambiente por cliente
-#   - S3 sync com cache headers inteligentes:
-#       Assets (JS/CSS/img): cache imutável 1 ano (CRA gera hashes)
-#       HTML/JSON: sem cache (sempre fresh)
-#   - CloudFront invalidation com wait
-#   - Deployment summary no GitHub
+# Jobs:
+#   1. build    → Checkout, Node 20, install, build (artefato)
+#   2. deploy   → Download artefato, S3 sync, CloudFront invalidation
+#   3. summary  → Resumo do deploy
 #
 # Autor: Platform Team
-# Versão: 1.0.0
+# Versão: 2.0.0
 ##############################################################################
 
 name: "Reusable — Deploy S3 + CloudFront"
@@ -43,9 +36,9 @@ on:
         type: string
         description: >
           Região AWS do bucket S3 (sa-east-1 ou us-east-1).
-          IMPORTANTE: Por legislação (LGPD), os buckets
+          IMPORTANTE: Por legislação (LGPD), a maioria dos buckets
           deve estar em sa-east-1. Buckets em us-east-1 são exceção
-          documentada.
+          documentada (ex: operações MT).
 
       # ── Build Config ──
       node_version:
@@ -81,47 +74,31 @@ on:
         type: boolean
         default: false
 
-env:
-  CI: false
-
 jobs:
-  build-and-deploy:
+  # ════════════════════════════════════════════════════════════════
+  # JOB 1: BUILD
+  # Checkout → Node setup → Install → Build → Upload artefato
+  # ════════════════════════════════════════════════════════════════
+  build:
     runs-on: ubuntu-latest
-    name: "🚀 ${{ inputs.client_name }}"
+    name: "📦 Build — ${{ inputs.client_name }}"
     steps:
-      # ────────────────────────────────────────
-      # 1. Checkout do código
-      # ────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ────────────────────────────────────────
-      # 2. Setup Node.js com cache yarn
-      # ────────────────────────────────────────
       - name: Setup Node.js ${{ inputs.node_version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
           cache: "yarn"
 
-      # ────────────────────────────────────────
-      # 3. Install dependências (frozen lockfile)
-      # ────────────────────────────────────────
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      # ────────────────────────────────────────
-      # 4. Build React com env vars do cliente
-      #    react-scripts prioriza env vars do
-      #    sistema sobre arquivos .env
-      #
-      #    NODE_OPTIONS: react-scripts 4.x usa Webpack 4
-      #    com OpenSSL legado. Node 20+ usa OpenSSL 3,
-      #    que quebra sem --openssl-legacy-provider.
-      # ────────────────────────────────────────
       - name: Build — ${{ inputs.client_name }}
         run: ${{ inputs.build_command }}
         env:
+          CI: false
           NODE_ENV: production
           NODE_OPTIONS: "--openssl-legacy-provider"
           REACT_APP_API_URL: ${{ inputs.react_app_api_url }}
@@ -129,9 +106,29 @@ jobs:
           REACT_APP_TITLE: ${{ inputs.react_app_title }}
           REACT_APP_DESCRIPTION: ${{ inputs.react_app_description }}
 
-      # ────────────────────────────────────────
-      # 5. Configure AWS Credentials
-      # ────────────────────────────────────────
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.client_name }}
+          path: ${{ inputs.build_output }}/
+          retention-days: 1
+          if-no-files-found: error
+
+  # ════════════════════════════════════════════════════════════════
+  # JOB 2: DEPLOY
+  # Download artefato → AWS credentials → S3 sync → CF invalidation
+  # ════════════════════════════════════════════════════════════════
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    name: "🚀 Deploy — ${{ inputs.client_name }}"
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ inputs.client_name }}
+          path: ${{ inputs.build_output }}/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -139,13 +136,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ inputs.aws_region }}
 
-      # ────────────────────────────────────────
-      # 6. S3 Sync — Assets estáticos
-      #    Cache imutável de 1 ano.
-      #    CRA gera hashes nos nomes dos arquivos
-      #    (main.a1b2c3.js), então cada build gera
-      #    nomes únicos. Seguro para cache longo.
-      # ────────────────────────────────────────
       - name: "S3 Sync — Assets (cache imutável 1 ano)"
         run: |
           echo "📦 Uploading assets → s3://${{ inputs.s3_bucket }}/"
@@ -157,12 +147,6 @@ jobs:
             --exclude "*.json" \
             --exclude "service-worker.js"
 
-      # ────────────────────────────────────────
-      # 7. S3 Sync — HTML e manifests
-      #    Sem cache. Garante que o browser sempre
-      #    busca a versão mais recente do index.html,
-      #    que referencia os assets com hash novo.
-      # ────────────────────────────────────────
       - name: "S3 Sync — HTML/JSON (sem cache)"
         run: |
           echo "📄 Uploading HTML/JSON → s3://${{ inputs.s3_bucket }}/"
@@ -174,11 +158,6 @@ jobs:
             --include "*.json" \
             --include "service-worker.js"
 
-      # ────────────────────────────────────────
-      # 8. CloudFront Invalidation
-      #    Invalida /* para forçar edges a buscar
-      #    o novo index.html. Aguarda conclusão.
-      # ────────────────────────────────────────
       - name: Invalidate CloudFront
         if: ${{ inputs.skip_invalidation == false }}
         run: |
@@ -195,21 +174,33 @@ jobs:
             --id $INVALIDATION_ID
           echo "✅ Cache invalidado com sucesso"
 
-      # ────────────────────────────────────────
-      # 9. Deployment Summary
-      # ────────────────────────────────────────
+  # ════════════════════════════════════════════════════════════════
+  # JOB 3: SUMMARY
+  # Resumo visual do deploy no GitHub Actions
+  # ════════════════════════════════════════════════════════════════
+  summary:
+    needs: [build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    name: "📊 Summary — ${{ inputs.client_name }}"
+    steps:
       - name: Deployment Summary
-        if: always()
         run: |
-          STATUS="${{ job.status }}"
-          [ "$STATUS" = "success" ] && ICON="✅" || ICON="❌"
+          BUILD_STATUS="${{ needs.build.result }}"
+          DEPLOY_STATUS="${{ needs.deploy.result }}"
+
+          [ "$DEPLOY_STATUS" = "success" ] && ICON="✅" || ICON="❌"
 
           echo "## $ICON Deploy — ${{ inputs.client_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Etapa | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build** | \`$BUILD_STATUS\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy** | \`$DEPLOY_STATUS\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Valor |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **Cliente** | \`${{ inputs.client_name }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Status** | \`$STATUS\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Bucket S3** | \`${{ inputs.s3_bucket }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **CloudFront** | \`${{ inputs.cloudfront_distribution_id }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Região** | \`${{ inputs.aws_region }}\` |" >> $GITHUB_STEP_SUMMARY

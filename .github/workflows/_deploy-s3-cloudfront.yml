@@ -7,10 +7,14 @@
 #   2. deploy   → Download artefato, S3 sync, CloudFront invalidation
 #   3. summary  → Resumo do deploy
 #
-# Actions: v5 (Node.js 24 runtime — compatível até set/2028+)
+# Multi-account:
+#   Usa GitHub Environments para isolar secrets por conta AWS.
+#   - sandbox:    conta 118690287580 (deploy livre)
+#   - production: conta 385697366782 (com aprovação opcional)
 #
+# Actions: v5 (Node.js 24 runtime)
 # Autor: Platform Team
-# Versão: 2.1.0
+# Versão: 3.0.0
 ##############################################################################
 
 name: "Reusable — Deploy S3 + CloudFront"
@@ -23,6 +27,10 @@ on:
         required: true
         type: string
         description: "Slug do cliente (ex: aprobank, bankzz, concorrencia)"
+      environment:
+        required: true
+        type: string
+        description: "GitHub Environment (sandbox ou production)"
 
       # ── AWS Resources ──
       s3_bucket:
@@ -36,11 +44,7 @@ on:
       aws_region:
         required: true
         type: string
-        description: >
-          Região AWS do bucket S3 (sa-east-1 ou us-east-1).
-          IMPORTANTE: Por legislação (LGPD), a maioria dos buckets
-          deve estar em sa-east-1. Buckets em us-east-1 são exceção
-          documentada (ex: operações MT).
+        description: "Região AWS do bucket S3 (sa-east-1 ou us-east-1)"
 
       # ── Build Config ──
       node_version:
@@ -79,11 +83,11 @@ on:
 jobs:
   # ════════════════════════════════════════════════════════════════
   # JOB 1: BUILD
-  # Checkout → Node setup → Install → Build → Upload artefato
+  # Não precisa de credentials AWS — apenas código
   # ════════════════════════════════════════════════════════════════
   build:
     runs-on: ubuntu-latest
-    name: "📦 Build — ${{ inputs.client_name }}"
+    name: "📦 Build — ${{ inputs.client_name }} [${{ inputs.environment }}]"
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -111,32 +115,41 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
         with:
-          name: build-${{ inputs.client_name }}
+          name: build-${{ inputs.client_name }}-${{ inputs.environment }}
           path: ${{ inputs.build_output }}/
           retention-days: 1
           if-no-files-found: error
 
   # ════════════════════════════════════════════════════════════════
   # JOB 2: DEPLOY
-  # Download artefato → AWS credentials → S3 sync → CF invalidation
+  # Usa GitHub Environment para pegar secrets da conta correta
+  # Se production tiver "required reviewers", aguarda aprovação aqui
   # ════════════════════════════════════════════════════════════════
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    name: "🚀 Deploy — ${{ inputs.client_name }}"
+    name: "🚀 Deploy — ${{ inputs.client_name }} [${{ inputs.environment }}]"
+    environment: ${{ inputs.environment }}
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v5
         with:
-          name: build-${{ inputs.client_name }}
+          name: build-${{ inputs.client_name }}-${{ inputs.environment }}
           path: ${{ inputs.build_output }}/
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials — ${{ inputs.environment }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ inputs.aws_region }}
+
+      - name: Verify AWS Account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "🔐 Deploying to AWS Account: $ACCOUNT_ID"
+          echo "📍 Environment: ${{ inputs.environment }}"
+          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
 
       - name: "S3 Sync — Assets (cache imutável 1 ano)"
         run: |
@@ -178,13 +191,12 @@ jobs:
 
   # ════════════════════════════════════════════════════════════════
   # JOB 3: SUMMARY
-  # Resumo visual do deploy no GitHub Actions
   # ════════════════════════════════════════════════════════════════
   summary:
     needs: [build, deploy]
     if: always()
     runs-on: ubuntu-latest
-    name: "📊 Summary — ${{ inputs.client_name }}"
+    name: "📊 Summary"
     steps:
       - name: Deployment Summary
         run: |
@@ -193,7 +205,7 @@ jobs:
 
           [ "$DEPLOY_STATUS" = "success" ] && ICON="✅" || ICON="❌"
 
-          echo "## $ICON Deploy — ${{ inputs.client_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "## $ICON Deploy — ${{ inputs.client_name }} [${{ inputs.environment }}]" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Etapa | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
@@ -203,6 +215,7 @@ jobs:
           echo "| Item | Valor |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **Cliente** | \`${{ inputs.client_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Ambiente** | \`${{ inputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Bucket S3** | \`${{ inputs.s3_bucket }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **CloudFront** | \`${{ inputs.cloudfront_distribution_id }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Região** | \`${{ inputs.aws_region }}\` |" >> $GITHUB_STEP_SUMMARY

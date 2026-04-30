@@ -93,7 +93,7 @@ jobs:
           cache: "yarn"
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Build — ${{ inputs.client_name }}
         run: ${{ inputs.build_command }}

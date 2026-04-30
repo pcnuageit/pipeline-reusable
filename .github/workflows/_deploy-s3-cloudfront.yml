@@ -114,11 +114,16 @@ jobs:
       # 4. Build React com env vars do cliente
       #    react-scripts prioriza env vars do
       #    sistema sobre arquivos .env
+      #
+      #    NODE_OPTIONS: react-scripts 4.x usa Webpack 4
+      #    com OpenSSL legado. Node 20+ usa OpenSSL 3,
+      #    que quebra sem --openssl-legacy-provider.
       # ────────────────────────────────────────
       - name: Build — ${{ inputs.client_name }}
         run: ${{ inputs.build_command }}
         env:
           NODE_ENV: production
+          NODE_OPTIONS: "--openssl-legacy-provider"
           REACT_APP_API_URL: ${{ inputs.react_app_api_url }}
           REACT_APP_FRONT_APP: ${{ inputs.react_app_front_app }}
           REACT_APP_TITLE: ${{ inputs.react_app_title }}

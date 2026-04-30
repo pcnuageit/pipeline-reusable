@@ -1,0 +1,251 @@
+import {
+	Box,
+	LinearProgress,
+	TextField,
+	Typography,
+	useMediaQuery,
+	useTheme,
+} from '@material-ui/core';
+import React, { useEffect, useState } from 'react';
+import { generatePath, useHistory, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+
+import CustomBreadcrumbs from '../../components/CustomBreadcrumbs/CustomBreadcrumbs';
+import CustomTable from '../../components/CustomTable/CustomTable';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Pagination from '@material-ui/lab/Pagination';
+import SearchBar from '../../components/CustomTextField/CustomTextField';
+import { faCalendarAlt } from '@fortawesome/free-regular-svg-icons';
+import { loadListarProdutosGiftCard } from '../../actions/actions';
+import useAuth from '../../hooks/useAuth';
+import useDebounce from '../../hooks/useDebounce';
+import moment from 'moment';
+import 'moment/locale/pt-br';
+import { APP_CONFIG } from '../../constants/config';
+
+const columns = [
+	{
+		headerText: 'Criado em',
+		key: 'created_at',
+		CustomValue: (data) => {
+			/* const date = new Date(data);
+			const option = {
+				year: 'numeric',
+				month: 'numeric',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: 'numeric',
+				second: 'numeric',
+			};
+			const formatted = date.toLocaleDateString('pt-br', option);
+			return (
+				<Box display="flex" justifyContent="center">
+					<FontAwesomeIcon icon={faCalendarAlt} size="lg" />
+					<Typography style={{ marginLeft: '6px' }}>
+						{formatted}
+					</Typography>
+				</Box>
+			); */
+			return (
+				<Box
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						alignItems: 'center',
+					}}
+				>
+					<FontAwesomeIcon icon={faCalendarAlt} size="lg" />
+					{moment.utc(data).format('DD MMMM YYYY, hh:mm')}
+				</Box>
+			);
+		},
+	},
+	{
+		headerText: 'Produto',
+		key: 'produto_celcoin',
+		CustomValue: (produto) => {
+			return <Typography>{produto}</Typography>;
+		},
+	},
+	{
+		headerText: 'Situação',
+		key: 'status',
+		CustomValue: (status) => {
+			if (
+				status === 'SUCESSO' ||
+				status === 'Confirmada' ||
+				status === 'Aprovado' ||
+				status === 'Criada'
+			) {
+				return (
+					<Typography
+						style={{
+							color: 'green',
+							fontWeight: 'bold',
+
+							borderRadius: '27px',
+						}}
+					>
+						{status}
+					</Typography>
+				);
+			}
+			if (status === 'Pendente') {
+				return (
+					<Typography
+						style={{
+							color: '#CCCC00',
+							fontWeight: 'bold',
+
+							borderRadius: '27px',
+						}}
+					>
+						{status}
+					</Typography>
+				);
+			}
+			return (
+				<Typography
+					style={{
+						color: 'red',
+						fontWeight: 'bold',
+						borderRadius: '27px',
+					}}
+				>
+					{status}
+				</Typography>
+			);
+		},
+	},
+	{
+		headerText: 'Valor',
+		key: 'valor',
+		CustomValue: (valor) => {
+			return (
+				<Typography>
+					R$ <b>{valor}</b>
+				</Typography>
+			);
+		},
+	},
+];
+
+const GiftCardsList = () => {
+	const token = useAuth();
+	const history = useHistory();
+	const theme = useTheme();
+	const matches = useMediaQuery(theme.breakpoints.down('sm'));
+	const { id } = useParams();
+	const userData = useSelector((state) => state.userData);
+	const [filters, setFilters] = useState({
+		like: '',
+		order: '',
+		mostrar: '',
+	});
+	const debouncedLike = useDebounce(filters.like, 800);
+	const dispatch = useDispatch();
+	const [page, setPage] = useState(1);
+	const giftCards = useSelector((state) => state.giftCards);
+
+	moment.locale('pt-br');
+
+	useEffect(() => {
+		dispatch(
+			loadListarProdutosGiftCard(
+				token,
+				id,
+				page,
+				debouncedLike,
+				filters.order,
+				filters.mostrar
+			)
+		);
+	}, [page, filters.order, filters.mostrar, debouncedLike, id]);
+
+	const handleChangePage = (e, value) => {
+		setPage(value);
+	};
+
+	const handleClickRow = async (row) => {
+		if (row.id) {
+			const path = generatePath(
+				'/dashboard/gerenciar-contas/:id/detalhes-gift-card/:giftCardId',
+				{
+					id: id,
+					giftCardId: row.id,
+				}
+			);
+			history.push(path);
+		} else {
+			return null;
+		}
+	};
+
+	return (
+		<Box display="flex" flexDirection="column">
+			<Box
+				display="flex"
+				justifyContent="space-between"
+				flexDirection={matches ? 'column' : null}
+			>
+				<Typography
+					style={{
+						marginTop: '8px',
+						color: APP_CONFIG.mainCollors.primary,
+						marginBottom: 30,
+					}}
+					variant="h4"
+				>
+					Gift Cards
+				</Typography>
+			</Box>
+			<Box
+				style={{
+					width: '100%',
+					backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+					borderTopLeftRadius: 27,
+					borderTopRightRadius: 27,
+				}}
+			>
+				<Box marginTop="16px" marginBottom="16px" style={{ margin: 30 }}>
+					{/* <TextField
+						variant="outlined"
+						fullWidth
+						placeholder="Pesquisar por nome, documento..."
+						value={filters.like}
+						onChange={(e) =>
+							setFilters({
+								...filters,
+								like: e.target.value,
+							})
+						}
+					/> */}
+				</Box>
+			</Box>
+
+			{giftCards.data && giftCards.per_page ? (
+				<Box minWidth={!matches ? '800px' : null}>
+					<CustomTable
+						columns={columns}
+						data={giftCards.data}
+						handleClickRow={handleClickRow}
+					/>
+				</Box>
+			) : (
+				<LinearProgress />
+			)}
+			<Box alignSelf="flex-end" marginTop="8px">
+				<Pagination
+					variant="outlined"
+					color="secondary"
+					size="large"
+					count={giftCards.last_page}
+					onChange={handleChangePage}
+					page={page}
+				/>
+			</Box>
+		</Box>
+	);
+};
+
+export default GiftCardsList;

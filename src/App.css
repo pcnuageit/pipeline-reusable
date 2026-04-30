@@ -1,0 +1,103 @@
+body {
+	margin: 0;
+	padding: 0;
+	font-family: 'Humanist';
+	text-decoration: none !important;
+}
+
+a,
+u {
+	text-decoration: none !important;
+}
+input[type='number']::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+input[type='number'] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
+
+input:focus {
+	outline: none;
+}
+
+@font-face {
+	font-family: 'arial';
+	src: local('arial'), url(./fonts/arial.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-black-bt';
+	src: local('Humanist'),
+		url(./fonts/humanist-777-black-bt.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-bold-bt';
+	src: local('Humanist'),
+		url(./fonts/humanist-777-bold-bt.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-bold-italic-bt';
+	src: local('Humanist'),
+		url(./fonts/humanist-777-bold-italic-bt.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-bt';
+	src: local('Humanist'), url(./fonts/humanist-777-bt.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-light-italic-bt';
+	src: local('Humanist'),
+		url(./fonts/humanist-777-light-italic-bt.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Humanist-777-lt-bt-light';
+	src: local('Humanist'),
+		url(./fonts/humanist-777-lt-bt-light.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'microgramma-d-bold-extended';
+	src: local('Humanist'),
+		url(./fonts/microgramma-d-bold-extended.otf) format('opentype');
+}
+
+@font-face {
+	font-family: 'Montserrat-ExtraBold';
+	src: local('Humanist'),
+		url(./fonts/Montserrat-ExtraBold.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Montserrat-MediumItalic';
+	src: local('Humanist'),
+		url(./fonts/Montserrat-MediumItalic.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Montserrat-Regular';
+	src: local('Humanist'),
+		url(./fonts/Montserrat-Regular.otf) format('opentype');
+}
+
+@font-face {
+	font-family: 'Montserrat-RegularItalic';
+	src: local('Humanist'),
+		url(./fonts/Montserrat-RegularItalic.ttf) format('truetype');
+}
+
+@font-face {
+	font-family: 'Montserrat-SemiBold';
+	src: local('Humanist'),
+		url(./fonts/Montserrat-SemiBold.otf) format('opentype');
+}
+
+@font-face {
+	font-family: 'Montserrat-Thin';
+	src: local('Humanist'), url(./fonts/Montserrat-Thin.ttf) format('truetype');
+}

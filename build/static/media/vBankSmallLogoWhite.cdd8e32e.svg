@@ -1,0 +1,58 @@
+<svg id="Componente_4" data-name="Componente 4" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="57.225" height="63.518" viewBox="0 0 57.225 63.518">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Retângulo_43" data-name="Retângulo 43" width="57.225" height="63.518" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-path-3">
+      <rect id="Retângulo_39" data-name="Retângulo 39" width="4.946" height="8.956" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-path-4">
+      <path id="Caminho_17" data-name="Caminho 17" d="M93.611,268.291,89.155,264.5l-.49-5.17,4.31,2.247Z" transform="translate(-88.665 -259.335)" fill="none"/>
+    </clipPath>
+    <linearGradient id="linear-gradient" x1="-0.699" y1="3.885" x2="-0.689" y2="3.885" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.252" stop-color="#fff"/>
+      <stop offset="1" stop-color="#1d1d1b"/>
+    </linearGradient>
+    <clipPath id="clip-path-5">
+      <rect id="Retângulo_41" data-name="Retângulo 41" width="4.847" height="8.148" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-path-6">
+      <path id="Caminho_18" data-name="Caminho 18" d="M98.162,359.127l4.374,2.924.473,5.224-4.31-2.247Z" transform="translate(-98.162 -359.127)" fill="none"/>
+    </clipPath>
+    <linearGradient id="linear-gradient-2" x1="-0.919" y1="2.7" x2="-0.907" y2="2.7" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.166" stop-color="#fff"/>
+      <stop offset="1" stop-color="#1d1d1b"/>
+    </linearGradient>
+  </defs>
+  <g id="Grupo_71" data-name="Grupo 71" clip-path="url(#clip-path)">
+    <g id="Grupo_70" data-name="Grupo 70">
+      <g id="Grupo_69" data-name="Grupo 69" clip-path="url(#clip-path)">
+        <path id="Caminho_16" data-name="Caminho 16" d="M28.024,63.518a16.552,16.552,0,0,1-16.4-15.011L10.78,39.6l-5.6-4.756A14.79,14.79,0,0,1,2.371,15.57a5.639,5.639,0,0,1,6.152-2.439,5.663,5.663,0,0,1,4.322,5.027l1.838,19.395.082.069a5.979,5.979,0,0,0,9.259-1.962L38.7,5.351A9.4,9.4,0,0,1,47.164,0h.05a9.4,9.4,0,0,1,8.471,5.263,14.642,14.642,0,0,1-9.675,20.763,5.15,5.15,0,0,0-3.86,6.032l2.244,11.364A16.82,16.82,0,0,1,34.048,62.37a16.487,16.487,0,0,1-6.024,1.148M15.154,42.525l.53,5.594A12.421,12.421,0,0,0,32.566,58.555a12.727,12.727,0,0,0,7.827-14.336L38.149,32.855a9.232,9.232,0,0,1,6.92-10.813,10.543,10.543,0,0,0,6.967-14.95,5.38,5.38,0,0,0-9.67.05L27.692,37.45a10.067,10.067,0,0,1-12.538,5.075M7.13,17.058a1.541,1.541,0,0,0-1.342.748A10.676,10.676,0,0,0,7.819,31.72l2.409,2.047L8.785,18.546a1.594,1.594,0,0,0-1.237-1.438,1.776,1.776,0,0,0-.419-.05" transform="translate(0)" fill="#fff"/>
+        <g id="Grupo_63" data-name="Grupo 63" transform="translate(9.737 28.597)" opacity="0.25" style="mix-blend-mode: multiply;isolation: isolate">
+          <g id="Grupo_62" data-name="Grupo 62">
+            <g id="Grupo_61" data-name="Grupo 61" clip-path="url(#clip-path-3)">
+              <g id="Grupo_60" data-name="Grupo 60" transform="translate(0)">
+                <g id="Grupo_59" data-name="Grupo 59" clip-path="url(#clip-path-4)">
+                  <rect id="Retângulo_38" data-name="Retângulo 38" width="10.193" height="8.95" transform="matrix(0.536, -0.844, 0.844, 0.536, -4.038, 6.379)" fill="url(#linear-gradient)"/>
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+        <g id="Grupo_68" data-name="Grupo 68" transform="translate(10.78 39.601)" opacity="0.25" style="mix-blend-mode: multiply;isolation: isolate">
+          <g id="Grupo_67" data-name="Grupo 67">
+            <g id="Grupo_66" data-name="Grupo 66" clip-path="url(#clip-path-5)">
+              <g id="Grupo_65" data-name="Grupo 65" transform="translate(0)">
+                <g id="Grupo_64" data-name="Grupo 64" clip-path="url(#clip-path-6)">
+                  <rect id="Retângulo_40" data-name="Retângulo 40" width="9.307" height="8.981" transform="translate(-4.019 4.636) rotate(-48.965)" fill="url(#linear-gradient-2)"/>
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

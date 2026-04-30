@@ -1,0 +1,21 @@
+name: "Deploy Dashboard — Concorrência"
+
+on:
+  push:
+    branches:
+      - "release/dashboard-concorrencia"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia"
+      s3_bucket: "dashboard-gf-concorrencia"
+      cloudfront_distribution_id: "E2EPGFGK32LGEA"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://drpzon9lew0kt.cloudfront.net/api"
+      react_app_front_app: "concorrencia"
+      react_app_title: "Concorrencia"
+      react_app_description: "Concorrencia - Dashboard do Banco Concorrencia"
+    secrets: inherit

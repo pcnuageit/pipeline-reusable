@@ -1,0 +1,214 @@
+##############################################################################
+# _deploy-s3-cloudfront.yml
+# Reusable workflow — Build React (CRA) + Deploy S3 + Invalidação CloudFront
+#
+# Este template contém TODA a lógica de build e deploy.
+# Os caller workflows (1 por cliente) apenas passam parâmetros.
+#
+# Recursos:
+#   - Node 20 LTS com cache de dependências (yarn)
+#   - Build com variáveis de ambiente por cliente
+#   - S3 sync com cache headers inteligentes:
+#       Assets (JS/CSS/img): cache imutável 1 ano (CRA gera hashes)
+#       HTML/JSON: sem cache (sempre fresh)
+#   - CloudFront invalidation com wait
+#   - Deployment summary no GitHub
+#
+# Autor: Platform Team
+# Versão: 1.0.0
+##############################################################################
+
+name: "Reusable — Deploy S3 + CloudFront"
+
+on:
+  workflow_call:
+    inputs:
+      # ── Identificação ──
+      client_name:
+        required: true
+        type: string
+        description: "Slug do cliente (ex: aprobank, bankzz, concorrencia)"
+
+      # ── AWS Resources ──
+      s3_bucket:
+        required: true
+        type: string
+        description: "Nome do bucket S3 de destino"
+      cloudfront_distribution_id:
+        required: true
+        type: string
+        description: "ID da distribuição CloudFront"
+      aws_region:
+        required: true
+        type: string
+        description: >
+          Região AWS do bucket S3 (sa-east-1 ou us-east-1).
+          IMPORTANTE: Por legislação (LGPD), os buckets
+          deve estar em sa-east-1. Buckets em us-east-1 são exceção
+          documentada.
+
+      # ── Build Config ──
+      node_version:
+        required: false
+        type: string
+        default: "20"
+      build_command:
+        required: false
+        type: string
+        default: "yarn build"
+      build_output:
+        required: false
+        type: string
+        default: "build"
+
+      # ── React Environment Variables ──
+      react_app_api_url:
+        required: true
+        type: string
+      react_app_front_app:
+        required: true
+        type: string
+      react_app_title:
+        required: true
+        type: string
+      react_app_description:
+        required: true
+        type: string
+
+      # ── Options ──
+      skip_invalidation:
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CI: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: "🚀 ${{ inputs.client_name }}"
+    steps:
+      # ────────────────────────────────────────
+      # 1. Checkout do código
+      # ────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ────────────────────────────────────────
+      # 2. Setup Node.js com cache yarn
+      # ────────────────────────────────────────
+      - name: Setup Node.js ${{ inputs.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: "yarn"
+
+      # ────────────────────────────────────────
+      # 3. Install dependências (frozen lockfile)
+      # ────────────────────────────────────────
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # ────────────────────────────────────────
+      # 4. Build React com env vars do cliente
+      #    react-scripts prioriza env vars do
+      #    sistema sobre arquivos .env
+      # ────────────────────────────────────────
+      - name: Build — ${{ inputs.client_name }}
+        run: ${{ inputs.build_command }}
+        env:
+          NODE_ENV: production
+          REACT_APP_API_URL: ${{ inputs.react_app_api_url }}
+          REACT_APP_FRONT_APP: ${{ inputs.react_app_front_app }}
+          REACT_APP_TITLE: ${{ inputs.react_app_title }}
+          REACT_APP_DESCRIPTION: ${{ inputs.react_app_description }}
+
+      # ────────────────────────────────────────
+      # 5. Configure AWS Credentials
+      # ────────────────────────────────────────
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws_region }}
+
+      # ────────────────────────────────────────
+      # 6. S3 Sync — Assets estáticos
+      #    Cache imutável de 1 ano.
+      #    CRA gera hashes nos nomes dos arquivos
+      #    (main.a1b2c3.js), então cada build gera
+      #    nomes únicos. Seguro para cache longo.
+      # ────────────────────────────────────────
+      - name: "S3 Sync — Assets (cache imutável 1 ano)"
+        run: |
+          echo "📦 Uploading assets → s3://${{ inputs.s3_bucket }}/"
+          aws s3 sync ${{ inputs.build_output }}/ s3://${{ inputs.s3_bucket }}/ \
+            --delete \
+            --exact-timestamps \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.json" \
+            --exclude "service-worker.js"
+
+      # ────────────────────────────────────────
+      # 7. S3 Sync — HTML e manifests
+      #    Sem cache. Garante que o browser sempre
+      #    busca a versão mais recente do index.html,
+      #    que referencia os assets com hash novo.
+      # ────────────────────────────────────────
+      - name: "S3 Sync — HTML/JSON (sem cache)"
+        run: |
+          echo "📄 Uploading HTML/JSON → s3://${{ inputs.s3_bucket }}/"
+          aws s3 sync ${{ inputs.build_output }}/ s3://${{ inputs.s3_bucket }}/ \
+            --exact-timestamps \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.json" \
+            --include "service-worker.js"
+
+      # ────────────────────────────────────────
+      # 8. CloudFront Invalidation
+      #    Invalida /* para forçar edges a buscar
+      #    o novo index.html. Aguarda conclusão.
+      # ────────────────────────────────────────
+      - name: Invalidate CloudFront
+        if: ${{ inputs.skip_invalidation == false }}
+        run: |
+          echo "🔄 Invalidando CloudFront ${{ inputs.cloudfront_distribution_id }}..."
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ inputs.cloudfront_distribution_id }} \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+
+          echo "⏳ Aguardando invalidação $INVALIDATION_ID..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id ${{ inputs.cloudfront_distribution_id }} \
+            --id $INVALIDATION_ID
+          echo "✅ Cache invalidado com sucesso"
+
+      # ────────────────────────────────────────
+      # 9. Deployment Summary
+      # ────────────────────────────────────────
+      - name: Deployment Summary
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          [ "$STATUS" = "success" ] && ICON="✅" || ICON="❌"
+
+          echo "## $ICON Deploy — ${{ inputs.client_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Cliente** | \`${{ inputs.client_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | \`$STATUS\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Bucket S3** | \`${{ inputs.s3_bucket }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **CloudFront** | \`${{ inputs.cloudfront_distribution_id }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Região** | \`${{ inputs.aws_region }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${GITHUB_SHA::8}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **API URL** | \`${{ inputs.react_app_api_url }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trigger** | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY

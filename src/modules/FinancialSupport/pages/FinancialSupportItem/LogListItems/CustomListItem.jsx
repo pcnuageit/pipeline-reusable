@@ -1,29 +1,27 @@
 import {
-	Avatar,
-	Box,
-	colors,
-	ListItem,
-	ListItemAvatar,
-	ListItemText,
-	Typography,
-} from '@material-ui/core';
+  Avatar,
+  Box,
+  colors,
+  ListItem,
+  ListItemAvatar,
+  Typography,
+} from "@material-ui/core";
 import {
-	AttachMoney,
-	Block,
-	BorderColor,
-	Cancel,
-	Check,
-	DoneAll,
-	InfoOutlined,
-	MoneyOff,
-	Receipt,
-} from '@material-ui/icons';
-import Popover from '../../../components/Popover';
-import { format } from "date-fns";
-import { useMemo } from 'react';
-import FeeChargeListItemText from './FeeChargeListItemText';
-import FinancialTransferListItemText from './FinancialTransferListItemText';
-import DefaultListItemText from './DefaultListItemText';
+  AttachMoney,
+  Block,
+  BorderColor,
+  Cancel,
+  Check,
+  DoneAll,
+  InfoOutlined,
+  MoneyOff,
+  Receipt,
+} from "@material-ui/icons";
+import { useMemo } from "react";
+import Popover from "../../../components/Popover";
+import DefaultListItemText from "./DefaultListItemText";
+import FeeChargeListItemText from "./FeeChargeListItemText";
+import FinancialTransferListItemText from "./FinancialTransferListItemText";
 
 const mappedLogs = {
   solicitado: {
@@ -97,38 +95,46 @@ const CustomListItem = ({ log }) => {
   const { Icon, color, textAction } = mappedLogs[log.action];
 
   const customColor = useMemo(() => {
-    if(log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
-      if(!log.transferencia_pagamento?.status) return colors.grey[100];
-      return log.transferencia_pagamento?.status === "Sucesso" ? colors.green[500] : colors.red[500];
+    if (log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
+      if (!log.transferencia_pagamento?.status) return colors.grey[100];
+      return log.transferencia_pagamento?.status === "Sucesso"
+        ? colors.green[500]
+        : colors.red[500];
     }
-    if(log.action === "liberacao_apoio") {
-      if(!log.transferencia_apoio?.status) return colors.grey[100];
-      return log.transferencia_apoio?.status === "Sucesso" ? colors.green[500] : colors.red[500];
+    if (log.action === "liberacao_apoio") {
+      if (!log.transferencia_apoio?.status) return colors.grey[100];
+      return log.transferencia_apoio?.status === "Sucesso"
+        ? colors.green[500]
+        : colors.red[500];
     }
     return color;
   }, [color, log]);
 
   const item = useMemo(() => {
-    if(log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
+    if (log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
       return <FeeChargeListItemText log={log} textAction={textAction} />;
     }
-    if(log.action === "liberacao_apoio") {
-      return <FinancialTransferListItemText log={log} textAction={textAction} />;
+    if (log.action === "liberacao_apoio") {
+      return (
+        <FinancialTransferListItemText log={log} textAction={textAction} />
+      );
     }
     return <DefaultListItemText log={log} textAction={textAction} />;
-  }, [log, textAction])
+  }, [log, textAction]);
 
   const details = useMemo(() => {
-    if(log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
-      if(log.transferencia_pagamento?.fitbank?.Message) return log.transferencia_pagamento?.fitbank?.Message;
+    if (log.action === "pagamento_tarifa" || log.action === "pagamento_apoio") {
+      if (log.transferencia_pagamento?.fitbank?.Message)
+        return log.transferencia_pagamento?.fitbank?.Message;
       return "-";
     }
-    if(log.action === "liberacao_apoio") {
-      if(log.transferencia_apoio?.fitbank?.Message) return log.transferencia_apoio?.fitbank?.Message;
+    if (log.action === "liberacao_apoio") {
+      if (log.transferencia_apoio?.fitbank?.Message)
+        return log.transferencia_apoio?.fitbank?.Message;
       return "-";
     }
     return "-";
-  }, [log])
+  }, [log]);
 
   return (
     <ListItem disableGutters>
@@ -140,12 +146,8 @@ const CustomListItem = ({ log }) => {
       {item}
       <Popover buttonContent={<InfoOutlined />}>
         <Box>
-          <Typography variant="body2">
-            Descrição: {log.description}
-          </Typography>
-          <Typography variant="body2">
-            Detalhes: {details}
-          </Typography>
+          <Typography variant="body2">Descrição: {log.description}</Typography>
+          <Typography variant="body2">Detalhes: {details}</Typography>
           <Box marginTop={1}>
             <Typography variant="body2">
               Por: {log.user} <br />

@@ -1,8 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import thunk from "redux-thunk";
 
-import { combineReducers } from "../utils/redux";
 import { baseApi } from "../services/api";
+import { combineReducers } from "../utils/redux";
 
 import { INITIAL_STATE, rootReducer } from "./rootReducer";
 

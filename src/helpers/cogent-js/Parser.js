@@ -1,9 +1,9 @@
-import qs from 'qs';
+import qs from "qs";
 
 export default class Parser {
   constructor(query) {
     this.query = query;
-    this.uri = '';
+    this.uri = "";
   }
 
   // parse the final query string
@@ -21,7 +21,7 @@ export default class Parser {
   }
 
   prepend() {
-    return this.uri === '' ? '?' : '&';
+    return this.uri === "" ? "?" : "&";
   }
 
   /**
@@ -32,11 +32,9 @@ export default class Parser {
       return;
     }
 
-    this.uri +=
-      `${this.prepend() +
-      this.query.queryParameters.includes
-      }=${
-      this.query.include}`;
+    this.uri += `${this.prepend() + this.query.queryParameters.includes}=${
+      this.query.include
+    }`;
   }
 
   appends() {
@@ -44,11 +42,9 @@ export default class Parser {
       return;
     }
 
-    this.uri +=
-      `${this.prepend() +
-      this.query.queryParameters.appends
-      }=${
-      this.query.append}`;
+    this.uri += `${this.prepend() + this.query.queryParameters.appends}=${
+      this.query.append
+    }`;
   }
 
   fields() {
@@ -56,7 +52,10 @@ export default class Parser {
       return;
     }
 
-    const fields = { [`${this.query.queryParameters.fields}[${this.query.model}]`]: this.query.fields };
+    const fields = {
+      [`${this.query.queryParameters.fields}[${this.query.model}]`]:
+        this.query.fields,
+    };
     this.uri += this.prepend() + qs.stringify(fields, { encode: false });
   }
 
@@ -65,7 +64,9 @@ export default class Parser {
       return;
     }
 
-    const filters = { [this.query.queryParameters.filters]: this.query.filters };
+    const filters = {
+      [this.query.queryParameters.filters]: this.query.filters,
+    };
     this.uri += this.prepend() + qs.stringify(filters, { encode: false });
   }
 
@@ -74,8 +75,9 @@ export default class Parser {
       return;
     }
 
-    this.uri +=
-      `${this.prepend() + this.query.queryParameters.sort}=${this.query.sorts}`;
+    this.uri += `${this.prepend() + this.query.queryParameters.sort}=${
+      this.query.sorts
+    }`;
   }
 
   page() {
@@ -83,11 +85,9 @@ export default class Parser {
       return;
     }
 
-    this.uri +=
-      `${this.prepend() +
-      this.query.queryParameters.page
-      }=${
-      this.query.pageValue}`;
+    this.uri += `${this.prepend() + this.query.queryParameters.page}=${
+      this.query.pageValue
+    }`;
   }
 
   limit() {
@@ -95,18 +95,15 @@ export default class Parser {
       return;
     }
 
-    this.uri +=
-      `${this.prepend() +
-      this.query.queryParameters.limit
-      }=${
-      this.query.limitValue}`;
+    this.uri += `${this.prepend() + this.query.queryParameters.limit}=${
+      this.query.limitValue
+    }`;
   }
 
   params() {
     if (this.query.paramsObj === null) {
       return;
     }
-
 
     this.uri +=
       this.prepend() + qs.stringify(this.query.paramsObj, { encode: false });

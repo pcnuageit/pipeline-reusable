@@ -1,4 +1,4 @@
-import Parser from './Parser';
+import Parser from "./Parser";
 
 export default class Query {
   constructor(options = {}) {
@@ -16,16 +16,16 @@ export default class Query {
 
     // default filter names
     this.queryParameters = options.queryParameters || {
-      filters: 'filter',
-      fields: 'fields',
-      includes: 'include',
-      appends: 'append',
-      page: 'page',
-      limit: 'limit',
-      sort: 'sort'
+      filters: "filter",
+      fields: "fields",
+      includes: "include",
+      appends: "append",
+      page: "page",
+      limit: "limit",
+      sort: "sort",
     };
 
-    // initialise variables to hold 
+    // initialise variables to hold
     // the urls data
     this.include = [];
     this.append = [];
@@ -49,7 +49,9 @@ export default class Query {
   // return the parsed url
   get() {
     // generate the url
-    const url = this.base_url ? this.base_url + this.parseQuery() : this.parseQuery();
+    const url = this.base_url
+      ? this.base_url + this.parseQuery()
+      : this.parseQuery();
     // reset the url so the query object can be re-used
     this.reset();
     return url;
@@ -61,12 +63,14 @@ export default class Query {
 
   reset() {
     // reset the uri
-    this.parser.uri = '';
+    this.parser.uri = "";
   }
 
   parseQuery() {
     if (!this.model) {
-      throw new Error('Please call the for() method before adding filters or calling url() / get().');
+      throw new Error(
+        "Please call the for() method before adding filters or calling url() / get()."
+      );
     }
 
     return `/${this.model}${this.parser.parse()}`;
@@ -77,7 +81,9 @@ export default class Query {
    */
   includes(...include) {
     if (!include.length) {
-      throw new Error(`The ${this.queryParameters.includes}s() function takes at least one argument.`);
+      throw new Error(
+        `The ${this.queryParameters.includes}s() function takes at least one argument.`
+      );
     }
 
     this.include = include;
@@ -87,7 +93,9 @@ export default class Query {
 
   appends(...append) {
     if (!append.length) {
-      throw new Error(`The ${this.queryParameters.appends}s() function takes at least one argument.`);
+      throw new Error(
+        `The ${this.queryParameters.appends}s() function takes at least one argument.`
+      );
     }
 
     this.append = append;
@@ -97,18 +105,20 @@ export default class Query {
 
   select(...fields) {
     if (!fields.length) {
-      throw new Error(`The ${this.queryParameters.fields}() function takes a single argument of an array.`);
+      throw new Error(
+        `The ${this.queryParameters.fields}() function takes a single argument of an array.`
+      );
     }
 
     // single entity .fields(['age', 'firstname'])
     if (fields[0].constructor === String || Array.isArray(fields[0])) {
-      this.fields = fields.join(',');
+      this.fields = fields.join(",");
     }
 
     // related entities .fields({ posts: ['title', 'content'], user: ['age', 'firstname']} )
     if (fields[0].constructor === Object) {
       Object.entries(fields[0]).forEach(([key, value]) => {
-        this.fields[key] = value.join(',');
+        this.fields[key] = value.join(",");
       });
     }
 
@@ -117,10 +127,14 @@ export default class Query {
 
   where(key, value) {
     if (key === undefined || value === undefined)
-      throw new Error('The where() function takes 2 arguments both of string values.');
+      throw new Error(
+        "The where() function takes 2 arguments both of string values."
+      );
 
     if (Array.isArray(value) || value instanceof Object)
-      throw new Error('The second argument to the where() function must be a string. Use whereIn() if you need to pass in an array.');
+      throw new Error(
+        "The second argument to the where() function must be a string. Use whereIn() if you need to pass in an array."
+      );
 
     this.filters[key] = value;
 
@@ -129,18 +143,24 @@ export default class Query {
 
   whereIn(key, array) {
     if (!key || !array) {
-      throw new Error('The whereIn() function takes 2 arguments of (string, array).');
+      throw new Error(
+        "The whereIn() function takes 2 arguments of (string, array)."
+      );
     }
 
-    if (!key && Array.isArray(key) || typeof key === 'object') {
-      throw new Error('The first argument for the whereIn() function must be a string or integer.');
+    if ((!key && Array.isArray(key)) || typeof key === "object") {
+      throw new Error(
+        "The first argument for the whereIn() function must be a string or integer."
+      );
     }
 
     if (!Array.isArray(array)) {
-      throw new Error('The second argument for the whereIn() function must be an array.');
+      throw new Error(
+        "The second argument for the whereIn() function must be an array."
+      );
     }
 
-    this.filters[key] = array.join(',');
+    this.filters[key] = array.join(",");
 
     return this;
   }
@@ -153,7 +173,9 @@ export default class Query {
 
   page(value) {
     if (!Number.isInteger(value)) {
-      throw new Error('The page() function takes a single argument of a number');
+      throw new Error(
+        "The page() function takes a single argument of a number"
+      );
     }
 
     this.pageValue = value;
@@ -163,7 +185,9 @@ export default class Query {
 
   limit(value) {
     if (!Number.isInteger(value)) {
-      throw new Error('The limit() function takes a single argument of a number.');
+      throw new Error(
+        "The limit() function takes a single argument of a number."
+      );
     }
 
     this.limitValue = value;
@@ -173,12 +197,13 @@ export default class Query {
 
   params(params) {
     if (params === undefined || params.constructor !== Object) {
-      throw new Error('The params() function takes a single argument of an object.');
+      throw new Error(
+        "The params() function takes a single argument of an object."
+      );
     }
 
     this.paramsObj = params;
 
     return this;
   }
-
 }

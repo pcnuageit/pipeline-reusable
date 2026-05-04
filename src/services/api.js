@@ -23,6 +23,34 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+Axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    const url = error.config?.url;
+    if (url?.endsWith("/login")) {
+      return Promise.reject(error);
+    }
+
+    const logout = () => {
+      localStorage.removeItem("@auth");
+      window.location = "/login";
+    };
+
+    if (
+      error?.response?.data?.error &&
+      (error?.response?.data?.session === false ||
+        error?.response?.data?.session === "false")
+    )
+      logout();
+
+    if (error?.response?.status === 401) logout();
+
+    return Promise.reject(error);
+  },
+);
+
 export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: fetchBaseQuery({

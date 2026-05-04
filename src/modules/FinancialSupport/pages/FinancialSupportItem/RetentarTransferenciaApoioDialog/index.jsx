@@ -15,7 +15,8 @@ function RetentarTransferenciaApoioDialog({
   onClose = () => {},
   financialSupport,
 }) {
-  const [retryFinancialSupportTransfer] = useRetryFinancialSupportTransferMutation();
+  const [retryFinancialSupportTransfer] =
+    useRetryFinancialSupportTransferMutation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {

@@ -1,92 +1,121 @@
-import '../../fonts/Montserrat-SemiBold.otf';
+import "../../fonts/Montserrat-SemiBold.otf";
 
-import { Box, makeStyles } from '@material-ui/core';
-import React, { useEffect } from 'react';
+import { Box, makeStyles } from "@material-ui/core";
+import { useEffect } from "react";
 import {
-	filters_historico_pix,
-	filters_historico_ted,
-	filters_historico_transacoes,
-	filters_historico_transferencia,
-} from '../../constants/localStorageStrings';
+  filters_historico_pix,
+  filters_historico_ted,
+  filters_historico_transacoes,
+  filters_historico_transferencia,
+} from "../../constants/localStorageStrings";
 
-import AccountCollections from '../../components/AccountCollections/AccountCollections';
-import { useParams } from 'react-router';
-import { APP_CONFIG } from '../../constants/config';
+import { useSelector } from "react-redux";
+import { useParams } from "react-router";
+import AccountCollections from "../../components/AccountCollections/AccountCollections";
+import { APP_CONFIG } from "../../constants/config";
+import usePermission from "../../hooks/usePermission";
 
 const useStyles = makeStyles((theme) => ({
-	root: {
-		position: 'absolute',
-		display: 'flex',
-		flexDirection: 'column',
-	},
-	headerContainer: {
-		/* padding: '80px 400px ', */
-		display: 'flex',
-		flexDirection: 'column',
-		justifyContent: 'space-between',
-		marginBottom: '25px',
-	},
-	pageTitle: {
-		color: '#c6930a',
-		fontFamily: 'Montserrat-SemiBold',
-	},
-	subTitleContainer: {
-		margin: '15px 15px',
-		display: 'flex',
-		justifyContent: 'space-between',
-	},
-	contentContainer: {
-		marginTop: '20px',
-	},
+  root: {
+    position: "absolute",
+    display: "flex",
+    flexDirection: "column",
+  },
 }));
 
 const GerenciarListaDeContas = () => {
-	const classes = useStyles();
-	const { subsection } = useParams();
+  const classes = useStyles();
+  const conta = useSelector((state) => state.conta);
+  const { subsection } = useParams();
+  const { hasPermission, PERMISSIONS } = usePermission();
+  //const isBanking = conta?.is_default_app_account;
+  const isAdquirencia = conta?.solicitado_adquirencia;
+  const isEstabelecimento = conta?.is_estabelecimento;
+  const isGestao = conta?.is_gestao_concorrencia ?? true;
+  const isBanking = !(isEstabelecimento || isGestao);
+  const estado = APP_CONFIG?.estado;
 
-	useEffect(() => {
-		localStorage.removeItem(filters_historico_transacoes);
-		localStorage.removeItem(filters_historico_transferencia);
-		localStorage.removeItem(filters_historico_ted);
-		localStorage.removeItem(filters_historico_pix);
-	}, []);
+  useEffect(() => {
+    localStorage.removeItem(filters_historico_transacoes);
+    localStorage.removeItem(filters_historico_transferencia);
+    localStorage.removeItem(filters_historico_ted);
+    localStorage.removeItem(filters_historico_pix);
+  }, []);
 
-	return (
-		<Box className={classes.root}>
-			<AccountCollections
-				ted
-				pix
-				pagamentoConta
-				chavespix
-				cartao
-				boleto
-				carne
-				assinaturas
-				link
-				cobranca
-				extrato
-				extrato_adquirencia
-				historicoTransacoes
-				lancamentosFuturos
-				realizarTransferencia
-				historicoTransferencia
-				criarContaDigital
-				pagadores
-				solicitarCartao
-				cartoesPre
-				terminais
-				giftCard
-				exportacoesSolicitadas
-				recarga
-				tarifas
-				folhaPagamento={
-					subsection === 'lista-conta-juridica' ? true : false
-				}
-				todos={true}
-				area="Todos"
-			/>
-		</Box>
-	);
+  const pageTitle = conta?.saldo?.valor
+    ? "Saldo: " +
+      new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(conta?.saldo?.valor)
+    : "Gerenciar conta";
+
+  return (
+    <Box className={classes.root}>
+      <AccountCollections
+        title={pageTitle}
+        ted={isBanking}
+        pix={false}
+        pagamentoConta={false}
+        chavespix={isBanking}
+        cartao={isBanking}
+        boleto={isBanking}
+        carne={isBanking}
+        assinaturas={isBanking}
+        link={isBanking}
+        extrato={isBanking}
+        historicoTransacoes={false}
+        historicoTransferencia={false}
+        pagadores={isBanking}
+        terminais={isBanking}
+        recarga={isBanking}
+        folhaPagamento={false}
+        contasAutorizadas={isBanking && subsection === "lista-conta-juridica"}
+        exportacoesSolicitadas={isBanking}
+        tarifas={false}
+        extrato_adquirencia={isAdquirencia}
+        extrato_beneficios={isEstabelecimento}
+        //
+        beneficiarios={
+          isGestao && hasPermission(PERMISSIONS.secretarias.beneficiarios.view)
+        }
+        listaBeneficios={
+          isGestao && hasPermission(PERMISSIONS.secretarias.beneficios.view)
+        }
+        //
+        cartoesBeneficiarios={
+          isGestao && hasPermission(PERMISSIONS.secretarias.cartoes.view)
+        }
+        pagamentoCartaoPrivado={
+          isGestao &&
+          hasPermission(PERMISSIONS.secretarias.pagamento_cartao.view)
+        }
+        liberarCartoes={isGestao}
+        //
+        voucherBeneficiarios={
+          estado !== "MT" &&
+          isGestao &&
+          hasPermission(PERMISSIONS.secretarias.vouchers.view)
+        }
+        pagamentoContaVoucher={
+          estado !== "MT" &&
+          isGestao &&
+          hasPermission(PERMISSIONS.secretarias.pagamento_voucher.view)
+        }
+        autorizaPagamentoContaVoucher={
+          estado !== "MT" &&
+          isGestao &&
+          hasPermission(
+            PERMISSIONS.secretarias.autorizar_pagamento_voucher.view,
+          )
+        }
+        //
+        listaContratoAluguel={estado !== "MT" && isGestao}
+        pagamentoContratoAluguel={estado !== "MT" && isGestao}
+        autorizaPagamentoContratoAluguel={estado !== "MT" && isGestao}
+      />
+    </Box>
+  );
 };
 
 export default GerenciarListaDeContas;

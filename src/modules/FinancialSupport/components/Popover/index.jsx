@@ -1,7 +1,7 @@
-import React from "react";
-import PopoverMUI from "@material-ui/core/Popover";
-import Button from "@material-ui/core/Button";
 import { Box } from "@material-ui/core";
+import Button from "@material-ui/core/Button";
+import PopoverMUI from "@material-ui/core/Popover";
+import React from "react";
 
 export default function Popover({ children, buttonContent }) {
   const [anchorEl, setAnchorEl] = React.useState(null);

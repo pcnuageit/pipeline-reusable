@@ -1,6 +1,6 @@
 {
   "name": "adm-itabank",
-  "version": "0.1.0",
+  "version": "3.0.2",
   "private": true,
   "dependencies": {
     "@datadog/browser-logs": "^5.8.0",
@@ -43,6 +43,7 @@
     "moment": "^2.29.3",
     "react": "^17.0.1",
     "react-calendar": "^4.0.0",
+    "react-code-input": "^3.10.1",
     "react-copy-to-clipboard": "^5.0.3",
     "react-credit-cards": "^0.8.3",
     "react-currency-format": "^1.0.0",
@@ -62,6 +63,7 @@
     "react-swipeable-views": "^0.13.9",
     "react-to-print": "^2.14.7",
     "react-toastify": "^7.0.3",
+    "react-virtualized": "^9.22.3",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "web-vitals": "^1.0.1",
@@ -69,6 +71,7 @@
     "yup": "^0.32.11"
   },
   "scripts": {
+    "dev": "env-cmd -f .env.concorrencia react-scripts start",
     "start": "react-scripts start",
     "start:vbank": "env-cmd -f .env react-scripts start",
     "start:amazonbank": "env-cmd -f .env.amazonbank react-scripts start",
@@ -80,6 +83,7 @@
     "start:xbank": "env-cmd -f .env.xbank react-scripts start",
     "start:bankzz": "env-cmd -f .env.bankzz react-scripts start",
     "start:concorrencia": "env-cmd -f .env.concorrencia react-scripts start",
+    "start:concorrencia_mt": "env-cmd -f .env.concorrencia_mt react-scripts start",
     "build": "react-scripts build",
     "build:vbank": "env-cmd -f .env react-scripts build",
     "build:amazonbank": "env-cmd -f .env.amazonbank react-scripts build",
@@ -91,6 +95,7 @@
     "build:xbank": "env-cmd -f .env.xbank react-scripts build",
     "build:bankzz": "env-cmd -f .env.bankzz react-scripts build",
     "build:concorrencia": "env-cmd -f .env.concorrencia react-scripts build",
+    "build:concorrencia_mt": "env-cmd -f .env.concorrencia_mt react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

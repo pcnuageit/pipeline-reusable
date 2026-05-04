@@ -1,197 +1,198 @@
-import { faCopy } from '@fortawesome/free-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCopy } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-	Box,
-	Button,
-	Checkbox,
-	Divider,
-	FormControlLabel,
-	FormGroup,
-	Grid,
-	List,
-	makeStyles,
-	TextField,
-	Tooltip,
-	Typography,
-} from '@material-ui/core';
-import React from 'react';
-import { useMemo } from 'react';
-import CopyToClipboard from 'react-copy-to-clipboard';
-import { useHistory, useParams } from 'react-router';
-import { toast } from 'react-toastify';
-import { useEffect } from 'react';
-import CustomTable from '../../../../components/CustomTable/CustomTable';
-import SupportStatusBadge from '../../components/SupportStatusBadge';
+  Box,
+  Button,
+  Checkbox,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  List,
+  makeStyles,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@material-ui/core";
+import { format } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import CopyToClipboard from "react-copy-to-clipboard";
+import { useHistory, useParams } from "react-router";
+import { toast } from "react-toastify";
+import CustomTable from "../../../../components/CustomTable/CustomTable";
+import { APP_CONFIG } from "../../../../constants/config";
+import { PERMISSIONS } from "../../../../constants/permissions";
+import usePermission from "../../../../hooks/usePermission";
+import SupportStatusBadge from "../../components/SupportStatusBadge";
 import {
   useAproveFinancialSupportMutation,
   useCancelFinancialSupportMutation,
   useGetFinancialSupportQuery,
 } from "../../services/financialSupport";
 import { formatMoney } from "../../utils/money";
-import { format } from "date-fns";
-import usePermission from "../../../../hooks/usePermission";
-import { PERMISSIONS } from "../../../../constants/permissions";
-import { useState } from "react";
 import CobrarTarifaDialog from "./CobrarTarifaDialog";
+import CustomListItem from "./LogListItems/CustomListItem";
 import ReativarApoioDialog from "./ReativarApoioDialog";
-import RetentarTransferenciaApoioDialog from './RetentarTransferenciaApoioDialog';
-import { APP_CONFIG } from '../../../../constants/config';
-import CustomListItem from './LogListItems/CustomListItem';
+import RetentarTransferenciaApoioDialog from "./RetentarTransferenciaApoioDialog";
 
 const useStyles = makeStyles((theme) => ({
-	card: {
-		display: 'flex',
-		height: '100%',
-		flexDirection: 'column',
-		padding: 24,
-		backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-		borderRadius: 16,
-	},
-	cardTitle: {
-		fontSize: 24,
-		fontWeight: 'medium',
-		marginBottom: 16,
-	},
+  card: {
+    display: "flex",
+    height: "100%",
+    flexDirection: "column",
+    padding: 24,
+    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+    borderRadius: 16,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: "medium",
+    marginBottom: 16,
+  },
 }));
 
 const FinancialSupportItemPage = () => {
-	const { id } = useParams();
-	const classes = useStyles();
-	const history = useHistory();
+  const id = useParams()?.id ?? "";
+  const classes = useStyles();
+  const history = useHistory();
 
   const [openTarifaDialog, setOpenTarifaDialog] = useState(false);
   const [openReativarDialog, setOpenReativarDialog] = useState(false);
-  const [openRetentarTransferenciaDialog, setOpenRetentarTransferenciaDialog] = useState(false);
+  const [openRetentarTransferenciaDialog, setOpenRetentarTransferenciaDialog] =
+    useState(false);
 
-	const canManageFinancialSupport = usePermission([
-		PERMISSIONS.MANAGE_FINANCIAL_SUPPORT,
-		PERMISSIONS.FULL_ACCESS,
-	]);
+  const canManageFinancialSupport = usePermission([
+    PERMISSIONS.MANAGE_FINANCIAL_SUPPORT,
+    PERMISSIONS.FULL_ACCESS,
+  ]);
 
-	const [aproveFinancialSupport] = useAproveFinancialSupportMutation();
-	const [cancelFinancialSupport] = useCancelFinancialSupportMutation();
+  const [aproveFinancialSupport] = useAproveFinancialSupportMutation();
+  const [cancelFinancialSupport] = useCancelFinancialSupportMutation();
 
-	const {
-		data: financialSupport,
-		isLoading,
-		isError,
-		refetch,
-	} = useGetFinancialSupportQuery(
-		{
-			id,
-		},
-		{
-			skip: !id,
-		}
-	);
+  const {
+    data: financialSupport,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetFinancialSupportQuery(
+    {
+      id,
+    },
+    {
+      skip: !id,
+    }
+  );
 
-	useEffect(() => {
-		if (!isLoading && !financialSupport) {
-			toast.error('Apoio Financeiro não encontrado');
-			history.goBack();
-		}
-	}, [isLoading, financialSupport, history]);
+  useEffect(() => {
+    if (!isLoading && !financialSupport) {
+      toast.error("Apoio Financeiro não encontrado");
+      history.goBack();
+    }
+  }, [isLoading, financialSupport, history]);
 
-	const valorDisponibilizado = useMemo(() => {
-		if (
-			financialSupport &&
-			financialSupport.status !== 'pendente' &&
-			financialSupport.status !== 'analise' &&
-			financialSupport.status !== 'recusado' &&
-			financialSupport.transferencia_apoio?.status === 'Sucesso'
-		) {
-			return financialSupport.proposta_apoio_financeiro.valor;
-		}
+  const valorDisponibilizado = useMemo(() => {
+    if (
+      financialSupport &&
+      financialSupport.status !== "pendente" &&
+      financialSupport.status !== "analise" &&
+      financialSupport.status !== "recusado" &&
+      financialSupport.transferencia_apoio?.status === "Sucesso"
+    ) {
+      return financialSupport.proposta_apoio_financeiro.valor;
+    }
 
-		return 0;
-	}, [financialSupport]);
+    return 0;
+  }, [financialSupport]);
 
-	const valorUtilizado = useMemo(() => {
-		if (!financialSupport) {
-			return 0;
-		}
+  const valorUtilizado = useMemo(() => {
+    if (!financialSupport) {
+      return 0;
+    }
 
-		return (
-			valorDisponibilizado -
-			Number(financialSupport.conta_saldo.valor_apoio_financeiro)
-		);
-	}, [valorDisponibilizado, financialSupport]);
+    return (
+      valorDisponibilizado -
+      Number(financialSupport.conta_saldo.valor_apoio_financeiro)
+    );
+  }, [valorDisponibilizado, financialSupport]);
 
-	const valorTarifas = useMemo(() => {
-		if (!financialSupport || financialSupport.tarifas.length === 0) {
-			return 0;
-		}
+  const valorTarifas = useMemo(() => {
+    if (!financialSupport || financialSupport.tarifas.length === 0) {
+      return 0;
+    }
 
-		return financialSupport.tarifas.reduce(
-			(acc, tarifa) => ((tarifa.status == 'pago' && tarifa.transferencia?.valor) ? (acc + Number(tarifa.transferencia.valor)) : acc),
-			0
-		);
-	}, [financialSupport]);
+    return financialSupport.tarifas.reduce(
+      (acc, tarifa) =>
+        tarifa.status == "pago" && tarifa.transferencia?.valor
+          ? acc + Number(tarifa.transferencia.valor)
+          : acc,
+      0
+    );
+  }, [financialSupport]);
 
-	const hasDelayedTax =
-		financialSupport &&
-		financialSupport.tarifas.some((tarifa) => tarifa.status === 'atrasado');
+  const hasDelayedTax =
+    financialSupport &&
+    financialSupport.tarifas.some((tarifa) => tarifa.status === "atrasado");
 
-	const handleAproveProposal = async () => {
-		try {
-			await aproveFinancialSupport({
-				id,
-			}).unwrap();
+  const handleAproveProposal = async () => {
+    try {
+      await aproveFinancialSupport({
+        id,
+      }).unwrap();
 
-			toast.success('Apoio Financeiro aprovado com sucesso!');
-		} catch (e) {
-			toast.error("Não foi possível aprovar o Apoio Financeiro!");
-			if (e.status === 401 && e.data?.message) {
-				return toast.error(e.data.message);
-			}
-		} finally {
-			refetch();
-		}
-	};
+      toast.success("Apoio Financeiro aprovado com sucesso!");
+    } catch (e) {
+      toast.error("Não foi possível aprovar o Apoio Financeiro!");
+      if (e.status === 401 && e.data?.message) {
+        return toast.error(e.data.message);
+      }
+    } finally {
+      refetch();
+    }
+  };
 
-	const handleRefuseProposal = async () => {
-		try {
-			await aproveFinancialSupport({
-				id,
-				aprove: false,
-			}).unwrap();
+  const handleRefuseProposal = async () => {
+    try {
+      await aproveFinancialSupport({
+        id,
+        aprove: false,
+      }).unwrap();
 
-			toast.success('Apoio Financeiro recusado com sucesso!');
-		} catch (e) {
-			toast.error('Não foi possível recusar o apoio financeiro!');
-			if (e.status === 401 && e.data?.message) {
-				return toast.error(e.data.message);
-			}
-		} finally {
-			refetch();
-		}
-	};
+      toast.success("Apoio Financeiro recusado com sucesso!");
+    } catch (e) {
+      toast.error("Não foi possível recusar o apoio financeiro!");
+      if (e.status === 401 && e.data?.message) {
+        return toast.error(e.data.message);
+      }
+    } finally {
+      refetch();
+    }
+  };
 
-	const handleCancelProposal = async () => {
-		try {
-			await cancelFinancialSupport({
-				id,
-			}).unwrap();
+  const handleCancelProposal = async () => {
+    try {
+      await cancelFinancialSupport({
+        id,
+      }).unwrap();
 
-			toast.success('Apoio Financeiro cancelado com sucesso!');
-		} catch (e) {
-			toast.error('Não foi possível cancelar o apoio financeiro!');
-		} finally {
-			refetch();
-		}
-	};
+      toast.success("Apoio Financeiro cancelado com sucesso!");
+    } catch (e) {
+      toast.error("Não foi possível cancelar o apoio financeiro!");
+    } finally {
+      refetch();
+    }
+  };
 
   const handleReativeProposal = () => {
     setOpenReativarDialog(true);
   };
 
-	const handleCobrarTarifaProposal = () => {
-		setOpenTarifaDialog(true);
-	};
+  const handleCobrarTarifaProposal = () => {
+    setOpenTarifaDialog(true);
+  };
 
   const handleRetentarTransferencia = () => {
-		setOpenRetentarTransferenciaDialog(true);
-	};
+    setOpenRetentarTransferenciaDialog(true);
+  };
 
   return isLoading || isError ? (
     <div />
@@ -214,7 +215,7 @@ const FinancialSupportItemPage = () => {
         onClose={() => setOpenReativarDialog(false)}
         financialSupport={financialSupport}
       />
-	    <RetentarTransferenciaApoioDialog
+      <RetentarTransferenciaApoioDialog
         open={openRetentarTransferenciaDialog}
         onClose={() => setOpenRetentarTransferenciaDialog(false)}
         financialSupport={financialSupport}
@@ -293,12 +294,10 @@ const FinancialSupportItemPage = () => {
                 <TextField
                   fullWidth
                   label="Data da contratação"
-                  value={
-                    format(
-                      new Date(financialSupport.created_at.slice(0, -1)),
-                      'dd MMM yyyy, hh:mm'
-                    )
-                  }
+                  value={format(
+                    new Date(financialSupport.created_at.slice(0, -1)),
+                    "dd MMM yyyy, HH:mm"
+                  )}
                   disabled
                 />
               </Grid>
@@ -483,250 +482,250 @@ const FinancialSupportItemPage = () => {
                   label="Vinculo de funcionário"
                 />
 
-								<FormControlLabel
-									control={
-										<Checkbox
-											color="primary"
-											checked={
-												financialSupport.validacoes.validacoes
-													.situacao_regular
-											}
-											name="jason"
-										/>
-									}
-									label="Situação cadastral regular"
-								/>
-								<FormControlLabel
-									control={
-										<Checkbox
-											color="primary"
-											checked={
-												financialSupport.validacoes.validacoes
-													.maior_de_18
-											}
-											name="jason"
-										/>
-									}
-									label="Maior de 18 anos"
-								/>
-								<FormControlLabel
-									control={
-										<Checkbox
-											color="primary"
-											checked={
-												financialSupport.validacoes.validacoes
-													.saldo_medio
-											}
-											name="antoine"
-										/>
-									}
-									label="Saldo médio validado"
-								/>
-							</FormGroup>
-						</Box>
-						{canManageFinancialSupport && (
-							<Box className={classes.card} marginTop={2}>
-								<Typography className={classes.cardTitle}>
-									Ações
-								</Typography>
-								<Grid container spacing={2}>
-									{(financialSupport.status === 'analise' || financialSupport.status === 'validacao_negada') && (
-										<>
-											<Grid item xs={12}>
-												<Button
-													fullWidth
-													variant="contained"
-													onClick={handleAproveProposal}
-													style={{
-														backgroundColor: 'green',
-														color: 'white',
-													}}
-												>
-													Aprovar Apoio
-												</Button>
-											</Grid>
-											<Grid item xs={12}>
-												<Button
-													fullWidth
-													variant="contained"
-													onClick={handleRefuseProposal}
-													style={{
-														backgroundColor: 'red',
-														color: 'white',
-													}}
-												>
-													Recusar Apoio
-												</Button>
-											</Grid>
-										</>
-									)}
-									{(financialSupport.status === 'cancelado' || financialSupport.status === 'finalizado') && (
-										<Grid item xs={12}>
-											<Button
-												fullWidth
-												onClick={handleReativeProposal}
-												variant="contained"
-												style={{
-													backgroundColor: 'green',
-													color: 'white',
-												}}
-											>
-												Reativar Apoio
-											</Button>
-										</Grid>
-									)}
-                  					{financialSupport.status === 'ativo' && financialSupport.transferencia_apoio?.status !== 'Sucesso' && (
-										<Grid item xs={12}>
-											<Button
-												fullWidth
-												onClick={handleRetentarTransferencia}
-												variant="contained"
-												style={{
-													backgroundColor: 'green',
-													color: 'white',
-												}}
-											>
-												Refazer Transferência
-											</Button>
-										</Grid>
-									)}
-									{(financialSupport.status === 'atrasado' ||
-										financialSupport.status === 'cancelado') &&
-										hasDelayedTax && (
-											<Grid item xs={12}>
-												<Button
-													fullWidth
-													variant="contained"
-													onClick={handleCobrarTarifaProposal}
-													style={{
-														backgroundColor: 'green',
-														color: 'white',
-													}}
-												>
-													Efetuar cobrança das taxas
-												</Button>
-											</Grid>
-										)}
-									{financialSupport.status !== 'cancelado' &&
-										financialSupport.status !== 'validacao_negada' &&
-										financialSupport.status !== 'analise' &&
-										financialSupport.status !== 'finalizado' &&
-										financialSupport.status !== 'recusado' && (
-											<Grid item xs={12}>
-												<Button
-													fullWidth
-													variant="contained"
-													onClick={handleCancelProposal}
-													style={{
-														backgroundColor: 'red',
-														color: 'white',
-													}}
-												>
-													Cancelar Apoio
-												</Button>
-											</Grid>
-										)}
-								</Grid>
-							</Box>
-						)}
-					</Box>
-				</Grid>
-			</Grid>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      color="primary"
+                      checked={
+                        financialSupport.validacoes.validacoes.situacao_regular
+                      }
+                      name="jason"
+                    />
+                  }
+                  label="Situação cadastral regular"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      color="primary"
+                      checked={
+                        financialSupport.validacoes.validacoes.maior_de_18
+                      }
+                      name="jason"
+                    />
+                  }
+                  label="Maior de 18 anos"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      color="primary"
+                      checked={
+                        financialSupport.validacoes.validacoes.saldo_medio
+                      }
+                      name="antoine"
+                    />
+                  }
+                  label="Saldo médio validado"
+                />
+              </FormGroup>
+            </Box>
+            {canManageFinancialSupport && (
+              <Box className={classes.card} marginTop={2}>
+                <Typography className={classes.cardTitle}>Ações</Typography>
+                <Grid container spacing={2}>
+                  {(financialSupport.status === "analise" ||
+                    financialSupport.status === "validacao_negada") && (
+                    <>
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={handleAproveProposal}
+                          style={{
+                            backgroundColor: "green",
+                            color: "white",
+                          }}
+                        >
+                          Aprovar Apoio
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={handleRefuseProposal}
+                          style={{
+                            backgroundColor: "red",
+                            color: "white",
+                          }}
+                        >
+                          Recusar Apoio
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
+                  {(financialSupport.status === "cancelado" ||
+                    financialSupport.status === "finalizado") && (
+                    <Grid item xs={12}>
+                      <Button
+                        fullWidth
+                        onClick={handleReativeProposal}
+                        variant="contained"
+                        style={{
+                          backgroundColor: "green",
+                          color: "white",
+                        }}
+                      >
+                        Reativar Apoio
+                      </Button>
+                    </Grid>
+                  )}
+                  {financialSupport.status === "ativo" &&
+                    financialSupport.transferencia_apoio?.status !==
+                      "Sucesso" && (
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          onClick={handleRetentarTransferencia}
+                          variant="contained"
+                          style={{
+                            backgroundColor: "green",
+                            color: "white",
+                          }}
+                        >
+                          Refazer Transferência
+                        </Button>
+                      </Grid>
+                    )}
+                  {(financialSupport.status === "atrasado" ||
+                    financialSupport.status === "cancelado") &&
+                    hasDelayedTax && (
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={handleCobrarTarifaProposal}
+                          style={{
+                            backgroundColor: "green",
+                            color: "white",
+                          }}
+                        >
+                          Efetuar cobrança das taxas
+                        </Button>
+                      </Grid>
+                    )}
+                  {financialSupport.status !== "cancelado" &&
+                    financialSupport.status !== "validacao_negada" &&
+                    financialSupport.status !== "analise" &&
+                    financialSupport.status !== "finalizado" &&
+                    financialSupport.status !== "recusado" && (
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={handleCancelProposal}
+                          style={{
+                            backgroundColor: "red",
+                            color: "white",
+                          }}
+                        >
+                          Cancelar Apoio
+                        </Button>
+                      </Grid>
+                    )}
+                </Grid>
+              </Box>
+            )}
+          </Box>
+        </Grid>
+      </Grid>
 
-			<Grid item xs={4}>
-				<Box maxHeight="850px" overflow="auto" className={classes.card}>
-					<Typography className={classes.cardTitle}>Histórico</Typography>
-					<List className={classes.root}>
-						{financialSupport.logs.map((log, index) => {
-
-							return (
-								<>
-									{index !== 0 && (
-										<Divider variant="inset" component="li" />
-									)}
-									<CustomListItem key={log.id} log={log} />
-								</>
-							);
-						})}
-					</List>
-				</Box>
-			</Grid>
-			<Grid item xs={12}>
-				<Box className={classes.card}>
-					<Typography className={classes.cardTitle}>Tarifas</Typography>
-					<CustomTable
-						columns={[
-							{
-								headerText: '#',
-								key: 'ordem',
-							},
-							{
-								headerText: 'Pago em',
-								key: 'data_pagamento_efetivado',
-								CustomValue: (value) => {
-									if(!value) return null;
-									const formated = format(
-										new Date(value.slice(0, -1)),
-										'dd MMM yyyy, HH:mm'
-									);
-									return <Typography>{formated}</Typography>
-								}
-							},
-							{
-								headerText: 'Status Pagamento',
-								key: 'status_pagamento',
-							},
-							{
-								headerText: 'Metodo de Pagamento',
-								key: 'tipo_pagamento',
-							},
-							{
-								headerText: 'Valor',
-								key: 'custom_valor',
-								FullObject: (tarifa) => {
-									return formatMoney(
-										tarifa.is_valor_final_proposta
-											? financialSupport.proposta_apoio_financeiro.valor
-											: financialSupport.proposta_apoio_financeiro.valor_tarifa
-									);
-								},
-							},
-							{
-								headerText: 'Mês',
-								key: 'data_pagamento',
-								CustomValue: (value) => {
+      <Grid item xs={4}>
+        <Box maxHeight="850px" overflow="auto" className={classes.card}>
+          <Typography className={classes.cardTitle}>Histórico</Typography>
+          <List className={classes.root}>
+            {financialSupport.logs.map((log, index) => {
+              return (
+                <>
+                  {index !== 0 && <Divider variant="inset" component="li" />}
+                  <CustomListItem key={log.id} log={log} />
+                </>
+              );
+            })}
+          </List>
+        </Box>
+      </Grid>
+      <Grid item xs={12}>
+        <Box className={classes.card}>
+          <Typography className={classes.cardTitle}>Tarifas</Typography>
+          <CustomTable
+            columns={[
+              {
+                headerText: "#",
+                key: "ordem",
+              },
+              {
+                headerText: "Pago em",
+                key: "data_pagamento_efetivado",
+                CustomValue: (value) => {
+                  if (!value) return null;
+                  const formated = format(
+                    new Date(value.slice(0, -1)),
+                    "dd MMM yyyy, HH:mm"
+                  );
+                  return <Typography>{formated}</Typography>;
+                },
+              },
+              {
+                headerText: "Status Pagamento",
+                key: "status_pagamento",
+              },
+              {
+                headerText: "Metodo de Pagamento",
+                key: "tipo_pagamento",
+              },
+              {
+                headerText: "Valor",
+                key: "custom_valor",
+                FullObject: (tarifa) => {
+                  return formatMoney(
+                    tarifa.is_valor_final_proposta
+                      ? financialSupport.proposta_apoio_financeiro.valor
+                      : financialSupport.proposta_apoio_financeiro.valor_tarifa
+                  );
+                },
+              },
+              {
+                headerText: "Mês",
+                key: "data_pagamento",
+                CustomValue: (value) => {
                   const splited = value.split("-");
-									return <Typography>{splited[2]}/{splited[1]}/{splited[0]}</Typography>
-								}
-							},
-							{
-								headerText: 'Status',
-								key: 'status',
-								CustomValue: (value) => (
-									<Box
-										padding={'4px 8px'}
-										borderRadius={28}
-										bgcolor={
-											value === 'pendente'
-												? 'orange'
-												: value === 'pago'
-												? 'green'
-												: 'red'
-										}
-									>
-										<Typography variant="body2" color="secondary">
-											{value}
-										</Typography>
-									</Box>
-								),
-							},
-						]}
-						data={financialSupport.tarifas}
-					/>
-				</Box>
-			</Grid>
-		</Grid>
-	);
+                  return (
+                    <Typography>
+                      {splited[2]}/{splited[1]}/{splited[0]}
+                    </Typography>
+                  );
+                },
+              },
+              {
+                headerText: "Status",
+                key: "status",
+                CustomValue: (value) => (
+                  <Box
+                    padding={"4px 8px"}
+                    borderRadius={28}
+                    bgcolor={
+                      value === "pendente"
+                        ? "orange"
+                        : value === "pago"
+                        ? "green"
+                        : "red"
+                    }
+                  >
+                    <Typography variant="body2" color="secondary">
+                      {value}
+                    </Typography>
+                  </Box>
+                ),
+              },
+            ]}
+            data={financialSupport.tarifas}
+          />
+        </Box>
+      </Grid>
+    </Grid>
+  );
 };
 
 export default FinancialSupportItemPage;

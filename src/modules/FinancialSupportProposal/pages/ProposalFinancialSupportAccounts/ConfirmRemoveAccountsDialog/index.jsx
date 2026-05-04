@@ -1,20 +1,20 @@
 import {
-	Button,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
-} from '@material-ui/core';
-import React from 'react';
-import { APP_CONFIG } from '../../../../../constants/config';
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@material-ui/core";
+import React from "react";
+import { APP_CONFIG } from "../../../../../constants/config";
 
 function ConfirmRemoveAccountsDialog({
-	open = false,
+  open = false,
   onConfirm = () => {},
-	onClose = () => {},
+  onClose = () => {},
 }) {
   return (
-		<Dialog
+    <Dialog
       open={open}
       onClose={onClose}
       aria-labelledby="form-dialog-title"
@@ -23,22 +23,25 @@ function ConfirmRemoveAccountsDialog({
       <DialogTitle
         style={{
           color: APP_CONFIG.mainCollors.primary,
-          fontFamily: 'Montserrat-SemiBold',
+          fontFamily: "Montserrat-SemiBold",
         }}
       >
-        Deseja remover a Proposta de Apoio Financeiro para as contas selecionadas?
+        Deseja remover a Proposta de Apoio Financeiro para as contas
+        selecionadas?
       </DialogTitle>
 
       <DialogContent
         style={{
           minWidth: 500,
         }}
-      >
-        
-      </DialogContent>
+      ></DialogContent>
 
       <DialogActions>
-        <Button variant="outlined" onClick={onClose} style={{marginRight:"10px"}}>
+        <Button
+          variant="outlined"
+          onClick={onClose}
+          style={{ marginRight: "10px" }}
+        >
           Cancelar
         </Button>
         <Button variant="outlined" color="primary" onClick={onConfirm}>
@@ -46,7 +49,7 @@ function ConfirmRemoveAccountsDialog({
         </Button>
       </DialogActions>
     </Dialog>
-	);
+  );
 }
 
 export default ConfirmRemoveAccountsDialog;

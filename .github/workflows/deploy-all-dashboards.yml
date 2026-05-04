@@ -1,68 +1,24 @@
-name: "Deploy ALL Dashboards"
+name: "Deploy ALL Dashboards — Production"
 
 # ══════════════════════════════════════════════════════════════════
-# SDLC:
-#   sandbox branch → deploy TODOS os clientes no SANDBOX
-#   main branch    → deploy TODOS os clientes em PRODUCTION
+# Push em main → deploy de TODOS os clientes em PRODUCTION
+# Sandbox tem workflow próprio (deploy-dashboard-sandbox.yml)
 # ══════════════════════════════════════════════════════════════════
 
 on:
   push:
     branches:
-      - sandbox
       - main
     paths-ignore:
       - "**.md"
 
-jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    name: "🔍 Resolve"
-    outputs:
-      environment: ${{ steps.env.outputs.environment }}
-    steps:
-      - name: Resolve environment
-        id: env
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-            echo "📍 Ambiente: production"
-          else
-            echo "environment=sandbox" >> $GITHUB_OUTPUT
-            echo "📍 Ambiente: sandbox"
-          fi
+  workflow_dispatch:
 
+jobs:
   concorrencia:
-    needs: resolve
     uses: ./.github/workflows/deploy-dashboard-concorrencia.yml
-    with:
-      environment: ${{ needs.resolve.outputs.environment }}
     secrets: inherit
 
   concorrencia-mt:
-    needs: resolve
     uses: ./.github/workflows/deploy-dashboard-concorrencia-mt.yml
-    with:
-      environment: ${{ needs.resolve.outputs.environment }}
-    secrets: inherit
-
-  aprobank:
-    needs: resolve
-    uses: ./.github/workflows/deploy-dashboard-aprobank.yml
-    with:
-      environment: ${{ needs.resolve.outputs.environment }}
-    secrets: inherit
-
-  bankzz:
-    needs: resolve
-    uses: ./.github/workflows/deploy-dashboard-bankzz.yml
-    with:
-      environment: ${{ needs.resolve.outputs.environment }}
-    secrets: inherit
-
-  amazonbank:
-    needs: resolve
-    uses: ./.github/workflows/deploy-dashboard-amazonbank.yml
-    with:
-      environment: ${{ needs.resolve.outputs.environment }}
     secrets: inherit

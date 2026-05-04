@@ -1,0 +1,20 @@
+name: "Deploy Dashboard — Concorrência MT"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "concorrencia_mt"
+      environment: "production"
+      s3_bucket: "dashboard-gf-concorrencia-mt-prod-385697366782"
+      cloudfront_distribution_id: "E3H2MZ44ZR9BTO"
+      aws_region: "us-east-1"
+      react_app_api_url: "https://seaf.mt.inttegrasocial.com.br/api"
+      react_app_front_app: "concorrencia_mt"
+      react_app_title: "concorrencia_mt"
+      react_app_description: "Desenvolve MT - Dashboard da Agência de Crédito do Empreendedor"
+    secrets: inherit

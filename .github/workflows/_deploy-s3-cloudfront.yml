@@ -73,6 +73,10 @@ on:
       react_app_description:
         required: true
         type: string
+      react_app_sga_api_base_url:
+        required: false
+        type: string
+        default: ""
 
       # ── Options ──
       skip_invalidation:
@@ -111,6 +115,7 @@ jobs:
           REACT_APP_FRONT_APP: ${{ inputs.react_app_front_app }}
           REACT_APP_TITLE: ${{ inputs.react_app_title }}
           REACT_APP_DESCRIPTION: ${{ inputs.react_app_description }}
+          REACT_APP_SGA_API_BASE_URL: ${{ inputs.react_app_sga_api_base_url }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5

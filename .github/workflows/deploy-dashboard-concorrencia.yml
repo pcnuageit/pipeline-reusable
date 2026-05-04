@@ -2,46 +2,17 @@ name: "Deploy Dashboard — Concorrência"
 
 on:
   workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Ambiente"
-        required: true
-        type: choice
-        options:
-          - sandbox
-          - production
-        default: sandbox
 
 jobs:
-  sandbox:
-    if: inputs.environment == 'sandbox'
-    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
-    with:
-      client_name: "concorrencia"
-      environment: "sandbox"
-      s3_bucket: "dashboard-gf-concorrencia-sbx-118690287580"
-      cloudfront_distribution_id: "EXXXXX_SBX_CONCORRENCIA"
-      aws_region: "sa-east-1"
-      react_app_api_url: "https://SBX_CONCORRENCIA.cloudfront.net/api"
-      react_app_front_app: "concorrencia"
-      react_app_title: "Concorrencia"
-      react_app_description: "Concorrencia - Dashboard [SANDBOX]"
-    secrets: inherit
-
-  production:
-    if: inputs.environment == 'production'
+  deploy:
     uses: ./.github/workflows/_deploy-s3-cloudfront.yml
     with:
       client_name: "concorrencia"
       environment: "production"
       s3_bucket: "dashboard-gf-concorrencia-prod-385697366782"
       cloudfront_distribution_id: "E2EPGFGK32LGEA"
-      aws_region: "sa-east-1"
+      aws_region: "us-east-1"
       react_app_api_url: "https://drpzon9lew0kt.cloudfront.net/api"
       react_app_front_app: "concorrencia"
       react_app_title: "Concorrencia"

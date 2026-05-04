@@ -15,10 +15,10 @@ jobs:
     with:
       client_name: "sandbox"
       environment: "sandbox"
-      s3_bucket: "dashboard-gf-concorrencia-sbx-118690287580"
-      cloudfront_distribution_id: "EXXXXX_SBX"
+      s3_bucket: "dashboard-tst-sandbox-sbx-118690287580"
+      cloudfront_distribution_id: "E2IDJNTQ3LGD6N"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://sandbox.inttegrasocial.com.br/api"
+      react_app_api_url: "https://d6raioji4vggb.cloudfront.net/api"
       react_app_front_app: "sandbox"
       react_app_title: "Sandbox"
       react_app_description: "Sandbox - Dashboard do Banco concorrencia"

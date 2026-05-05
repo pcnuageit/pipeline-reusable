@@ -110,7 +110,6 @@ jobs:
         env:
           CI: false
           NODE_ENV: production
-          NODE_OPTIONS: "--openssl-legacy-provider"
           REACT_APP_API_URL: ${{ inputs.react_app_api_url }}
           REACT_APP_FRONT_APP: ${{ inputs.react_app_front_app }}
           REACT_APP_TITLE: ${{ inputs.react_app_title }}

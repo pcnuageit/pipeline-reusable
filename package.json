@@ -2,6 +2,10 @@
   "name": "adm-itabank",
   "version": "3.0.2",
   "private": true,
+  "resolutions": {
+    "postcss": "^8.4.31",
+    "postcss-safe-parser": "^6.0.0"
+  },
   "dependencies": {
     "@datadog/browser-logs": "^5.8.0",
     "@datadog/browser-rum": "^5.8.0",

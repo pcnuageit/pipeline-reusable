@@ -47,7 +47,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `⚠️ **Erros de lint encontrados:**\n\`\`\`\n${output.substring(0, 65000)}\n\`\`\`\nCorrija os erros acima e atualize a branch.`,
+              body: `⚠️ ***Erros de lint encontrados:**\n\`\`\`\n${output.substring(0, 65000)}\n\`\`\`\nCorrija os erros acima e atualize a branch.`,
             });
 
       - name: Fail if lint failed

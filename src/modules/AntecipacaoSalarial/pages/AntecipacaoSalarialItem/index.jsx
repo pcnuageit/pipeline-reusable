@@ -15,13 +15,10 @@ import {
   Typography,
 } from "@material-ui/core";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import { useHistory, useParams } from "react-router";
 import { toast } from "react-toastify";
-import { APP_CONFIG } from "../../../../constants/config";
-import { PERMISSIONS } from "../../../../constants/permissions";
-import usePermission from "../../../../hooks/usePermission";
 import SupportStatusBadge from "../../components/SupportStatusBadge";
 import {
   useAproveAntecipacaoSalarialMutation,
@@ -29,6 +26,10 @@ import {
   useGetAntecipacaoSalarialQuery,
 } from "../../services/AntecipacaoSalarial";
 import { formatMoney } from "../../utils/money";
+
+import { useState } from "react";
+import CustomHeader from "../../../../components/CustomHeader/CustomHeader";
+import { APP_CONFIG } from "../../../../constants/config";
 import CustomListItem from "./LogListItems/CustomListItem";
 import RetentarTransferenciaApoioDialog from "./RetentarTransferenciaApoioDialog";
 
@@ -49,7 +50,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const AntecipacaoSalarialItemPage = () => {
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const classes = useStyles();
   const history = useHistory();
 
@@ -57,11 +58,6 @@ const AntecipacaoSalarialItemPage = () => {
   const [openReativarDialog, setOpenReativarDialog] = useState(false);
   const [openRetentarTransferenciaDialog, setOpenRetentarTransferenciaDialog] =
     useState(false);
-
-  const canManageFinancialSupport = usePermission([
-    PERMISSIONS.MANAGE_FINANCIAL_SUPPORT,
-    PERMISSIONS.FULL_ACCESS,
-  ]);
 
   const [aproveFinancialSupport] = useAproveAntecipacaoSalarialMutation();
   const [cancelFinancialSupport] = useCancelAntecipacaoSalarialMutation();
@@ -77,7 +73,7 @@ const AntecipacaoSalarialItemPage = () => {
     },
     {
       skip: !id,
-    }
+    },
   );
 
   useEffect(() => {
@@ -194,409 +190,420 @@ const AntecipacaoSalarialItemPage = () => {
   return isLoading || isError ? (
     <div />
   ) : (
-    <Grid container spacing={2}>
-      <RetentarTransferenciaApoioDialog
-        open={openRetentarTransferenciaDialog}
-        onClose={() => setOpenRetentarTransferenciaDialog(false)}
-        financialSupport={financialSupport}
-      />
+    <>
+      <CustomHeader pageTitle="Antecipação Salarial" />
+      <Box style={{ padding: "20px" }}>
+        <Grid container spacing={2}>
+          <RetentarTransferenciaApoioDialog
+            open={openRetentarTransferenciaDialog}
+            onClose={() => setOpenRetentarTransferenciaDialog(false)}
+            financialSupport={financialSupport}
+          />
 
-      <Grid item container spacing={2} xs={8}>
-        <Grid item xs={12}>
-          <Box className={classes.card}>
-            <Typography className={classes.cardTitle}>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-              >
-                Detalhes da antecipação
-                <Box display="flex">
-                  <SupportStatusBadge
-                    padding="4px 24px"
-                    value={financialSupport.status}
-                  />
-                </Box>
-              </Box>
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={12}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Nome da proposta de antecipação"
-                    value={financialSupport?.proposta?.nome}
-                    disabled
-                  />
-                </Grid>
-                <Box display="flex">
-                  <TextField
-                    fullWidth
-                    label="ID da Antecipação Salarial"
-                    value={financialSupport.id}
-                    disabled
-                  />
-                  <Box display="flex" marginTop="24px">
-                    <Tooltip title="Copiar">
-                      <CopyToClipboard text={financialSupport.id}>
-                        <Button
-                          aria="Copiar"
-                          style={{
-                            marginLeft: "6px",
-                            width: "60px",
-                            height: "20px",
-                            alignSelf: "center",
-                            color: "green",
-                          }}
-                          onClick={() =>
-                            toast.success(
-                              "Copiado para area de transferência",
-                              {
-                                autoClose: 2000,
-                              }
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            style={{
-                              width: "60px",
-                              height: "20px",
-                            }}
-                            icon={faCopy}
-                          />
-                        </Button>
-                      </CopyToClipboard>
-                    </Tooltip>
+          <Grid item container spacing={2} xs={8}>
+            <Grid item xs={12}>
+              <Box className={classes.card}>
+                <Typography className={classes.cardTitle}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
+                    Detalhes da antecipação
+                    <Box display="flex">
+                      <SupportStatusBadge
+                        padding="4px 24px"
+                        value={financialSupport.status}
+                      />
+                    </Box>
                   </Box>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Data da contratação"
-                  value={format(
-                    new Date(financialSupport.created_at.slice(0, -1)),
-                    "dd MMM yyyy, HH:mm"
-                  )}
-                  disabled
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Valor liberado"
-                  value={formatMoney(financialSupport.proposta.valor_liberado)}
-                  disabled
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Valor inicial"
-                  value={formatMoney(financialSupport.proposta.valor_inicial)}
-                  disabled
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Valor final"
-                  value={formatMoney(financialSupport.proposta.valor_final)}
-                  disabled
-                />
-              </Grid>
-            </Grid>
-          </Box>
-        </Grid>
-        <Grid item xs={6}>
-          <Box className={classes.card}>
-            <Typography className={classes.cardTitle}>
-              Detalhes do Tomador do crédito
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box display="flex">
-                  <TextField
-                    fullWidth
-                    label="ID da conta"
-                    value={financialSupport.conta.id}
-                    disabled
-                  />
-                  <Box display="flex" marginTop="24px">
-                    <Tooltip title="Copiar">
-                      <CopyToClipboard text={financialSupport.conta.id}>
-                        <Button
-                          aria="Copiar"
-                          style={{
-                            marginLeft: "6px",
-                            width: "60px",
-                            height: "20px",
-                            alignSelf: "center",
-                            color: "green",
-                          }}
-                          onClick={() =>
-                            toast.success(
-                              "Copiado para area de transferência",
-                              {
-                                autoClose: 2000,
-                              }
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            style={{
-                              width: "60px",
-                              height: "20px",
-                            }}
-                            icon={faCopy}
-                          />
-                        </Button>
-                      </CopyToClipboard>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Box display="flex">
-                  <TextField
-                    fullWidth
-                    label="Nome"
-                    value={financialSupport.conta.nome}
-                    disabled
-                  />
-                  <Box display="flex" marginTop="24px">
-                    <Tooltip title="Copiar">
-                      <CopyToClipboard text={financialSupport.conta.nome}>
-                        <Button
-                          aria="Copiar"
-                          style={{
-                            marginLeft: "6px",
-                            width: "60px",
-                            height: "20px",
-                            alignSelf: "center",
-                            color: "green",
-                          }}
-                          onClick={() =>
-                            toast.success(
-                              "Copiado para area de transferência",
-                              {
-                                autoClose: 2000,
-                              }
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            style={{
-                              width: "60px",
-                              height: "20px",
-                            }}
-                            icon={faCopy}
-                          />
-                        </Button>
-                      </CopyToClipboard>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Box display="flex">
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    value={financialSupport.conta.email}
-                    disabled
-                  />
-                  <Box display="flex" marginTop="24px">
-                    <Tooltip title="Copiar">
-                      <CopyToClipboard text={financialSupport.conta.email}>
-                        <Button
-                          aria="Copiar"
-                          style={{
-                            marginLeft: "6px",
-                            width: "60px",
-                            height: "20px",
-                            alignSelf: "center",
-                            color: "green",
-                          }}
-                          onClick={() =>
-                            toast.success(
-                              "Copiado para area de transferência",
-                              {
-                                autoClose: 2000,
-                              }
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            style={{
-                              width: "60px",
-                              height: "20px",
-                            }}
-                            icon={faCopy}
-                          />
-                        </Button>
-                      </CopyToClipboard>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-        </Grid>
-        <Grid item xs={6}>
-          <Box display="flex" flexDirection="column">
-            <Box className={classes.card}>
-              <Typography className={classes.cardTitle}>Validações</Typography>
-              <FormGroup>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={
-                        financialSupport.validacoes.validacoes
-                          .vinculo_funcionario
-                      }
-                      name="gilad"
-                    />
-                  }
-                  label="Vinculo de funcionário"
-                />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={
-                        financialSupport.validacoes.validacoes.situacao_regular
-                      }
-                      name="jason"
-                    />
-                  }
-                  label="Situação cadastral regular"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={
-                        financialSupport.validacoes.validacoes.maior_de_18
-                      }
-                      name="jason"
-                    />
-                  }
-                  label="Maior de 18 anos"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={
-                        financialSupport.validacoes.validacoes.saldo_medio
-                      }
-                      name="antoine"
-                    />
-                  }
-                  label="Saldo médio validado"
-                />
-              </FormGroup>
-            </Box>
-            {canManageFinancialSupport && (
-              <Box className={classes.card} marginTop={2}>
-                <Typography className={classes.cardTitle}>Ações</Typography>
+                </Typography>
                 <Grid container spacing={2}>
-                  {(financialSupport.status === "analise" ||
-                    financialSupport.status === "validacao_negada") && (
-                    <>
-                      <Grid item xs={12}>
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={handleAproveProposal}
-                          style={{
-                            backgroundColor: "green",
-                            color: "white",
-                          }}
-                        >
-                          Aprovar antecipação
-                        </Button>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={handleRefuseProposal}
-                          style={{
-                            backgroundColor: "red",
-                            color: "white",
-                          }}
-                        >
-                          Recusar antecipação
-                        </Button>
-                      </Grid>
-                    </>
-                  )}
-
-                  {financialSupport.status === "ativo" &&
-                    financialSupport.transferencia_antecipação?.status !==
-                      "Sucesso" && (
-                      <Grid item xs={12}>
-                        <Button
-                          fullWidth
-                          onClick={handleRetentarTransferencia}
-                          variant="contained"
-                          style={{
-                            backgroundColor: "green",
-                            color: "white",
-                          }}
-                        >
-                          Refazer Transferência
-                        </Button>
-                      </Grid>
-                    )}
-
-                  {financialSupport.status !== "cancelado" &&
-                    financialSupport.status !== "validacao_negada" &&
-                    financialSupport.status !== "analise" &&
-                    financialSupport.status !== "finalizado" &&
-                    financialSupport.status !== "recusado" && (
-                      <Grid item xs={12}>
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={handleCancelProposal}
-                          style={{
-                            backgroundColor: "red",
-                            color: "white",
-                          }}
-                        >
-                          Cancelar antecipação
-                        </Button>
-                      </Grid>
-                    )}
+                  <Grid item xs={12} sm={12}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Nome da proposta de antecipação"
+                        value={financialSupport?.proposta?.nome}
+                        disabled
+                      />
+                    </Grid>
+                    <Box display="flex" marginTop={"10px"}>
+                      <TextField
+                        fullWidth
+                        label="ID da Antecipação Salarial"
+                        value={financialSupport.id}
+                        disabled
+                      />
+                      <Box display="flex" marginTop="24px">
+                        <Tooltip title="Copiar">
+                          <CopyToClipboard text={financialSupport.id}>
+                            <Button
+                              aria="Copiar"
+                              style={{
+                                marginLeft: "6px",
+                                width: "60px",
+                                height: "20px",
+                                alignSelf: "center",
+                                color: "green",
+                              }}
+                              onClick={() =>
+                                toast.success(
+                                  "Copiado para area de transferência",
+                                  {
+                                    autoClose: 2000,
+                                  },
+                                )
+                              }
+                            >
+                              <FontAwesomeIcon
+                                style={{
+                                  width: "60px",
+                                  height: "20px",
+                                }}
+                                icon={faCopy}
+                              />
+                            </Button>
+                          </CopyToClipboard>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Data da contratação"
+                      value={format(
+                        new Date(financialSupport.created_at.slice(0, -1)),
+                        "dd MMM yyyy, HH:mm",
+                      )}
+                      disabled
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Valor liberado"
+                      value={formatMoney(
+                        financialSupport.proposta.valor_liberado,
+                      )}
+                      disabled
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Valor inicial"
+                      value={formatMoney(
+                        financialSupport.proposta.valor_inicial,
+                      )}
+                      disabled
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Valor final"
+                      value={formatMoney(financialSupport.proposta.valor_final)}
+                      disabled
+                    />
+                  </Grid>
                 </Grid>
               </Box>
-            )}
-          </Box>
-        </Grid>
-      </Grid>
+            </Grid>
+            <Grid item xs={6}>
+              <Box className={classes.card}>
+                <Typography className={classes.cardTitle}>
+                  Detalhes do Tomador do crédito
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Box display="flex">
+                      <TextField
+                        fullWidth
+                        label="ID da conta"
+                        value={financialSupport.conta.id}
+                        disabled
+                      />
+                      <Box display="flex" marginTop="24px">
+                        <Tooltip title="Copiar">
+                          <CopyToClipboard text={financialSupport.conta.id}>
+                            <Button
+                              aria="Copiar"
+                              style={{
+                                marginLeft: "6px",
+                                width: "60px",
+                                height: "20px",
+                                alignSelf: "center",
+                                color: "green",
+                              }}
+                              onClick={() =>
+                                toast.success(
+                                  "Copiado para area de transferência",
+                                  {
+                                    autoClose: 2000,
+                                  },
+                                )
+                              }
+                            >
+                              <FontAwesomeIcon
+                                style={{
+                                  width: "60px",
+                                  height: "20px",
+                                }}
+                                icon={faCopy}
+                              />
+                            </Button>
+                          </CopyToClipboard>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box display="flex">
+                      <TextField
+                        fullWidth
+                        label="Nome"
+                        value={financialSupport.conta.nome}
+                        disabled
+                      />
+                      <Box display="flex" marginTop="24px">
+                        <Tooltip title="Copiar">
+                          <CopyToClipboard text={financialSupport.conta.nome}>
+                            <Button
+                              aria="Copiar"
+                              style={{
+                                marginLeft: "6px",
+                                width: "60px",
+                                height: "20px",
+                                alignSelf: "center",
+                                color: "green",
+                              }}
+                              onClick={() =>
+                                toast.success(
+                                  "Copiado para area de transferência",
+                                  {
+                                    autoClose: 2000,
+                                  },
+                                )
+                              }
+                            >
+                              <FontAwesomeIcon
+                                style={{
+                                  width: "60px",
+                                  height: "20px",
+                                }}
+                                icon={faCopy}
+                              />
+                            </Button>
+                          </CopyToClipboard>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box display="flex">
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        value={financialSupport.conta.email}
+                        disabled
+                      />
+                      <Box display="flex" marginTop="24px">
+                        <Tooltip title="Copiar">
+                          <CopyToClipboard text={financialSupport.conta.email}>
+                            <Button
+                              aria="Copiar"
+                              style={{
+                                marginLeft: "6px",
+                                width: "60px",
+                                height: "20px",
+                                alignSelf: "center",
+                                color: "green",
+                              }}
+                              onClick={() =>
+                                toast.success(
+                                  "Copiado para area de transferência",
+                                  {
+                                    autoClose: 2000,
+                                  },
+                                )
+                              }
+                            >
+                              <FontAwesomeIcon
+                                style={{
+                                  width: "60px",
+                                  height: "20px",
+                                }}
+                                icon={faCopy}
+                              />
+                            </Button>
+                          </CopyToClipboard>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box display="flex" flexDirection="column">
+                <Box className={classes.card}>
+                  <Typography className={classes.cardTitle}>
+                    Validações
+                  </Typography>
+                  <FormGroup>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          color="primary"
+                          checked={
+                            financialSupport.validacoes.validacoes
+                              .vinculo_funcionario
+                          }
+                          name="gilad"
+                        />
+                      }
+                      label="Vinculo de funcionário"
+                    />
 
-      <Grid item xs={4}>
-        <Box maxHeight="850px" overflow="auto" className={classes.card}>
-          <Typography className={classes.cardTitle}>Histórico</Typography>
-          <List className={classes.root}>
-            {financialSupport.logs.map((log, index) => {
-              return (
-                <>
-                  {index !== 0 && <Divider variant="inset" component="li" />}
-                  <CustomListItem key={log.id} log={log} />
-                </>
-              );
-            })}
-          </List>
-        </Box>
-      </Grid>
-      <Grid item xs={12}>
-        {/* <Box className={classes.card}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          color="primary"
+                          checked={
+                            financialSupport.validacoes.validacoes
+                              .situacao_regular
+                          }
+                          name="jason"
+                        />
+                      }
+                      label="Situação cadastral regular"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          color="primary"
+                          checked={
+                            financialSupport.validacoes.validacoes.maior_de_18
+                          }
+                          name="jason"
+                        />
+                      }
+                      label="Maior de 18 anos"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          color="primary"
+                          checked={
+                            financialSupport.validacoes.validacoes.saldo_medio
+                          }
+                          name="antoine"
+                        />
+                      }
+                      label="Saldo médio validado"
+                    />
+                  </FormGroup>
+                </Box>
+
+                <Box className={classes.card} marginTop={2}>
+                  <Typography className={classes.cardTitle}>Ações</Typography>
+                  <Grid container spacing={2}>
+                    {(financialSupport.status === "analise" ||
+                      financialSupport.status === "validacao_negada") && (
+                      <>
+                        <Grid item xs={12}>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={handleAproveProposal}
+                            style={{
+                              backgroundColor: "green",
+                              color: "white",
+                            }}
+                          >
+                            Aprovar antecipação
+                          </Button>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={handleRefuseProposal}
+                            style={{
+                              backgroundColor: "red",
+                              color: "white",
+                            }}
+                          >
+                            Recusar antecipação
+                          </Button>
+                        </Grid>
+                      </>
+                    )}
+
+                    {financialSupport.status === "ativo" &&
+                      financialSupport.transferencia_antecipação?.status !==
+                        "Sucesso" && (
+                        <Grid item xs={12}>
+                          <Button
+                            fullWidth
+                            onClick={handleRetentarTransferencia}
+                            variant="contained"
+                            style={{
+                              backgroundColor: "green",
+                              color: "white",
+                            }}
+                          >
+                            Refazer Transferência
+                          </Button>
+                        </Grid>
+                      )}
+
+                    {financialSupport.status !== "cancelado" &&
+                      financialSupport.status !== "validacao_negada" &&
+                      financialSupport.status !== "analise" &&
+                      financialSupport.status !== "finalizado" &&
+                      financialSupport.status !== "recusado" && (
+                        <Grid item xs={12}>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={handleCancelProposal}
+                            style={{
+                              backgroundColor: "red",
+                              color: "white",
+                            }}
+                          >
+                            Cancelar antecipação
+                          </Button>
+                        </Grid>
+                      )}
+                  </Grid>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Grid item xs={4}>
+            <Box maxHeight="850px" overflow="auto" className={classes.card}>
+              <Typography className={classes.cardTitle}>Histórico</Typography>
+              <List className={classes.root}>
+                {financialSupport.logs.map((log, index) => {
+                  return (
+                    <>
+                      {index !== 0 && (
+                        <Divider variant="inset" component="li" />
+                      )}
+                      <CustomListItem key={log.id} log={log} />
+                    </>
+                  );
+                })}
+              </List>
+            </Box>
+          </Grid>
+          <Grid item xs={12}>
+            {/* <Box className={classes.card}>
 					<Typography className={classes.cardTitle}>Tarifas</Typography>
 					<CustomTable
 						columns={[
@@ -674,8 +681,10 @@ const AntecipacaoSalarialItemPage = () => {
 						data={financialSupport.tarifas}
 					/>
 				</Box> */}
-      </Grid>
-    </Grid>
+          </Grid>
+        </Grid>
+      </Box>
+    </>
   );
 };
 

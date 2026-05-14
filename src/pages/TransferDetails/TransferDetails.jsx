@@ -12,7 +12,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CopyToClipboard from "react-copy-to-clipboard";
@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
 import { toast } from "react-toastify";
 import { loadTransferenciaId } from "../../actions/actions";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import useAuth from "../../hooks/useAuth";
 
@@ -173,6 +174,10 @@ const TransferDetails = () => {
         minWidth: !matches ? 1200 : null,
       }}
     >
+      <CustomBreadcrumbs
+        path1="Histórico de Transferências"
+        path2="Detalhes da Transferência"
+      />
       <Paper
         style={{
           padding: "24px",
@@ -222,7 +227,15 @@ const TransferDetails = () => {
               <Box>
                 <Typography variant="h6">
                   Valor: R$
-                  {transferenciaId.valor ? transferenciaId.valor : ""}
+                  {transferenciaId.valor
+                    ? parseFloat(transferenciaId.valor).toLocaleString(
+                        "pt-br",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )
+                    : ""}
                 </Typography>
               </Box>
               <Box

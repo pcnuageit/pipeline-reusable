@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   loadBancos,
@@ -31,7 +31,7 @@ const CreateBankAccount = ({
   setDisableCadastro,
 }) => {
   const token = useAuth();
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const CreateBankAccount = ({
   const handleCadastrarConta = async () => {
     setLoading(true);
     const res = await dispatch(
-      postContaBancariaAction(token, contaBancaria, id)
+      postContaBancariaAction(token, contaBancaria, id),
     );
     if (res) {
       setErrosContaBancaria(res);

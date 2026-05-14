@@ -26,10 +26,9 @@ const useStyles = makeStyles((theme) => ({
       cursor: "pointer",
       backgroundColor: theme.palette.secondary.light,
       transform: "scale(1.05)",
-      color: "white",
     },
     width: "220px",
-    height: "120px",
+    minHeight: "120px",
     animation: `$myEffect 500ms ${theme.transitions.easing.easeInOut}`,
     [theme.breakpoints.down("md")]: {
       width: "170px",
@@ -52,7 +51,6 @@ const useStyles = makeStyles((theme) => ({
       transform: "translateX(0)",
     },
   },
-
   textImageContainer: {
     display: "flex",
     width: "100%",
@@ -72,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
   textContainer: {
     display: "flex",
     fontFamily: "Montserrat-Regular",
-    marginLeft: "24px",
+    marginLeft: "30px",
     fontSize: "0.7rem",
     fontWeight: "400",
     [theme.breakpoints.up("md")]: {
@@ -114,7 +112,7 @@ const AccountCollectionItem = ({
         <FontAwesomeIcon
           icon={icon}
           color={APP_CONFIG.mainCollors.primary}
-          size={matches ? "2x" : "3x"}
+          size={matches ? "3x" : "4x"}
         />
 
         <Typography

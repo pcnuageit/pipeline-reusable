@@ -1,465 +1,845 @@
-import { Box, Grid, Typography, makeStyles } from "@material-ui/core";
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { generatePath, useHistory } from "react-router";
-import {
-  getContasAction,
-  getResumoContaDashboardAction,
-} from "../../actions/actions";
+import "moment/locale/pt-br";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
 
-import CustomBarChart from "../../components/CustomBarChart/CustomBarChart";
-import CustomButton from "../../components/CustomButton/CustomButton";
+import {
+  Box,
+  Button,
+  CardMedia,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  Link,
+  MenuItem,
+  Select,
+  Typography,
+} from "@material-ui/core";
+import {
+  AttachMoneyOutlined,
+  CompareArrows,
+  Pages,
+  Receipt,
+  Replay,
+} from "@material-ui/icons";
+import { makeStyles } from "@material-ui/styles";
+import { Pix } from "@mui/icons-material";
+import moment from "moment";
+import { useEffect, useState } from "react";
+import CurrencyInput from "react-currency-input";
+import { useDispatch, useSelector } from "react-redux";
+import { Carousel } from "react-responsive-carousel";
+import { generatePath, useHistory } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import {
+  getListaBannerAction,
+  loadExtratoFilter,
+  loadUserData,
+  setRedirecionarTransferencia,
+  setRedirecionarValorTransferencia,
+  UserTypeAction,
+} from "../../actions/actions";
 import CustomCard from "../../components/CustomCard/CustomCard";
-import CustomLineChart from "../../components/CustomLineChart/CustomLineChart";
-import CustomTable from "../../components/CustomTable/CustomTable";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
+import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
-import usePermission from "../../hooks/usePermission";
-import { documentMask } from "../../utils/documentMask";
+
+moment.locale();
 
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
+  },
+  main: {
+    display: "flex",
     flexDirection: "column",
-    backgroundColor: "white",
+    width: "100%",
     height: "100%",
+    padding: "10px",
+  },
+  header: {
+    display: "flex",
+    alignContent: "center",
+    justifyContent: "space-around",
+    alignItems: "center",
     width: "100%",
   },
-  headerContainer: {
+  dadosBox: {
     display: "flex",
-    /* width: '100%', */
-
-    justifyContent: "center",
-
-    flexDirection: "column",
+    flexDirection: "row",
+    marginTop: "50px",
   },
-
+  cardContainer: {
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
+  },
   contadorStyle: {
     display: "flex",
     fontSize: "30px",
     fontFamily: "Montserrat-SemiBold",
   },
-
-  pageTitle: {
+  currencyInput: {
+    marginBottom: "6px",
+    alignSelf: "center",
+    textAlign: "center",
+    height: 45,
+    fontSize: 17,
+    borderWidth: "1px !important",
+    borderRadius: 27,
+    border: "none",
     color: APP_CONFIG.mainCollors.primary,
-    fontFamily: "Montserrat-SemiBold",
-  },
-
-  cardContainer: {
-    display: "flex",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-  },
-
-  bodyContainer: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    height: "100%",
-    marginTop: "20px",
+    backgroundColor: "transparent",
+    fontFamily: "Montserrat-Regular",
   },
 }));
 
-const columns = [
-  { headerText: "Nome", key: "nome" },
-  { headerText: "Tipo", key: "tipo" },
-  {
-    headerText: "Status",
-    key: "status",
-    CustomValue: (value) => {
-      if (value === "pending") {
-        return (
-          <Box
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              style={{
-                borderRadius: 32,
-                backgroundColor: "#F1E3D4",
-                maxWidth: "120px",
-                padding: "5px",
-              }}
-            >
-              <Typography style={{ color: "orange", width: "100%" }}>
-                PENDENTE
-              </Typography>
-            </Box>
-          </Box>
-        );
-      }
-      if (value === "active") {
-        return (
-          <Box
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              style={{
-                borderRadius: 32,
-                backgroundColor: "#C9DBF2",
-                maxWidth: "120px",
-                padding: "5px",
-              }}
-            >
-              <Typography style={{ color: "#75B1ED", width: "100%" }}>
-                ATIVO
-              </Typography>
-            </Box>
-          </Box>
-        );
-      }
-      if (value === "enabled") {
-        return (
-          <Box
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              style={{
-                borderRadius: 32,
-                backgroundColor: "#C9DBF2",
-                maxWidth: "120px",
-                padding: "5px",
-              }}
-            >
-              <Typography style={{ color: "#75B1ED", width: "100%" }}>
-                ATIVO
-              </Typography>
-            </Box>
-          </Box>
-        );
-      }
-      if (value === "approved") {
-        return (
-          <Box
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              style={{
-                borderRadius: 32,
-                backgroundColor: "#C9ECE7",
-                maxWidth: "120px",
-                padding: "5px",
-              }}
-            >
-              <Typography style={{ color: "#00B57D", width: "100%" }}>
-                APROVADO
-              </Typography>
-            </Box>
-          </Box>
-        );
-      }
-      if (value === "denied") {
-        return (
-          <Box
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-            }}
-          >
-            <Box
-              style={{
-                borderRadius: 32,
-                backgroundColor: "#ECC9D2",
-                maxWidth: "120px",
-                padding: "5px",
-              }}
-            >
-              <Typography style={{ color: "#ED757D", width: "100%" }}>
-                NEGADO
-              </Typography>
-            </Box>
-          </Box>
-        );
-      }
-    },
-  },
-  { headerText: "Número do Documento", key: "numero_documento" },
-  {
-    headerText: "Documento",
-    key: "documento",
-    CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
-  },
-];
-
-const Dashboard = () => {
-  const history = useHistory();
-  const dispatch = useDispatch();
+export default function Dashboard() {
   const classes = useStyles();
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const userData = useSelector((state) => state.userData);
+  const extrato = useSelector((state) => state.extrato);
+  const listaBanner = useSelector((state) => state.listaBanner);
+  const userType = useSelector((state) => state.userType);
   const token = useAuth();
-  const { hasPermission, PERMISSIONS } = usePermission();
-  const contadores = useSelector((state) => state.contadores);
+  const [loading, setLoading] = useState(false);
+  const [modalRetirada, setModalRetirada] = useState(false);
+  const [textRetirada, setTextRetirada] = useState(false);
+  const [valorRetirada, setValorRetirada] = useState(null);
+  const [tipoTransferencia, setTipoTransferencia] = useState("");
 
-  useEffect(() => {
-    dispatch(getResumoContaDashboardAction(token));
-  }, [dispatch, token]);
-
-  const listaContas = useSelector((state) => state.contas);
-  useEffect(() => {
-    dispatch(
-      getContasAction(
-        token,
-        1,
-
-        "",
-        "",
-        5,
-        "",
-        "",
-        "",
-        "",
-        ""
-      )
-    );
-  }, [dispatch, token]);
-
-  const handleVerTudo = () => {
-    const path = generatePath("/dashboard/lista-de-contas");
-    history.push(path);
+  const handleContinuar = () => {
+    if (tipoTransferencia && valorRetirada) {
+      dispatch(setRedirecionarTransferencia(true));
+      dispatch(setRedirecionarValorTransferencia(valorRetirada));
+      if (tipoTransferencia === "Pix") {
+        const path = generatePath("/dashboard/pix");
+        history.push(path);
+      }
+      if (tipoTransferencia === "TED") {
+        const path = generatePath("/dashboard/extratoTED");
+        history.push(path);
+      }
+      if (tipoTransferencia === "P2P") {
+        const path = generatePath("/dashboard/extratoP2P");
+        history.push(path);
+      }
+    } else {
+      toast.error("Preencha todos os campos");
+    }
   };
+
+  useEffect(() => {
+    dispatch(loadUserData(token));
+  }, [token]);
+
+  useEffect(() => {
+    const isGestao =
+      userData?.is_gestao_concorrencia === true &&
+      userData?.is_estabelecimento === false;
+    const isBanking =
+      userData?.is_gestao_concorrencia === false &&
+      userData?.is_estabelecimento === false;
+    dispatch(UserTypeAction({ isGestao, isBanking }));
+  }, [token, userData]);
+
+  useEffect(() => {
+    dispatch(loadExtratoFilter(token, "", "", "", "", "", "", "", "", ""));
+  }, [token]);
+
+  useEffect(() => {
+    dispatch(getListaBannerAction(token, "", ""));
+  }, [token]);
 
   return (
     <Box className={classes.root}>
-      <Box className={classes.headerContainer}>
-        <Box>
-          <Typography className={classes.pageTitle}>DASHBOARD</Typography>
-        </Box>
+      <LoadingScreen isLoading={loading} />
 
-        <Box
-          style={{
-            display: "flex",
+      <Box className={classes.main}>
+        <CustomHeader />
 
-            marginTop: "20px",
-          }}
-        >
-          <Grid container spacing={4}>
-            
-              <Grid item xs={12} sm={4}>
-                <CustomCard
-                  text="Contas pendentes"
-                  /* style={{ marginLeft: '0px' }} */
-                >
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_pendente}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            
-
-            {hasPermission(PERMISSIONS.home.cards.view_approved) && (
-              <Grid item xs={12} sm={4}>
-                <CustomCard text="Contas aprovadas" aprovada>
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_aprovado}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            )}
-
-            {hasPermission(PERMISSIONS.home.cards.view_active) && (
-              <Grid item xs={12} sm={4}>
-                <CustomCard text="Contas ativas">
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_ativo}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-
-        <Box
-          style={{
-            display: "flex",
-            marginTop: "20px",
-          }}
-        >
-          <Grid container spacing={4}>
-            {hasPermission(PERMISSIONS.home.cards.view_rejected) && (
-              <Grid item xs={12} sm={4}>
-                <CustomCard text="Contas rejeitadas" rejeitada>
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_rejeitado}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            )}
-
-            {hasPermission(PERMISSIONS.home.cards.view_refused) && (
-              <Grid item xs={12} sm={4}>
-                <CustomCard text="Contas recusadas" rejeitada>
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_recusado}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            )}
-
-            <Grid item xs={12} sm={4}>
-              <CustomCard text="Frequência diária">
-                <Box className={classes.cardContainer}>
-                  <Typography className={classes.contadorStyle}>
-                    {contadores.frequencia_quantidade_diaria}
-                  </Typography>
-                </Box>
-              </CustomCard>
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Box
-          style={{
-            display: "flex",
-            marginTop: "20px",
-          }}
-        >
-          <Grid container spacing={4}>
-            <Grid item xs={12} sm={4}>
-              <CustomCard text="Cadastro Pessoa Física">
-                <Box className={classes.cardContainer}>
-                  <Typography className={classes.contadorStyle}>
-                    {contadores.cadastro_pessoa_fisica}
-                  </Typography>
-                </Box>
-              </CustomCard>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <CustomCard text="Cadastro Pessoa Jurídica">
-                <Box className={classes.cardContainer}>
-                  <Typography className={classes.contadorStyle}>
-                    {contadores.cadastro_pessoa_juridica}
-                  </Typography>
-                </Box>
-              </CustomCard>
-            </Grid>
-
-            {hasPermission(PERMISSIONS.home.cards.view_total) && (
-              <Grid item xs={12} sm={4}>
-                <CustomCard text="Total de Contas">
-                  <Box className={classes.cardContainer}>
-                    <Typography className={classes.contadorStyle}>
-                      {contadores.cadastro_total}
-                    </Typography>
-                  </Box>
-                </CustomCard>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      </Box>
-
-      <Box className={classes.bodyContainer}>
-        <Box display="flex">
-          {hasPermission(PERMISSIONS.home.charts.view_accounts_by_month) && (
-            <Box style={{ width: "77%" }}>
-              <CustomLineChart />
-            </Box>
-          )}
-
-          {hasPermission(PERMISSIONS.home.charts.view_account_status) && (
-            <Box style={{ width: "35%" }}>
-              <CustomBarChart />
-            </Box>
-          )}
-
-          {/* 	<Grid container>
-						<Grid item xs={12} sm={8}>
-							<CustomLineChart />
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<CustomBarChart />
-						</Grid>
-					</Grid> */}
-        </Box>
-
-        <Box display="flex" style={{ height: "100%", marginTop: "40px" }}>
-          {hasPermission(PERMISSIONS.home.table.view) && (
-            <Grid container>
-              <Grid xs={12}>
-                <Box
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-
-                    height: "75px",
-                    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                    borderTopRightRadius: 27,
-                    borderTopLeftRadius: 27,
-                  }}
-                >
-                  <Typography
+        <Box className={classes.dadosBox}>
+          <Box
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {userType?.isBanking ? (
+              <Grid container spacing={2} style={{ marginTop: "0px" }}>
+                <Grid item sm={3} xs={12}>
+                  <Box
                     style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontFamily: "Montserrat-SemiBold",
-                      marginTop: "20px",
-                      alignSelf: "center",
-                      marginLeft: "30px",
+                      display: "flex",
+                      backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                      /* height: '100px', */
+                      borderRadius: "17px",
+                      flexDirection: "column",
+
+                      alignItems: "center",
                     }}
                   >
-                    CONTAS RECENTES
-                  </Typography>
-
-                  {hasPermission(PERMISSIONS.home.table.view_button) && (
-                    <Box
+                    <Typography
                       style={{
-                        marginTop: "20px",
-                        marginRight: "10px",
+                        fontFamily: "Montserrat-Regular",
+                        fontSize: "16px",
+                        color: APP_CONFIG.mainCollors.primary,
+                        marginTop: "30px",
                       }}
                     >
-                      <CustomButton
-                        size="small"
-                        color="purple"
-                        onClick={handleVerTudo}
-                      >
-                        VER TUDO
-                      </CustomButton>
-                    </Box>
-                  )}
-                </Box>
-                <Box style={{ marginBottom: "40px", width: "100%" }}>
-                  {listaContas.data && listaContas.per_page ? (
-                    <CustomTable
-                      boxShadowTop={true}
-                      columns={columns}
-                      data={listaContas.data}
+                      Saldo disponível
+                    </Typography>
+                    <Box
+                      style={{
+                        width: "80%",
+                        height: "1px",
+                        backgroundColor: APP_CONFIG.mainCollors.primary,
+                      }}
                     />
-                  ) : null}
-                </Box>
+
+                    {userData?.saldo?.valor && (
+                      <Typography
+                        style={{
+                          fontFamily: "Montserrat-Regular",
+                          fontSize: "20px",
+                          color: APP_CONFIG.mainCollors.primary,
+                          marginTop: "35px",
+                        }}
+                      >
+                        R$
+                        {parseFloat(userData.saldo.valor).toLocaleString(
+                          "pt-br",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}
+                      </Typography>
+                    )}
+
+                    <Box
+                      style={{
+                        marginTop: "30px",
+                        marginBottom: "25px",
+                      }}
+                    >
+                      <Button
+                        style={{
+                          backgroundColor: APP_CONFIG.mainCollors.secondary,
+                          borderRadius: "27px",
+                          marginTop: "15px",
+                        }}
+                        color="purple"
+                        onClick={() => {
+                          setModalRetirada(true);
+                          setTextRetirada(true);
+                          setValorRetirada(null);
+                        }}
+                      >
+                        <Typography
+                          style={{
+                            fontFamily: "Montserrat-Regular",
+                            fontSize: "16px",
+                            color: "white",
+                          }}
+                        >
+                          Retirada
+                        </Typography>
+                      </Button>
+                    </Box>
+
+                    <Dialog
+                      open={modalRetirada}
+                      onClose={() => {
+                        setModalRetirada(false);
+                        setTextRetirada(false);
+                        setValorRetirada(null);
+                      }}
+                      aria-labelledby="form-dialog-title"
+                    >
+                      <DialogTitle
+                        style={{
+                          color: APP_CONFIG.mainCollors.primary,
+                        }}
+                        id="form-dialog-title"
+                      >
+                        {textRetirada
+                          ? "Método de retirada"
+                          : "Método de transferência"}
+                      </DialogTitle>
+                      <form /* onSubmit={(e) => handleContinuar()} */>
+                        <DialogContent>
+                          {textRetirada ? (
+                            <>
+                              <DialogContentText
+                                style={{
+                                  color: APP_CONFIG.mainCollors.primary,
+                                }}
+                              >
+                                Selecione um valor:
+                              </DialogContentText>
+                              <CurrencyInput
+                                placeHolder="R$0,00"
+                                className={classes.currencyInput}
+                                decimalSeparator=","
+                                thousandSeparator="."
+                                prefix="R$ "
+                                value={valorRetirada}
+                                onChangeEvent={(
+                                  event,
+                                  maskedvalue,
+                                  floatvalue,
+                                ) => {
+                                  setValorRetirada(floatvalue);
+                                }}
+                              />
+                            </>
+                          ) : null}
+
+                          <DialogContentText
+                            style={{
+                              color: APP_CONFIG.mainCollors.primary,
+                              marginTop: "10px",
+                            }}
+                          >
+                            {textRetirada
+                              ? "Escolha como fazer a retirada:"
+                              : "Escolha como fazer a transferência:"}
+                          </DialogContentText>
+                          <Box>
+                            <Box
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                alignSelf: "center",
+                                marginTop: "30px",
+                              }}
+                            >
+                              <Box>
+                                <Select
+                                  style={{ width: "200px" }}
+                                  value={tipoTransferencia}
+                                  label="Tipo"
+                                  onChange={(e) =>
+                                    setTipoTransferencia(e.target.value)
+                                  }
+                                >
+                                  <MenuItem
+                                    value={"Pix"}
+                                    style={{
+                                      color: APP_CONFIG.mainCollors.secondary,
+                                      fontFamily: "Montserrat-Regular",
+                                    }}
+                                  >
+                                    Pix
+                                  </MenuItem>
+                                  <MenuItem
+                                    value={"TED"}
+                                    style={{
+                                      color: APP_CONFIG.mainCollors.secondary,
+                                      fontFamily: "Montserrat-Regular",
+                                    }}
+                                  >
+                                    TED
+                                  </MenuItem>
+                                  <MenuItem
+                                    value={"P2P"}
+                                    style={{
+                                      color: APP_CONFIG.mainCollors.secondary,
+                                      fontFamily: "Montserrat-Regular",
+                                    }}
+                                  >
+                                    P2P
+                                  </MenuItem>
+                                </Select>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </DialogContent>
+                        <DialogActions>
+                          <Button
+                            onClick={() => {
+                              setModalRetirada(false);
+                              setTextRetirada(false);
+                              setValorRetirada(null);
+                            }}
+                            color="primary"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setModalRetirada(false);
+                              handleContinuar();
+                            }}
+                            color="primary"
+                            /* type="submit" */
+                          >
+                            Continuar
+                          </Button>
+                        </DialogActions>
+                      </form>
+                    </Dialog>
+                  </Box>
+                </Grid>
+
+                <Grid item sm={4} xs={12}>
+                  <Box
+                    style={{
+                      display: "flex",
+                      backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                      /* height: '100px', */
+                      borderRadius: "17px",
+                      flexDirection: "column",
+
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      style={{
+                        fontFamily: "Montserrat-Regular",
+                        fontSize: "16px",
+                        color: APP_CONFIG.mainCollors.primary,
+                        marginTop: "30px",
+                      }}
+                    >
+                      Transferências
+                    </Typography>
+                    <Box
+                      style={{
+                        width: "80%",
+                        height: "1px",
+                        backgroundColor: APP_CONFIG.mainCollors.primary,
+                      }}
+                    />
+                    <Typography
+                      style={{
+                        fontFamily: "Montserrat-Regular",
+                        fontSize: "13px",
+                        color: APP_CONFIG.mainCollors.primary,
+                        marginTop: "10px",
+                      }}
+                    >
+                      Quanto você quer transferir?
+                    </Typography>
+
+                    <CurrencyInput
+                      placeHolder="R$0,00"
+                      style={{
+                        alignSelf: "center",
+                        textAlign: "center",
+                        height: 45,
+                        fontSize: "20px",
+                        borderWidth: "1px !important",
+                        borderRadius: 27,
+                        border: "none",
+                        color: APP_CONFIG.mainCollors.primary,
+                        backgroundColor: "transparent",
+                        fontFamily: "Montserrat-Regular",
+                      }}
+                      decimalSeparator=","
+                      thousandSeparator="."
+                      prefix="R$ "
+                      value={textRetirada ? "" : valorRetirada}
+                      onChangeEvent={(event, maskedvalue, floatvalue) => {
+                        setValorRetirada(floatvalue);
+                      }}
+                    />
+                    <Box
+                      style={{
+                        marginTop: "30px",
+                        marginBottom: "30px",
+                      }}
+                    >
+                      <Button
+                        style={{
+                          backgroundColor: APP_CONFIG.mainCollors.secondary,
+                          borderRadius: "27px",
+                        }}
+                        color="purple"
+                        onClick={() => {
+                          setModalRetirada(true);
+                          setTextRetirada(false);
+                        }}
+                      >
+                        <Typography
+                          style={{
+                            fontFamily: "Montserrat-Regular",
+                            fontSize: "16px",
+                            color: "white",
+                          }}
+                        >
+                          Transferir
+                        </Typography>
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item sm={5} xs={12}>
+                  <Box
+                    style={{
+                      display: "flex",
+                      backgroundColor: APP_CONFIG.mainCollors.primary,
+                      /* height: '100px', */
+                      borderRadius: "17px",
+                      flexDirection: "column",
+
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      style={{
+                        fontFamily: "Montserrat-Regular",
+                        fontSize: "16px",
+                        color: "white",
+                        marginTop: "30px",
+                      }}
+                    >
+                      Entradas e saídas
+                    </Typography>
+                    <Box
+                      style={{
+                        width: "80%",
+                        height: "1px",
+                        backgroundColor: "white",
+                      }}
+                    />
+
+                    <Box
+                      style={{
+                        marginTop: "140px",
+                        marginBottom: "30px",
+                      }}
+                    >
+                      {/* <CustomLineChart /> */}
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            ) : null}
+
+            <Grid container spacing={2}>
+              {userType.isBanking ? (
+                <Grid item sm={5} xs={12}>
+                  <Box
+                    style={{
+                      display: "flex",
+                      backgroundColor: APP_CONFIG.mainCollors.primary,
+
+                      borderRadius: "17px",
+                      flexDirection: "column",
+
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <Box
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                        width: "100%",
+                        marginTop: "10px",
+                      }}
+                    >
+                      <Box style={{ width: "20px" }} />
+
+                      <Box
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          style={{
+                            fontFamily: "Montserrat-Regular",
+                            fontSize: "18px",
+                            color: "white",
+                            marginTop: "0px",
+                          }}
+                        >
+                          Extrato
+                        </Typography>
+
+                        <Typography
+                          style={{
+                            fontFamily: "Montserrat-Regular",
+                            fontSize: "16px",
+                            color: "white",
+                            marginTop: "30px",
+                          }}
+                        >
+                          Últimas movimentações
+                        </Typography>
+
+                        <Box
+                          style={{
+                            width: "80%",
+                            height: "1px",
+                            backgroundColor: "white",
+                          }}
+                        />
+                      </Box>
+
+                      <Button
+                        style={{
+                          borderRadius: "60px",
+                          backgroundColor: "white",
+                          minWidth: "20px",
+                          height: "40px",
+                          display: "flex",
+                        }}
+                        onClick={() => history.push("extrato")}
+                      >
+                        <Pages
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                            fontSize: "30px",
+                          }}
+                        />
+                      </Button>
+                    </Box>
+
+                    <Box
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {extrato?.data?.length > 0
+                        ? extrato?.data?.slice(0, 1)?.map((item, index) => (
+                            <>
+                              <Typography
+                                style={{
+                                  fontFamily: "Montserrat-Regular",
+                                  fontSize: "16px",
+                                  color: "white",
+                                  marginTop: "30px",
+                                  marginLeft: "30px",
+                                }}
+                              >
+                                {moment.utc(item.data).format("DD MMMM (dddd)")}
+                              </Typography>
+                              <Box
+                                style={{
+                                  width: "100%",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Box
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    borderRadius: "17px",
+                                    backgroundColor:
+                                      APP_CONFIG.mainCollors.extratoHome,
+                                    alignSelf: "center",
+                                    width: "90%",
+                                    marginBottom: "20px",
+                                  }}
+                                >
+                                  {item?.items?.length > 0
+                                    ? item.items.map((subItem, index) => (
+                                        <>
+                                          <Box
+                                            style={{
+                                              display: "flex",
+                                              flexDirection: "column",
+                                              padding: "16px",
+                                            }}
+                                          >
+                                            <Box
+                                              style={{
+                                                display: "flex",
+                                                justifyContent: "space-around",
+                                              }}
+                                            >
+                                              <Typography
+                                                style={{
+                                                  fontFamily:
+                                                    "Montserrat-Regular",
+                                                  fontSize: "16px",
+                                                  color: "white",
+                                                }}
+                                              >
+                                                {console.log(subItem)}
+                                                {subItem?.transaction_details
+                                                  ?.receiver_name
+                                                  ? subItem?.transaction_details
+                                                      ?.receiver_name
+                                                  : (subItem?.conta
+                                                      ?.razao_social ??
+                                                    subItem?.conta?.nome)}
+                                              </Typography>
+                                              <Box>
+                                                <Typography
+                                                  style={{
+                                                    fontFamily:
+                                                      "Montserrat-Regular",
+                                                    fontSize: "16px",
+                                                    color: "white",
+                                                  }}
+                                                >
+                                                  R${" "}
+                                                  {parseFloat(
+                                                    subItem.transaction_amount,
+                                                  ).toLocaleString("pt-br", {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                  })}
+                                                </Typography>
+                                              </Box>
+                                            </Box>
+                                          </Box>
+                                        </>
+                                      ))
+                                    : null}
+                                </Box>
+                              </Box>
+                            </>
+                          ))
+                        : null}
+                    </Box>
+                  </Box>
+                </Grid>
+              ) : null}
+
+              {userData?.is_estabelecimento ? null : (
+                <Grid item sm={7} xs={12}>
+                  {listaBanner?.data?.length > 0 ? (
+                    <Carousel
+                      autoPlay
+                      showThumbs={false}
+                      showArrows={false}
+                      showIndicators={true}
+                      showStatus={false}
+                      interval={4000}
+                      infiniteLoop
+                    >
+                      {listaBanner.data.map((item) => (
+                        <CardMedia
+                          style={{
+                            display: "flex",
+                            backgroundColor: "transparent",
+                            height: "300px",
+                            borderRadius: "17px",
+                            flexDirection: "column",
+
+                            alignItems: "center",
+                            "&:hover": {
+                              cursor: "pointer",
+                            },
+                          }}
+                          image={item.imagem}
+                          onClick={() =>
+                            item.url ? window.open(item.url) : null
+                          }
+                        />
+                      ))}
+                    </Carousel>
+                  ) : (
+                    <Box
+                      style={{
+                        display: "flex",
+                        backgroundColor: "transparent",
+                        borderRadius: "17px",
+                        flexDirection: "column",
+
+                        alignItems: "center",
+                      }}
+                    />
+                  )}
+                </Grid>
+              )}
+
+              <Grid container spacing={2}>
+                {userType.isBanking ? (
+                  <CustomCard
+                    Icon={CompareArrows}
+                    title={"Transferências"}
+                    onClick={() => history.push("extratoP2P")}
+                  />
+                ) : null}
+
+                {userData?.is_estabelecimento ? (
+                  <CustomCard
+                    Icon={CompareArrows}
+                    title="Histórico de Transações"
+                    onClick={() =>
+                      history.push("beneficiarios/acao/transacoes")
+                    }
+                  />
+                ) : null}
+
+                {userData?.is_estabelecimento ? (
+                  <CustomCard
+                    Icon={Replay}
+                    title="Pagamentos Futuros"
+                    onClick={() => history.push("pagamentos-futuros")}
+                  />
+                ) : null}
+
+                {userData?.is_estabelecimento ? (
+                  <CustomCard
+                    Icon={AttachMoneyOutlined}
+                    title="Pagamentos Recebidos"
+                    onClick={() => history.push("pagamentos-recebidos")}
+                  />
+                ) : null}
+
+                {userType.isBanking ? (
+                  <>
+                    <CustomCard
+                      Icon={Receipt}
+                      title="Pagamentos"
+                      onClick={() => history.push("lista-pagamentos")}
+                    />
+
+                    <CustomCard
+                      Icon={Pix}
+                      title="Pix"
+                      onClick={() => history.push("pix")}
+                    />
+
+                    <CustomCard
+                      icon="boletos"
+                      title="Boletos"
+                      onClick={() => history.push("lista-boletos")}
+                    />
+                  </>
+                ) : null}
               </Grid>
             </Grid>
-          )}
+          </Box>
         </Box>
+
+        <Link
+          href={APP_CONFIG.linkPdfTermoContrato}
+          target="_blank"
+          style={{ width: "fit-content" }}
+        >
+          <Typography
+            style={{
+              fontSize: "15px",
+              color: APP_CONFIG.mainCollors.primary,
+              marginTop: "24px",
+              marginBottom: "8px",
+            }}
+          >
+            Política de privacidade
+          </Typography>
+        </Link>
       </Box>
     </Box>
   );
-};
-
-export default Dashboard;
+}

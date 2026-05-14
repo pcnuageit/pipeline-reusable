@@ -13,8 +13,7 @@ import { loadDetalhesRecarga } from "../../actions/actions";
 
 import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import moment from "moment";
-import "moment/locale/pt-br";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import useAuth from "../../hooks/useAuth";
 
@@ -23,32 +22,20 @@ const columns = [
     headerText: "Criado em",
     key: "created_at",
     CustomValue: (data) => {
-      /* 	const date = new Date(data);
-			const option = {
-				year: 'numeric',
-				month: 'numeric',
-				day: 'numeric',
-				hour: 'numeric',
-				minute: 'numeric',
-			 	second: 'numeric'
-			};
-			const formatted = date.toLocaleDateString('pt-br', option);
-			return (
-				<Box display="flex" justifyContent="center">
-					<FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-					<Typography style={{ marginLeft: '6px' }}>{formatted}</Typography>
-				</Box>
-			); */
+      const date = new Date(data);
+      const option = {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      };
+      const formatted = date.toLocaleDateString("pt-br", option);
       return (
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        <Box display="flex" justifyContent="center">
           <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-          {moment.utc(data).format("DD MMMM YYYY, HH:mm")}
+          <Typography style={{ marginLeft: "6px" }}>{formatted}</Typography>
         </Box>
       );
     },
@@ -129,7 +116,13 @@ const columns = [
     CustomValue: (valor) => {
       return (
         <Typography>
-          R$ <b>{valor}</b>
+          R${" "}
+          <b>
+            {parseFloat(valor).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </b>
         </Typography>
       );
     },
@@ -147,8 +140,6 @@ const RechargeCellphoneDetails = () => {
   const userData = useSelector((state) => state.userData);
 
   const [arrayObject, setArrayObject] = useState([{}]);
-
-  moment.locale("pt-br");
 
   useEffect(() => {
     if (subsectionId) {
@@ -168,6 +159,7 @@ const RechargeCellphoneDetails = () => {
       flexDirection="column"
       style={{ position: "absolute", maxWidth: 1200 }}
     >
+      <CustomBreadcrumbs path1="Recargas" path2="Detalhes" />
       <Paper
         style={{
           width: "100%",

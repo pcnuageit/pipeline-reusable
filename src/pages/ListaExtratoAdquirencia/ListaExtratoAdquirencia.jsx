@@ -1,6 +1,3 @@
-import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons";
-import { faWallet } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Box,
   Button,
@@ -16,24 +13,33 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@material-ui/core";
-import { Delete } from "@material-ui/icons";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBan,
+  faFilePdf,
+  faTable,
+  faTrash,
+  faWallet,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import PrintIcon from "@material-ui/icons/Print";
-import Pagination from "@material-ui/lab/Pagination";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { addDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import moment from "moment";
 import "moment/locale/pt-br";
-import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory, useParams } from "react-router";
 import ReactToPrint from "react-to-print";
 import { toast } from "react-toastify";
-
 import {
   getPagamentoContaExtratoAction,
   getPagamentoContaExtratoActionClear,
@@ -44,25 +50,20 @@ import {
   getTedExtratoActionClear,
   getTransferenciaExtratoAction,
   getTransferenciaExtratoActionClear,
+  loadExportExtrato,
   loadExtratoAdquirenciaFilter,
 } from "../../actions/actions";
+import CustomButton from "../../components/CustomButton/CustomButton";
+import CustomCollapseTable from "../../components/CustomCollapseTable/CustomCollapseTable";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
+import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
 
-import CustomButton from "../../components/CustomButton/CustomButton";
-import CustomCollapseTable from "../../components/CustomCollapseTable/CustomCollapseTable";
-import { ExportTableButtons } from "../../components/ExportTableButtons";
-import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
-import TableHeaderButton from "../../components/TableHeaderButton";
-
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
-
-    /* flexGrow: 1, */
-    /* width: '100vw',
-		height: '100vh', */
   },
 
   header: {
@@ -95,21 +96,21 @@ const columns = [
       );
     },
   },
-  // {
-  // 	headerText: 'Valor Bloqueado',
-  // 	key: 'valor_bloqueado',
-  // 	CustomValue: (value) => (
-  // 		<Box display="flex" justifyContent="center">
-  // 			<FontAwesomeIcon icon={faBan} size="lg" />
-  // 			<Typography style={{ marginLeft: '6px', color: 'red' }}>
-  // 				<b>R$ {value}</b>
-  // 			</Typography>
-  // 		</Box>
-  // 	),
-  // },
+  {
+    headerText: "Valor Bloqueado",
+    key: "valor_bloqueado",
+    CustomValue: (value) => (
+      <Box display="flex" justifyContent="center">
+        <FontAwesomeIcon icon={faBan} size="lg" />
+        <Typography style={{ marginLeft: "6px", color: "red" }}>
+          <b>R$ {value}</b>
+        </Typography>
+      </Box>
+    ),
+  },
   {
     headerText: "Saldo do dia",
-    key: "valor",
+    key: "saldo",
     CustomValue: (value) => (
       <Box display="flex" justifyContent="center">
         <FontAwesomeIcon icon={faWallet} size="lg" />
@@ -129,7 +130,7 @@ const columns = [
 const itemColumns = [
   {
     headerText: <Typography variant="h6">Descrição</Typography>,
-    key: "description",
+    key: "Details",
     CustomValue: (description) => {
       return (
         <Typography variant="" style={{ fontSize: 16 }}>
@@ -140,7 +141,7 @@ const itemColumns = [
   },
   {
     headerText: <Typography variant="h6">Transação Id</Typography>,
-    key: "idTransacao",
+    key: "DocumentNumber",
     CustomValue: (id) => {
       return (
         <Typography variant="" style={{ fontSize: 16 }}>
@@ -151,7 +152,7 @@ const itemColumns = [
   },
   {
     headerText: <Typography variant="h6">nsu</Typography>,
-    key: "nsu",
+    key: "OperationId",
     CustomValue: (nsu) => {
       return (
         <Typography variant="" style={{ fontSize: 16 }}>
@@ -161,19 +162,8 @@ const itemColumns = [
     },
   },
   {
-    headerText: <Typography variant="h6">Card</Typography>,
-    key: "externoMsk",
-    CustomValue: (nsu) => {
-      return (
-        <Typography variant="" style={{ fontSize: 16 }}>
-          {nsu}
-        </Typography>
-      );
-    },
-  },
-  {
-    headerText: <Typography variant="h6">Data e hora</Typography>,
-    key: "dtTransacao",
+    headerText: <Typography variant="h6">Taxas</Typography>,
+    key: "taxas",
     CustomValue: (fee) => {
       if (fee > 0) {
         return (
@@ -181,7 +171,7 @@ const itemColumns = [
             variant=""
             style={{ fontSize: 16, color: "#dfad06", fontWeight: 600 }}
           >
-            {fee}
+            R$ 0,00{fee}
           </Typography>
         );
       } else {
@@ -190,7 +180,7 @@ const itemColumns = [
             variant=""
             style={{ fontSize: 16, color: "	green", fontWeight: 600 }}
           >
-            {fee}
+            R$ 0,00{fee}
           </Typography>
         );
       }
@@ -198,7 +188,7 @@ const itemColumns = [
   },
   {
     headerText: <Typography variant="h6">Valor</Typography>,
-    key: "vlTransacao",
+    key: "EntryValue",
     CustomValue: (amount) => {
       if (amount < 0) {
         return (
@@ -239,17 +229,20 @@ const ListaExtratoAdquirencia = () => {
   const dispatch = useDispatch();
   const classes = useStyles();
   const token = useAuth();
+  const theme = useTheme();
   const [page, setPage] = useState(1);
   const extratoAdquirencia = useSelector((state) => state.extratoAdquirencia);
+  const userData = useSelector((state) => state.userData);
+  const exportExtrato = useSelector((state) => state.exportExtrato);
   const transferenciaExtrato = useSelector(
-    (state) => state.transferenciaExtrato
+    (state) => state.transferenciaExtrato,
   );
   const tedExtrato = useSelector((state) => state.tedExtrato);
   const pagamentoContaExtrato = useSelector(
-    (state) => state.pagamentoContaExtrato
+    (state) => state.pagamentoContaExtrato,
   );
   const pagamentoPixExtrato = useSelector((state) => state.pagamentoPixExtrato);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const history = useHistory();
   const [filters, setFilters] = useState({
     id: "",
@@ -268,6 +261,7 @@ const ListaExtratoAdquirencia = () => {
   const [atualizarFitbankModal, setAtualizarFitbankModal] = useState(false);
   const [maxDate, setMaxDate] = useState(addDays(new Date(), 29));
   const [loading, setLoading] = useState(false);
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const [state, setState] = useState([
     {
       startDate: new Date(),
@@ -303,8 +297,8 @@ const ListaExtratoAdquirencia = () => {
         filters.tipo,
         id,
         filters.data_inicial,
-        filters.data_final
-      )
+        filters.data_final,
+      ),
     );
   }, [
     filters.day,
@@ -316,8 +310,6 @@ const ListaExtratoAdquirencia = () => {
     id,
     filters.data_inicial,
     filters.data_final,
-    dispatch,
-    token,
   ]);
 
   const handleSincronizarExtrato = async () => {
@@ -335,8 +327,8 @@ const ListaExtratoAdquirencia = () => {
           token,
           id,
           formatedStartDate,
-          formatedEndDate
-        )
+          formatedEndDate,
+        ),
       );
       if (resSincronizarExtrato) {
         toast.error("Erro ao sincronizar extrato");
@@ -354,18 +346,65 @@ const ListaExtratoAdquirencia = () => {
 
   const handleClickRow = (row) => {
     if (row.transaction && row.transaction.id) {
-      const path = generatePath(
-        "/dashboard/gerenciar-contas/:id/detalhes-transacao",
-        {
-          id: row.transaction.id,
-        }
-      );
-
+      const path = generatePath("/dashboard/detalhes-transacao/:id/ver", {
+        id: row.transaction.id,
+      });
       history.push(path);
     } else {
       return null;
     }
   };
+
+  const handleExportarExtrato = async () => {
+    setLoading(true);
+    const res = await dispatch(
+      loadExportExtrato(
+        token,
+        page,
+        debouncedId,
+        filters.day,
+        filters.order,
+        filters.mostrar,
+        filters.tipo,
+        id,
+        filters.data_inicial,
+        filters.data_final,
+      ),
+    );
+    if (res && res.url !== undefined) {
+      window.open(`${res.url}`, "", "");
+    }
+    setLoading(false);
+  };
+
+  const handleExportarExtratoPDF = async () => {
+    setLoading(true);
+    const res = await dispatch(
+      loadExportExtrato(
+        token,
+        page,
+        debouncedId,
+        filters.day,
+        filters.order,
+        filters.mostrar,
+        filters.tipo,
+        id,
+        filters.data_inicial,
+        filters.data_final,
+        "pdf",
+      ),
+    );
+    if (res && res.url !== undefined) {
+      window.open(`${res.url}`, "", "");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      setFilters({ ...filters });
+    };
+  }, []);
 
   const EditarCollapse = (row) => {
     const comprovanteExtrato = async () => {
@@ -373,7 +412,7 @@ const ListaExtratoAdquirencia = () => {
         if (row.row.OperationType === 6 || row.row.OperationType === 0) {
           await dispatch(getTransferenciaExtratoActionClear());
           const resTransferenciaExtrato = await dispatch(
-            getTransferenciaExtratoAction(token, row.row.DocumentNumber)
+            getTransferenciaExtratoAction(token, row.row.DocumentNumber),
           );
           if (resTransferenciaExtrato) {
             setSemComprovante(true);
@@ -384,7 +423,7 @@ const ListaExtratoAdquirencia = () => {
         if (row.row.OperationType === 3 || row.row.OperationType === 4) {
           await dispatch(getTedExtratoActionClear());
           const resTedExtrato = await dispatch(
-            getTedExtratoAction(token, row.row.DocumentNumber)
+            getTedExtratoAction(token, row.row.DocumentNumber),
           );
           if (resTedExtrato) {
             setSemComprovante(true);
@@ -395,7 +434,7 @@ const ListaExtratoAdquirencia = () => {
         if (row.row.OperationType === 2) {
           await dispatch(getPagamentoContaExtratoActionClear());
           const resPagamentoContaExtrato = await dispatch(
-            getPagamentoContaExtratoAction(token, row.row.DocumentNumber)
+            getPagamentoContaExtratoAction(token, row.row.DocumentNumber),
           );
           if (resPagamentoContaExtrato) {
             setSemComprovante(true);
@@ -410,7 +449,7 @@ const ListaExtratoAdquirencia = () => {
         ) {
           await dispatch(getPagamentoPixExtratoActionClear());
           const resPagamentoPixExtrato = await dispatch(
-            getPagamentoPixExtratoAction(token, row.row.TransactionId)
+            getPagamentoPixExtratoAction(token, row.row.TransactionId),
           );
           if (resPagamentoPixExtrato) {
             setSemComprovante(true);
@@ -448,19 +487,12 @@ const ListaExtratoAdquirencia = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
       <LoadingScreen isLoading={loading} />
 
-      <Typography
-        style={{
-          marginTop: "8px",
-          color: APP_CONFIG.mainCollors.primary,
-          marginBottom: 30,
-        }}
-        variant="h5"
-      >
-        Extrato Benefícios
-      </Typography>
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Extrato Adquirência" />
+      </Box>
       <Box
         style={{
           width: "100%",
@@ -474,24 +506,23 @@ const ListaExtratoAdquirencia = () => {
           style={{ marginTop: "10px", marginBottom: "16px", margin: 30 }}
         >
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
               <TextField
                 variant="outlined"
                 InputLabelProps={{
                   shrink: true,
                 }}
-                placeholder="Filtrar por ID da transação"
+                label="Filtrar por ID da transação"
                 fullWidth
                 value={filters.id}
                 onChange={(e) => setFilters({ ...filters, id: e.target.value })}
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
               <Select
                 variant="outlined"
                 style={{
                   color: APP_CONFIG.mainCollors.secondary,
-                  marginTop: 10,
                 }}
                 fullWidth
                 value={filters.day}
@@ -543,7 +574,7 @@ const ListaExtratoAdquirencia = () => {
                 </MenuItem>
               </Select>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
               <TextField
                 label="Data inicial"
                 variant="outlined"
@@ -562,7 +593,7 @@ const ListaExtratoAdquirencia = () => {
                 }
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={2}>
               <TextField
                 label="Data final"
                 variant="outlined"
@@ -581,34 +612,49 @@ const ListaExtratoAdquirencia = () => {
                 }
               />
             </Grid>
-
-            <ExportTableButtons
-              token={token}
-              path={"extrato"}
-              page={page}
-              filters={`conta_id=${id}&id=${filters?.id}&day=${filters?.day}&data_inicial=${filters?.data_inicial}&data_final=${filters?.data_final}`}
-            />
-
-            <TableHeaderButton
-              Icon={Delete}
-              text="Limpar"
-              color="red"
-              onClick={() =>
-                setFilters({
-                  ...filters,
-                  id: "",
-                  day: " ",
-                  order: "",
-                  mostrar: "",
-                  tipo: "",
-                  data_inicial: "",
-                  data_final: "",
-                })
-              }
-            />
-
-            <Grid item xs={12} sm={1}>
-              <Tooltip title="Atualizar extrato QiTech">
+            <Grid
+              item
+              xs={12}
+              sm={4}
+              style={{ display: "flex", justifyContent: "flex-end" }}
+            >
+              <Tooltip title="Limpar Filtros">
+                <IconButton
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      id: "",
+                      day: " ",
+                      order: "",
+                      mostrar: "",
+                      tipo: "",
+                      data_inicial: "",
+                      data_final: "",
+                    })
+                  }
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Exportar Excel">
+                <IconButton
+                  variant="outlined"
+                  style={{ marginLeft: "6px" }}
+                  onClick={handleExportarExtrato}
+                >
+                  <FontAwesomeIcon icon={faTable} color="green" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Exportar PDF">
+                <IconButton
+                  variant="outlined"
+                  style={{ marginLeft: "6px" }}
+                  onClick={handleExportarExtratoPDF}
+                >
+                  <FontAwesomeIcon icon={faFilePdf} color="red" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Atualizar extrato fitbank">
                 <IconButton
                   variant="outlined"
                   style={{ marginLeft: "5px" }}
@@ -622,7 +668,9 @@ const ListaExtratoAdquirencia = () => {
         </Box>
       </Box>
 
-      {extratoAdquirencia && extratoAdquirencia.per_page ? (
+      {extratoAdquirencia &&
+      extratoAdquirencia.per_page &&
+      extratoAdquirencia.last_page ? (
         <CustomCollapseTable
           itemColumns={itemColumns}
           data={extratoAdquirencia.data}
@@ -633,18 +681,18 @@ const ListaExtratoAdquirencia = () => {
       ) : (
         <LinearProgress />
       )}
-      <Box alignSelf="flex-end" marginTop="8px">
-        {
-          <Pagination
-            variant="outlined"
-            color="secondary"
-            size="large"
-            count={extratoAdquirencia.last_page}
-            onChange={handleChangePage}
-            page={page}
-          />
-        }
-      </Box>
+      {/* <Box alignSelf="flex-end" marginTop="8px">
+				{
+					<Pagination
+						variant="outlined"
+						color="secondary"
+						size="large"
+						count={extratoAdquirencia.last_page}
+						onChange={handleChangePage}
+						page={page}
+					/>
+				}
+			</Box> */}
       <Modal
         style={{
           display: "flex",
@@ -710,7 +758,7 @@ const ListaExtratoAdquirencia = () => {
           >
             <CustomButton onClick={() => handleSincronizarExtrato()}>
               <Typography style={{ fontSize: 12 }}>
-                Atualizar Extrato QiTech
+                Atualizar Extrato Fitbank
               </Typography>
             </CustomButton>
           </Box>
@@ -911,7 +959,7 @@ const ListaExtratoAdquirencia = () => {
                     Instituição
                   </Typography>
                   <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.destino.banco} - Qitech
+                    {transferenciaExtrato.destino.banco} - FITBANK
                   </Typography>
                 </Box>
                 <Box
@@ -1011,7 +1059,7 @@ const ListaExtratoAdquirencia = () => {
                     Instituição
                   </Typography>
                   <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.origem.banco} - Qitech
+                    {transferenciaExtrato.origem.banco} - FITBANK
                   </Typography>
                 </Box>
                 <Box
@@ -1343,7 +1391,7 @@ const ListaExtratoAdquirencia = () => {
                     Banco
                   </Typography>
                   <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.banco} - Qitech
+                    {tedExtrato.conta_model.banco} - FITBANK
                   </Typography>
                 </Box>
                 <Box
@@ -2089,12 +2137,12 @@ const ListaExtratoAdquirencia = () => {
                     ***.
                     {pagamentoPixExtrato.response.consulta.Infos.ReceiverTaxNumber.substring(
                       3,
-                      6
+                      6,
                     )}
                     .
                     {pagamentoPixExtrato.response.consulta.Infos.ReceiverTaxNumber.substring(
                       6,
-                      9
+                      9,
                     )}
                     -**
                   </Typography>
@@ -2456,12 +2504,12 @@ const ListaExtratoAdquirencia = () => {
                     ***.
                     {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
                       3,
-                      6
+                      6,
                     )}
                     .
                     {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
                       6,
-                      9
+                      9,
                     )}
                     -**
                   </Typography>
@@ -2507,7 +2555,7 @@ const ListaExtratoAdquirencia = () => {
                   }}
                 >
                   <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo} alt=""></img>
+                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
                   </Box>
                   <ReactToPrint
                     trigger={() => {
@@ -2657,12 +2705,12 @@ const ListaExtratoAdquirencia = () => {
                     ***.
                     {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
                       3,
-                      6
+                      6,
                     )}
                     .
                     {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
                       6,
-                      9
+                      9,
                     )}
                     -**
                   </Typography>

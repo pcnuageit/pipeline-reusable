@@ -2,15 +2,14 @@ import { Box } from "@material-ui/core";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useTheme } from "@material-ui/styles";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router";
 import { loadPreContaId } from "../../actions/actions";
 import NewAccount from "../../components/NewAccount/NewAccount";
-import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 
 const DetalhesPreConta = () => {
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const theme = useTheme();
   const dispatch = useDispatch();
   const token = useAuth();
@@ -30,7 +29,7 @@ const DetalhesPreConta = () => {
     >
       <Box
         style={{
-          backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+          backgroundColor: "#EDEDF4",
           display: "flex",
           flexDirection: "column",
           borderRadius: 27,

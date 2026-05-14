@@ -1,4 +1,5 @@
 import {
+  faCalendarAlt,
   faQuestionCircle,
   faTable,
   faTrash,
@@ -26,10 +27,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
 import { isEqual } from "lodash";
-import moment from "moment";
-import "moment/locale/pt-br";
 import CurrencyInput from "react-currency-input";
-import { toast } from "react-toastify";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import { filters_historico_transferencia } from "../../constants/localStorageStrings";
@@ -72,12 +71,10 @@ const columns = [
       };
       const formatted = date.toLocaleDateString("pt-br", option);
       return (
-        <>
-          <Typography align="center"> {formatted}</Typography>
-          <Typography align="center">
-            {moment.utc(data).format("HH:mm:ss")}
-          </Typography>
-        </>
+        <Box display="flex" justifyContent="center">
+          <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
+          <Typography style={{ marginLeft: "6px" }}>{formatted}</Typography>
+        </Box>
       );
     },
   },
@@ -145,16 +142,16 @@ const columns = [
               {razao_social === null
                 ? nome
                 : tipo === "Pessoa Jurídica"
-                ? razao_social
-                : nome}
+                  ? razao_social
+                  : nome}
             </b>
           </Typography>
           <Typography align="center">
             {cnpj === null
               ? documento
               : tipo === "Pessoa Jurídica"
-              ? cnpj
-              : documento}
+                ? cnpj
+                : documento}
           </Typography>
         </Box>
       );
@@ -172,16 +169,16 @@ const columns = [
               {razao_social === null
                 ? nome
                 : tipo === "Pessoa Jurídica"
-                ? razao_social
-                : nome}
+                  ? razao_social
+                  : nome}
             </b>
           </Typography>
           <Typography align="center">
             {cnpj === null
               ? documento
               : tipo === "Pessoa Jurídica"
-              ? cnpj
-              : documento}
+                ? cnpj
+                : documento}
           </Typography>
         </Box>
       );
@@ -193,13 +190,15 @@ const columns = [
     key: "valor",
     CustomValue: (valor) => {
       return (
-        <>
+        <Typography>
           R${" "}
-          {parseFloat(valor).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </>
+          <b>
+            {parseFloat(valor).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </b>
+        </Typography>
       );
     },
   },
@@ -225,10 +224,10 @@ const TransferHistory = () => {
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const dispatch = useDispatch();
   const historicoTransferencia = useSelector(
-    (state) => state.historicoTransferencia
+    (state) => state.historicoTransferencia,
   );
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const exportTransferencia = useSelector((state) => state.exportTransferencia);
   const [page, setPage] = useState(1);
   const history = useHistory();
@@ -259,8 +258,8 @@ const TransferHistory = () => {
         debouncedInputValue,
         filters.valor,
         filters.data,
-        id
-      )
+        id,
+      ),
     );
   }, [page, token, filters.valor, filters.data, debouncedInputValue, id]);
 
@@ -272,13 +271,10 @@ const TransferHistory = () => {
         debouncedInputValue,
         filters.valor,
         filters.data,
-        id
-      )
+        id,
+      ),
     );
-    toast.warning(
-      res?.message ?? "A exportação pode demorar um pouco, por favor aguarde..."
-    );
-    if (res?.url) {
+    if (res && res.url !== undefined) {
       window.open(`${res.url}`, "", "");
     }
   };
@@ -287,14 +283,14 @@ const TransferHistory = () => {
     if (!isEqual(filters, filtersComparation)) {
       localStorage.setItem(
         filters_historico_transferencia,
-        JSON.stringify({ ...filters })
+        JSON.stringify({ ...filters }),
       );
     }
   }, [filters]);
 
   useEffect(() => {
     const getLocalFilters = JSON.parse(
-      localStorage.getItem(filters_historico_transferencia)
+      localStorage.getItem(filters_historico_transferencia),
     );
     if (getLocalFilters) {
       setFilters(getLocalFilters);
@@ -307,7 +303,7 @@ const TransferHistory = () => {
       {
         id: id,
         transferenciaId: row.id,
-      }
+      },
     );
 
     history.push(path);
@@ -315,17 +311,22 @@ const TransferHistory = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="Histórico de Transferências"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="Histórico de Transferências" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Histórico de Transferências

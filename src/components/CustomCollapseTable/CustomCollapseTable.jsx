@@ -19,24 +19,22 @@ const StyledTableCell = withStyles((theme) => ({
   head: {
     boxSizing: "",
     fontSize: 17,
-    fontFamily: "Montserrat-Regular",
+    fontFamily: "Montserrat-SemiBold",
     backgroundColor: APP_CONFIG.mainCollors.backgrounds,
     color: APP_CONFIG.mainCollors.primary,
-    [theme.breakpoints.down("sm")]: { fontSize: 14 },
+    [theme.breakpoints.down("sm")]: {},
   },
   body: {
+    fontSize: 16,
     color: APP_CONFIG.mainCollors.primary,
-    fontFamily: "Montserrat-Regular",
-    fontSize: 15,
-
-    [theme.breakpoints.down("sm")]: { fontSize: 12 },
+    fontFamily: "Montserrat-SemiBold",
   },
 }))(TableCell);
 
 const StyledTableRow = withStyles(() => ({
   root: {
     "&:hover": {
-      // cursor: "pointer",
+      cursor: "pointer",
       backgroundColor: APP_CONFIG.mainCollors.backgrounds,
     },
   },
@@ -56,12 +54,13 @@ const CustomRow = ({
   row,
   itemColumns,
   handleClickRow,
-  itemDataKey,
+  conta,
   open,
   rowIndex,
   compacta,
   EditarCollapse,
 }) => {
+  console.log(row);
   return (
     <>
       <TableRow style={{ borderWidth: 0 }}>
@@ -85,29 +84,7 @@ const CustomRow = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {itemDataKey
-                    ? row[itemDataKey].map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.funcionarios
+                  {row.funcionarios
                     ? row.funcionarios.map((row) => (
                         <StyledTableRow
                           size={compacta ? "small" : null}
@@ -130,135 +107,133 @@ const CustomRow = ({
                         </StyledTableRow>
                       ))
                     : row.items
-                    ? row.items.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.itens
-                    ? row.itens.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.beneficiarios
-                    ? row.beneficiarios.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.estabelecimentos
-                    ? row.estabelecimentos.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.aluguel
-                    ? row.aluguel.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                                {column.key === "menuCollapse" ? (
-                                  <EditarCollapse row={row} key={row.id} />
-                                ) : null}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : row.erros
-                    ? row.erros.map((row) => (
-                        <StyledTableRow
-                          size={compacta ? "small" : null}
-                          onClick={
-                            handleClickRow ? () => handleClickRow(row) : null
-                          }
-                        >
-                          {itemColumns.map((column) => (
-                            <>
-                              <StyledTableCell align="left">
-                                {column.CustomValue
-                                  ? column.CustomValue(get(row, column.key))
-                                  : get(row, column.key)}
-                              </StyledTableCell>
-                            </>
-                          ))}
-                        </StyledTableRow>
-                      ))
-                    : null}
+                      ? row.items.map((row) => (
+                          <StyledTableRow
+                            size={compacta ? "small" : null}
+                            onClick={
+                              handleClickRow ? () => handleClickRow(row) : null
+                            }
+                          >
+                            {itemColumns.map((column) => (
+                              <>
+                                <StyledTableCell align="left">
+                                  {column.CustomValue
+                                    ? column.CustomValue(get(row, column.key))
+                                    : get(row, column.key)}
+                                  {column.key === "menuCollapse" ? (
+                                    <EditarCollapse row={row} key={row.id} />
+                                  ) : null}
+                                </StyledTableCell>
+                              </>
+                            ))}
+                          </StyledTableRow>
+                        ))
+                      : row.beneficiarios
+                        ? row.beneficiarios.map((row) => (
+                            <StyledTableRow
+                              size={compacta ? "small" : null}
+                              onClick={
+                                handleClickRow
+                                  ? () => handleClickRow(row)
+                                  : null
+                              }
+                            >
+                              {itemColumns.map((column) => (
+                                <>
+                                  <StyledTableCell align="left">
+                                    {column.CustomValue
+                                      ? column.CustomValue(get(row, column.key))
+                                      : get(row, column.key)}
+                                    {column.key === "menuCollapse" ? (
+                                      <EditarCollapse row={row} key={row.id} />
+                                    ) : null}
+                                  </StyledTableCell>
+                                </>
+                              ))}
+                            </StyledTableRow>
+                          ))
+                        : row.estabelecimentos
+                          ? row.estabelecimentos.map((row) => (
+                              <StyledTableRow
+                                size={compacta ? "small" : null}
+                                onClick={
+                                  handleClickRow
+                                    ? () => handleClickRow(row)
+                                    : null
+                                }
+                              >
+                                {itemColumns.map((column) => (
+                                  <>
+                                    <StyledTableCell align="left">
+                                      {column.CustomValue
+                                        ? column.CustomValue(
+                                            get(row, column.key),
+                                          )
+                                        : get(row, column.key)}
+                                      {column.key === "menuCollapse" ? (
+                                        <EditarCollapse
+                                          row={row}
+                                          key={row.id}
+                                        />
+                                      ) : null}
+                                    </StyledTableCell>
+                                  </>
+                                ))}
+                              </StyledTableRow>
+                            ))
+                          : row.aluguel
+                            ? row.aluguel.map((row) => (
+                                <StyledTableRow
+                                  size={compacta ? "small" : null}
+                                  onClick={
+                                    handleClickRow
+                                      ? () => handleClickRow(row)
+                                      : null
+                                  }
+                                >
+                                  {itemColumns.map((column) => (
+                                    <>
+                                      <StyledTableCell align="left">
+                                        {column.CustomValue
+                                          ? column.CustomValue(
+                                              get(row, column.key),
+                                            )
+                                          : get(row, column.key)}
+                                        {column.key === "menuCollapse" ? (
+                                          <EditarCollapse
+                                            row={row}
+                                            key={row.id}
+                                          />
+                                        ) : null}
+                                      </StyledTableCell>
+                                    </>
+                                  ))}
+                                </StyledTableRow>
+                              ))
+                            : row.erros
+                              ? row.erros.map((row) => (
+                                  <StyledTableRow
+                                    size={compacta ? "small" : null}
+                                    onClick={
+                                      handleClickRow
+                                        ? () => handleClickRow(row)
+                                        : null
+                                    }
+                                  >
+                                    {itemColumns.map((column) => (
+                                      <>
+                                        <StyledTableCell align="left">
+                                          {column.CustomValue
+                                            ? column.CustomValue(
+                                                get(row, column.key),
+                                              )
+                                            : get(row, column.key)}
+                                        </StyledTableCell>
+                                      </>
+                                    ))}
+                                  </StyledTableRow>
+                                ))
+                              : null}
                 </TableBody>
               </Table>
             </>
@@ -279,7 +254,6 @@ const CustomCollapseTable = ({
   noCollapse,
   compacta,
   EditarCollapse,
-  itemDataKey,
 }) => {
   const classes = useStyles();
   const [open, setOpen] = React.useState(false);
@@ -334,6 +308,11 @@ const CustomCollapseTable = ({
                         }}
                       >
                         <IconButton
+                          style={{
+                            verticalAlign: "center",
+                            padding: "8px",
+                            border: "1px solid gray",
+                          }}
                           aria-label="expand row"
                           size="small"
                           onClick={() => {
@@ -342,11 +321,6 @@ const CustomCollapseTable = ({
                             } else {
                               setOpen(rowIndex);
                             }
-                          }}
-                          style={{
-                            verticalAlign: "center",
-                            padding: "8px",
-                            border: "1px solid gray",
                           }}
                         >
                           {open === rowIndex ? (
@@ -364,7 +338,6 @@ const CustomCollapseTable = ({
                     open={open}
                     row={row}
                     rowIndex={rowIndex}
-                    itemDataKey={itemDataKey}
                     itemColumns={itemColumns}
                     handleClickRow={handleClickRow}
                     conta={conta}

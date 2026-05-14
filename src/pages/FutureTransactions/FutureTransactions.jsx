@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons";
@@ -55,7 +55,11 @@ const columns = [
           variant=""
           style={{ fontSize: 17, color: "green", fontWeight: "bold" }}
         >
-          R$ {valor}
+          R${" "}
+          {parseFloat(valor).toLocaleString("pt-br", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </Typography>
       );
     },
@@ -142,7 +146,7 @@ const FutureTransactions = () => {
   const token = useAuth();
   const [page, setPage] = useState(1);
   const userLancamentosFuturos = useSelector(
-    (state) => state.lancamentosFuturos
+    (state) => state.lancamentosFuturos,
   );
   const [filters, setFilters] = useState({
     data_liberacao: "",

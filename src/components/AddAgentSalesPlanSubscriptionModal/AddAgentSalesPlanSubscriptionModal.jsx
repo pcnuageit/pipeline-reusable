@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import { Autocomplete } from "@material-ui/lab";
@@ -65,16 +65,16 @@ const AddAgentSalesPlanSubscriptionModal = ({
         "",
         "",
         "",
-        true,
-        agentId
-      )
+        "",
+        agentId,
+      ),
     );
   }, [debouncedLike, agentId]);
 
   const handleAddEcSubscription = async () => {
     setIsLoading(true);
     const resPostAssinatura = await dispatch(
-      postAssinaturaPlanoVendasAction(token, accountId, planId)
+      postAssinaturaPlanoVendasAction(token, accountId, planId),
     );
     if (resPostAssinatura) {
       toast.error("Erro ao adicionar EC ao Plano de Venda!");

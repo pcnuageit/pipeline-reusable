@@ -8,7 +8,6 @@ import {
   Select,
   TextField,
   Tooltip,
-  Typography,
 } from "@material-ui/core";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
 import { isEqual } from "lodash";
 import { toast } from "react-toastify";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
@@ -38,7 +38,7 @@ const TransactionHistory = () => {
   const historico = useSelector((state) => state.historicoTransacao);
   const exportTransacao = useSelector((state) => state.exportTransacao);
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
 
   const handleChangePage = (e, value) => {
     setPage(value);
@@ -112,8 +112,8 @@ const TransactionHistory = () => {
         filters.terminal_id,
         filters.seller_like,
         filters.holder_name,
-        filters.is_physical_sale
-      )
+        filters.is_physical_sale,
+      ),
     );
   }, [
     token,
@@ -141,18 +141,21 @@ const TransactionHistory = () => {
 
   const handleClickRow = (row) => {
     const path = generatePath(
-      "/dashboard/gerenciar-contas/:id/detalhes-transacao",
+      "/dashboard/gerenciar-lista-contas/:id/detalhes-transacao",
       {
         id: row.transaction_id,
-      }
+      },
     );
     history.push(path);
   };
 
   const [loading, setLoading] = useState(false);
 
+  console.log(historico);
+
   const handleExportarTransacao = async () => {
     setLoading(true);
+    toast.warning("A exportação pode demorar um pouco, por favor aguarde...");
     const res = await dispatch(
       loadExportHistoricoTransacao(
         token,
@@ -175,13 +178,10 @@ const TransactionHistory = () => {
         filters.terminal_id,
         filters.seller_like,
         filters.holder_name,
-        filters.is_physical_sale
-      )
+        filters.is_physical_sale,
+      ),
     );
-    toast.warning(
-      res?.message ?? "A exportação pode demorar um pouco, por favor aguarde..."
-    );
-    if (res?.url) {
+    if (res && res.url !== undefined) {
       window.open(`${res.url}`, "", "");
     }
     setLoading(false);
@@ -191,14 +191,14 @@ const TransactionHistory = () => {
     if (!isEqual(filters, filtersComparation)) {
       localStorage.setItem(
         filters_historico_transacoes,
-        JSON.stringify({ ...filters })
+        JSON.stringify({ ...filters }),
       );
     }
   }, [filters]);
 
   useEffect(() => {
     const getLocalFilters = JSON.parse(
-      localStorage.getItem(filters_historico_transacoes)
+      localStorage.getItem(filters_historico_transacoes),
     );
     if (getLocalFilters) {
       setFilters(getLocalFilters);
@@ -224,27 +224,18 @@ const TransactionHistory = () => {
           filters.terminal_id,
           filters.seller_like,
           filters.holder_name,
-          filters.is_physical_sale
-        )
+          filters.is_physical_sale,
+        ),
       );
     }
   }, []);
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
       <LoadingScreen isLoading={loading} />
 
-      <Box display="flex" justifyContent="">
-        <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
-          variant="h4"
-        >
-          Histórico de Transações
-        </Typography>
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Histórico de Transações" />
       </Box>
       <Box
         style={{
@@ -262,9 +253,8 @@ const TransactionHistory = () => {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                placeholder="Filtrar por pagador (nome, documento, e-mail...)"
+                label="Filtrar por pagador (nome, documento, e-mail...)"
                 fullWidth
-                label="Pagador"
                 value={filters.like}
                 onChange={(e) =>
                   setFilters({ ...filters, like: e.target.value })
@@ -277,9 +267,8 @@ const TransactionHistory = () => {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                placeholder="Filtrar por ID da transação ou conciliação"
+                label="Filtrar por ID da transação ou conciliação"
                 fullWidth
-                label="ID da transação ou conciliação"
                 value={filters.id}
                 onChange={(e) => setFilters({ ...filters, id: e.target.value })}
               />
@@ -482,6 +471,12 @@ const TransactionHistory = () => {
                 </MenuItem>
                 <MenuItem
                   style={{ color: APP_CONFIG.mainCollors.secondary }}
+                  value="boleto"
+                >
+                  Boleto
+                </MenuItem>
+                <MenuItem
+                  style={{ color: APP_CONFIG.mainCollors.secondary }}
                   value="commission"
                 >
                   Comissão
@@ -572,9 +567,8 @@ const TransactionHistory = () => {
                     InputLabelProps={{
                       shrink: true,
                     }}
-                    placeholder="Filtrar por ID do POS"
+                    label="Filtrar por ID do POS"
                     fullWidth
-                    label="ID do POS"
                     value={filters.terminal_id}
                     onChange={(e) =>
                       setFilters({
@@ -596,9 +590,8 @@ const TransactionHistory = () => {
                     InputLabelProps={{
                       shrink: true,
                     }}
-                    placeholder="Nome do portador do Cartão"
+                    label="Nome do portador do Cartão"
                     fullWidth
-                    label="Portador do Cartão"
                     value={filters.holder_name}
                     onChange={(e) =>
                       setFilters({
@@ -695,9 +688,8 @@ const TransactionHistory = () => {
                     InputLabelProps={{
                       shrink: true,
                     }}
-                    placeholder="Filtrar por N° Documento"
+                    label="Filtrar por N° Documento"
                     fullWidth
-                    label="N° Documento"
                     value={filters.documento}
                     onChange={(e) =>
                       setFilters({

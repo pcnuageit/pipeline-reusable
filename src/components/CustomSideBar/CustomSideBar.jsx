@@ -1,75 +1,46 @@
-import { Box, Button, Collapse } from "@material-ui/core";
+import { Box, Button, Divider } from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Drawer from "@material-ui/core/Drawer";
 import Hidden from "@material-ui/core/Hidden";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
-import ListItemText from "@material-ui/core/ListItemText";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
-import {
-  AttachMoney,
-  CenterFocusStrong,
-  ConfirmationNumber,
-  ExpandLess,
-  ExpandMore,
-  HistorySharp,
-  ListAlt,
-  School,
-} from "@material-ui/icons";
-import AccessibilityNewIcon from "@material-ui/icons/AccessibilityNew";
-import AccountBalanceIcon from "@material-ui/icons/AccountBalance";
-import AccountBoxIcon from "@material-ui/icons/AccountBox";
+import { CompareArrows, PersonOutline } from "@material-ui/icons";
 import AssignmentIcon from "@material-ui/icons/Assignment";
-import BlockIcon from "@material-ui/icons/Block";
-import GroupIcon from "@material-ui/icons/Group";
 import HomeIcon from "@material-ui/icons/Home";
-import LockIcon from "@material-ui/icons/Lock";
 import PersonIcon from "@material-ui/icons/Person";
-import PersonAddIcon from "@material-ui/icons/PersonAdd";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import {
-  DocumentScanner,
-  Download,
-  FilePresentSharp,
-  Key,
-  PersonOff,
-} from "@mui/icons-material";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
+import { Download, Pix } from "@mui/icons-material";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import ComputerIcon from "@mui/icons-material/Computer";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
-import ImportExportIcon from "@mui/icons-material/ImportExport";
-import LocalAtmIcon from "@mui/icons-material/LocalAtm";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import PaidIcon from "@mui/icons-material/Paid";
-import PercentIcon from "@mui/icons-material/Percent";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import CreditScoreIcon from "@mui/icons-material/CreditScore";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import FolderIcon from "@mui/icons-material/Folder";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PaymentsIcon from "@mui/icons-material/Payments";
 import PixIcon from "@mui/icons-material/Pix";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
-import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
-import CurrencyFormat from "react-currency-format";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router";
-import { Link, useParams } from "react-router-dom";
-import { loadContaId } from "../../actions/actions";
+import { Link } from "react-router-dom";
+
+import { getBeneficiosAction, loadUserData } from "../../actions/actions";
 import { APP_CONFIG } from "../../constants/config";
-import { PERMISSIONS as PERM } from "../../constants/permissions";
+import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
-import usePermission from "../../hooks/usePermission";
 
 const drawerWidth = 300;
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    background: APP_CONFIG.mainCollors.secondaryGradient,
     display: "flex",
+    backgroundColor: "white",
   },
   drawer: {
     [theme.breakpoints.up("sm")]: {
@@ -94,47 +65,51 @@ const useStyles = makeStyles((theme) => ({
   drawerPaper: {
     width: drawerWidth,
     borderRightWidth: "0px",
+    background: APP_CONFIG.mainCollors.drawerSideBar,
   },
   content: {
     flexGrow: 1,
     padding: theme.spacing(3),
   },
-  nested: {
-    paddingLeft: theme.spacing(4),
-  },
 }));
 
 function CustomSideBar(props) {
   const dispatch = useDispatch();
-  const history = useHistory();
-  const { id, section } = useParams();
   const token = useAuth();
-  const { hasPermission, PERMISSIONS } = usePermission();
-  const contaSelecionada = useSelector((state) => state.conta);
-  const userData = useSelector((state) => state.userData);
   const me = useSelector((state) => state.me);
+  /* const contaSelecionada = useSelector((state) => state.conta); */
+  /* const userData = useSelector((state) => state.userData); */
+  /* const me = useSelector((state) => state.me); */
+  const [subMenuTransferencia, setSubMenuTransferencia] = useState(false);
+  const [subMenuWallet, setSubMenuWallet] = useState(false);
+  const userData = useSelector((state) => state.userData);
   const { window } = props;
   const classes = useStyles();
   const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const AbaGestao = APP_CONFIG.AbaGestao;
-
-  const canShowFinancialSupport =
-    hasPermission(PERM.MANAGE_FINANCIAL_PROPOSAL) ||
-    hasPermission(PERM.MANAGE_FINANCIAL_SUPPORT);
-
-  const [openCreditCollapse, setOpenCreditCollapse] = useState(false);
-  const [openTransferenciaCollapse, setOpenTransferenciaCollapse] =
-    useState(false);
-  const [openTarifasCollapse, setOpenTarifasCollapse] = useState(false);
-  const [openRelatoriosCollapse, setOpenRelatoriosCollapse] = useState(false);
+  const [isSaldoVisible, setIsSaldoVisible] = useState(true);
+  const userPermissao = useSelector((state) => state.userPermissao);
+  const beneficios = useSelector((state) => state.beneficios);
+  const userType = useSelector((state) => state.userType);
+  const [permissoes, setPermissoes] = useState([]);
+  const isBankConc =
+    userType?.isBanking &&
+    (APP_CONFIG?.isEstabelecimento || APP_CONFIG?.isGestao);
 
   useEffect(() => {
-    if (id && token && section !== "taxa" && section !== "apoio-financeiro") {
-      dispatch(loadContaId(token, id));
-    }
-  }, [dispatch, id, section, token, userData]);
+    const { permissao } = userPermissao;
+    setPermissoes(permissao.map((item) => item.tipo));
+  }, [userPermissao]);
+
+  useEffect(() => {
+    if (!props?.cadastro) dispatch(loadUserData(token));
+  }, [token]);
+
+  useEffect(() => {
+    if (userType?.isGestao)
+      dispatch(getBeneficiosAction(token, userData?.cnpj));
+  }, [token, userType, userData]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -147,6 +122,8 @@ function CustomSideBar(props) {
   const drawer = (
     <Box
       style={{
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
         background: APP_CONFIG.mainCollors.secondaryGradient,
         display: "flex",
         flexDirection: "column",
@@ -161,475 +138,404 @@ function CustomSideBar(props) {
           marginTop: "50px",
         }}
       >
-        <img
-          src={APP_CONFIG.assets.smallWhiteLogo}
-          alt=""
-          style={{ width: "130px", alignSelf: "center" }}
-        />
+        {APP_CONFIG.titleLogin === "Firminópolis" ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: "16px",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={APP_CONFIG.assets.smallWhiteLogo}
+              alt={""}
+              style={{
+                width: "260px",
+                alignSelf: "center",
+              }}
+            />
+          </div>
+        ) : (
+          <img
+            src={APP_CONFIG.assets.smallWhiteLogo}
+            alt={""}
+            style={{
+              width: "50px",
+              alignSelf: "center",
+              ...(APP_CONFIG.titleLogin === "Aprobank" ||
+              APP_CONFIG.titleLogin === "Simer Bank" ||
+              APP_CONFIG.name ===
+                "Dashboard da Polícia Militar do Estado de Goiás - PMGO"
+                ? { width: "170px" }
+                : {}),
+              ...(APP_CONFIG.name === "Dashboard da prefeitura de Itaberaí" ||
+              APP_CONFIG.name === "Dashboard da prefeitura de Corumbaíba"
+                ? { width: "230px" }
+                : {}),
+              ...(APP_CONFIG.name ===
+                "Dashboard da Secretaria de Estado da Educação – SEDUC" ||
+              APP_CONFIG.name ===
+                "Dashboard da Secretaria de Estado da Retomada" ||
+              APP_CONFIG.name ===
+                "Dashboard da Secretaria de Estado de Desenvolvimento Social – SEDS" ||
+              APP_CONFIG.name ===
+                "Dashboard da Agência Goiana de Habitação - Agehab" ||
+              APP_CONFIG.name ===
+                "Dashboard da Secretaria Da Ciência, Tecnologia, Inovação E Educação Profissional - SECTI" ||
+              APP_CONFIG.name ===
+                "Dashboard da Secretaria de Estado de Agricultura, Pecuária e Abastecimento – SEAPA" ||
+              APP_CONFIG.name ===
+                "Desenvolve MT - Dashboard da Agência de Crédito do Empreendedor" ||
+              APP_CONFIG.name ===
+                "Desenvolve MT - Dashboard da Secretaria de Estado de Agricultura Familiar – SEAF" ||
+              APP_CONFIG.name === "Dashboard da Secretaria Goiânia"
+                ? { width: "240px" }
+                : {}),
+            }}
+          />
+        )}
       </Box>
       <Box className={classes.toolbar} />
 
       <List style={{ marginLeft: "30px" }}>
         <MenuItem
           text="Home"
-          path="/dashboard/home"
           Icon={HomeIcon}
+          path="/dashboard/home"
+          disabled={props.cadastro}
+          show={true}
           index={0}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
-
-        {me?.email !== "aamaral@tce.go.gov.br" &&
-        me?.email !== "balfeu@tce.go.gov.br" &&
-        me?.email !== "ifreitas@tce.go.gov.br" &&
-        me?.email !== "rdarc@tce.go.gov.br" ? (
-          <MenuItem
-            text="Contas"
-            path="/dashboard/lista-de-contas"
-            Icon={PersonIcon}
-            index={1}
-            selectedIndex={selectedIndex}
-            handleListItemClick={handleListItemClick}
-          />
-        ) : null}
-
         <MenuItem
-          text="Contas Adquirência"
-          path="/dashboard/lista-de-contas-adquirencia"
-          Icon={PersonOutlineIcon}
-          index={17}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Estabelecimentos"
-          path="/dashboard/lista-de-contas-estabelecimentos"
-          Icon={PersonOutlineIcon}
-          index={24}
-          show={
-            AbaGestao && hasPermission(PERMISSIONS.estabelecimentos.list.view)
+          text={
+            isBankConc
+              ? "Dados da Conta"
+              : userType.isBanking
+                ? "Conta digital"
+                : "Perfil"
           }
+          Icon={PersonIcon}
+          path="/dashboard/conta-digital"
+          disabled={props.cadastro}
+          show={true}
+          index={1}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="Pix"
+          Icon={PixIcon}
+          path="/dashboard/pix"
+          disabled={props.cadastro}
+          show={userType.isBanking}
+          index={2}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="Transferências"
+          Icon={CompareArrowsIcon}
+          path="#"
+          disabled={props.cadastro}
+          show={userType.isBanking && !isBankConc}
+          index={3}
+          selectedIndex={selectedIndex}
+          handleListItemClick={() => {
+            setSubMenuTransferencia(!subMenuTransferencia);
+            setSubMenuWallet(false);
+          }}
+        />
+        <MenuSubItem
+          text="P2P"
+          path="/dashboard/extratoP2P"
+          show={subMenuTransferencia}
+          index={3.1}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuSubItem
+          text="TED"
+          path="/dashboard/extratoTED"
+          show={subMenuTransferencia && APP_CONFIG.areaTed}
+          index={3.2}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text={userType.isBanking ? "Pagamentos" : "Gestão de Benefício"}
+          Icon={PaymentsIcon}
+          path={
+            !userData?.is_gestao_concorrencia
+              ? "/dashboard/lista-pagamentos"
+              : "/dashboard/folha-de-pagamento"
+          }
+          disabled={props.cadastro}
+          show={!userData?.is_estabelecimento && !isBankConc}
+          index={4}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="Cartões"
+          Icon={CreditCardIcon}
+          path="/dashboard/cartoes"
+          disabled={props.cadastro}
+          show={APP_CONFIG.AbaCartoes}
+          index={6}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="Boleto"
+          Icon={ReceiptIcon}
+          path="/dashboard/lista-boletos"
+          disabled={props.cadastro}
+          show={userType.isBanking && !isBankConc}
+          index={7}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="Antecipação salarial"
+          Icon={RequestQuoteIcon}
+          path="/dashboard/antecipacao-salarial"
+          disabled={props.cadastro}
+          show={userType.isBanking && !isBankConc}
+          index={11}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
 
         <MenuItem
-          text="Secretarias"
-          path="/dashboard/lista-de-contas-secretarias"
-          Icon={PersonOutlineIcon}
-          index={50}
-          show={AbaGestao && hasPermission(PERMISSIONS.secretarias.list.view)}
+          text="Extrato"
+          Icon={PersonOutline}
+          path="/dashboard/extrato"
+          disabled={props.cadastro}
+          show={userType.isBanking}
+          index={20}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+
+        <MenuItem
+          text="Arquivo de remessa"
+          Icon={FolderIcon}
+          path="/dashboard/arquivo-remessa"
+          disabled={props.cadastro}
+          show={userType.isBanking && !isBankConc}
+          index={10}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuItem
+          text="APROVEC"
+          Icon={FolderIcon}
+          path="/dashboard/aproveck-boletos"
+          disabled={props.cadastro}
+          show={
+            permissoes.includes(PERMISSIONS.APROVEC) && APP_CONFIG.AbaAprovec
+          }
+          index={12}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        {/* <MenuItem
+          text="Wallet"
+          Icon={PaymentsIcon}
+          path="#"
+          disabled={props.cadastro}
+          show={
+            permissoes.includes(PERMISSIONS.APROVEC) && APP_CONFIG.AbaAprovec
+          }
+          index={8}
+          selectedIndex={selectedIndex}
+          handleListItemClick={() => {
+            setSubMenuWallet(!subMenuWallet);
+            setSubMenuTransferencia(false);
+          }}
+        />
+        <MenuSubItem
+          text={APP_CONFIG?.sidebarRede}
+          path="/dashboard/walletVBank"
+          show={subMenuWallet}
+          index={8.1}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        <MenuSubItem
+          text="Cobranças compartilhadas"
+          path="/dashboard/walletCompartilhado"
+          show={subMenuWallet}
+          index={8.2}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        /> */}
+        <MenuItem
+          text="Adquirência"
+          Icon={CreditScoreIcon}
+          path="/dashboard/adquirencia"
+          disabled={props.cadastro}
+          show={userData?.status_adquirencia === "approved"}
+          index={9}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+        {userData?.agent ? (
+          <>
+            <Divider
+              style={{
+                backgroundColor: "gray",
+                width: "90%",
+                alignSelf: "center",
+                marginTop: "10px",
+              }}
+            />
+            <Typography
+              style={{
+                color: "#fff",
+                alignSelf: "center",
+                marginTop: "5px",
+              }}
+              align="center"
+            >
+              Representante
+            </Typography>
+
+            <List style={{ marginTop: "10px" }}>
+              <MenuItem
+                text="Dashboard"
+                Icon={DashboardIcon}
+                path="/dashboard/adm"
+                disabled={props.cadastro}
+                show={userData?.agent}
+                index={11}
+                selectedIndex={selectedIndex}
+                handleListItemClick={handleListItemClick}
+              />
+
+              <MenuItem
+                text="Gerenciar Contas"
+                Icon={GroupsIcon}
+                path="/dashboard/lista-contas"
+                disabled={props.cadastro}
+                show={userData?.agent}
+                index={12}
+                selectedIndex={selectedIndex}
+                handleListItemClick={handleListItemClick}
+              />
+
+              <MenuItem
+                text="Transações"
+                Icon={ComputerIcon}
+                path="/dashboard/historico-de-transacoes"
+                disabled={props.cadastro}
+                show={userData?.agent}
+                index={13}
+                selectedIndex={selectedIndex}
+                handleListItemClick={handleListItemClick}
+              />
+
+              <MenuItem
+                text="Planos de Vendas"
+                Icon={ComputerIcon}
+                path="/dashboard/planos-de-venda"
+                disabled={props.cadastro}
+                show={userData?.agent}
+                index={14}
+                selectedIndex={selectedIndex}
+                handleListItemClick={handleListItemClick}
+              />
+
+              <MenuItem
+                text="Logs"
+                Icon={VisibilityIcon}
+                path="/dashboard/logs"
+                disabled={props.cadastro}
+                show={userData?.agent}
+                index={15}
+                selectedIndex={selectedIndex}
+                handleListItemClick={handleListItemClick}
+              />
+            </List>
+          </>
+        ) : null}
+        {/* Concorrencia */}
+        <MenuItem
+          text="Gerenciar Contas"
+          Icon={GroupsIcon}
+          path="/dashboard/lista-contas-secretaria"
+          disabled={props.cadastro}
+          show={userType.isGestao}
+          index={12}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+
+        <MenuItem
+          text="Transações Cartão"
+          Icon={CompareArrowsIcon}
+          path="/dashboard/beneficiarios/acao/transacoes"
+          disabled={props.cadastro}
+          show={userType.isGestao}
+          index={3}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+
+        <MenuItem
+          text="Transações PIX"
+          Icon={Pix}
+          path="/dashboard/beneficiarios/acao/lista-transacao-pix"
+          disabled={props.cadastro}
+          show={userType.isGestao}
+          index={17}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+
+        <MenuItem
+          text="Liberar Cartões"
+          Icon={CreditCardIcon}
+          path="/dashboard/liberar-cartao"
+          disabled={props.cadastro}
+          show={userType.isGestao}
+          index={18}
+          selectedIndex={selectedIndex}
+          handleListItemClick={handleListItemClick}
+        />
+
+        <MenuItem
+          text="Histórico de transações"
+          Icon={CompareArrows}
+          path="/dashboard/beneficiarios/acao/transacoes"
+          disabled={props.cadastro}
+          show={userData?.is_estabelecimento}
+          index={19}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
 
         <MenuItem
           text="Beneficiários"
+          Icon={PersonOutline}
           path="/dashboard/lista-de-contas-beneficiarios"
-          Icon={PersonOutlineIcon}
-          index={51}
-          show={AbaGestao && hasPermission(PERMISSIONS.beneficiarios.list.view)}
+          disabled={props.cadastro}
+          show={userType.isGestao}
+          index={5}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
-
         <MenuItem
           text="Benefícios"
+          Icon={PersonOutline}
           path="/dashboard/lista-de-contas-beneficios"
-          Icon={PersonOutlineIcon}
-          index={52}
-          show={AbaGestao && hasPermission(PERMISSIONS.beneficios.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Cursos"
-          path="/dashboard/lista-de-cursos"
-          Icon={School}
-          index={57}
-          show={AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Pré contas"
-          path="/dashboard/lista-pre-contas"
-          Icon={PersonAddIcon}
-          index={2}
-          show={hasPermission(PERMISSIONS.pre_contas.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Administradores"
-          path="/dashboard/lista-de-administradores"
-          Icon={AccountBoxIcon}
-          index={3}
-          show={hasPermission(PERMISSIONS.administradores.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Painel centralizador"
-          path="/dashboard/painel-centralizador"
-          Icon={CenterFocusStrong}
-          index={30}
-          show={true}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Pagamento estabelecimento"
-          path="/dashboard/gerenciar-pagamento-estabelecimento"
-          Icon={AttachMoneyIcon}
-          index={53}
-          show={AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Crédito"
-          path="#"
-          Icon={AccountBalanceIcon}
-          index={false}
-          show={APP_CONFIG.AbaCredito && canShowFinancialSupport}
-          selectedIndex={selectedIndex}
-          handleListItemClick={() => setOpenCreditCollapse((open) => !open)}
-          showMoreIcon={openCreditCollapse}
-        />
-        <MenuSubItem
-          text="Apoio Financeiro"
-          path="/dashboard/apoio-financeiro"
-          Icon={AttachMoney}
-          index={11}
-          show={openCreditCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Antecipação Salarial"
-          path="/dashboard/antecipacao-salarial"
-          Icon={RequestQuoteIcon}
-          index={20}
-          show={openCreditCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Transações"
-          path="#"
-          Icon={PaidIcon}
-          index={false}
-          show={true}
-          selectedIndex={selectedIndex}
-          handleListItemClick={() =>
-            setOpenTransferenciaCollapse((open) => !open)
-          }
-          showMoreIcon={openTransferenciaCollapse}
-        />
-        <MenuSubItem
-          text="Trasações Adquirência"
-          path="/dashboard/transacoes"
-          Icon={ImportExportIcon}
-          index={22}
-          show={!AbaGestao && openTransferenciaCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Histórico de transações"
-          path="/dashboard/historico-transacoes"
-          Icon={HistorySharp}
-          index={56}
-          show={
-            openTransferenciaCollapse &&
-            AbaGestao &&
-            hasPermission(PERMISSIONS.transacoes.historico.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Notas fiscais"
-          path="/dashboard/transacoes-notas-fiscais"
-          Icon={FilePresentSharp}
-          index={58}
-          show={
-            openTransferenciaCollapse && AbaGestao
-            // && hasPermission(PERMISSIONS.transacoes.historico.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="PIX"
-          path="/dashboard/transacoes-pix"
-          Icon={PixIcon}
-          index={12}
-          show={
-            openTransferenciaCollapse &&
-            hasPermission(PERMISSIONS.transacoes.pix.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="P2P"
-          path="/dashboard/transacoes-p2p"
-          Icon={CompareArrowsIcon}
-          index={13}
-          show={
-            openTransferenciaCollapse &&
-            hasPermission(PERMISSIONS.transacoes.p2p.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="TED"
-          path="/dashboard/transacoes-ted"
-          Icon={LocalAtmIcon}
-          index={14}
-          show={!AbaGestao && openTransferenciaCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Pagamento Conta"
-          path="/dashboard/transacoes-pagamento-conta"
-          Icon={AttachMoneyIcon}
-          index={15}
-          show={!AbaGestao && openTransferenciaCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Boletos"
-          path="/dashboard/transacoes-pagamento-boleto"
-          Icon={ReceiptIcon}
-          index={16}
-          show={!AbaGestao && openTransferenciaCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        {/* <MenuSubItem
-          text="Transações cartões"
-          path="/dashboard/transacoes-cartoes"
-          Icon={CreditCard}
-          index={54}
-          show={
-            AbaGestao &&
-            openTransferenciaCollapse &&
-            hasPermission(PERMISSIONS.transacoes.cartoes.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        /> */}
-        <MenuSubItem
-          text="Transações voucher"
-          path="/dashboard/transacoes-voucher"
-          Icon={ConfirmationNumber}
-          index={55}
-          show={
-            AbaGestao &&
-            openTransferenciaCollapse &&
-            hasPermission(PERMISSIONS.transacoes.voucher.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Dispositivos bloqueados"
-          path="/dashboard/lista-dispositivos-bloqueados"
-          Icon={LockIcon}
-          index={4}
-          show={
-            !AbaGestao &&
-            hasPermission(PERMISSIONS.dispositivos_bloqueados.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Bloqueio de device"
-          path="/dashboard/bloqueio-device"
-          Icon={LockIcon}
-          index={26}
-          show={
-            AbaGestao &&
-            hasPermission(PERMISSIONS.dispositivos_bloqueados.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Blacklist"
-          path="/dashboard/blacklist"
-          Icon={BlockIcon}
-          index={27}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Usuários bloqueados"
-          path="/dashboard/usuarios-bloqueados"
-          Icon={PersonOff}
-          index={31}
-          show={true}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Tarifas"
-          path="#"
-          Icon={AssignmentIcon}
-          index={false}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={() => setOpenTarifasCollapse((open) => !open)}
-          showMoreIcon={openTarifasCollapse}
-        />
-        <MenuSubItem
-          text="Taxas"
-          path="/dashboard/taxas"
-          Icon={PercentIcon}
-          index={5.1}
-          show={openTarifasCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Tarifa Padrão"
-          path="/dashboard/taxa-padrao"
-          Icon={AssessmentIcon}
-          index={5.2}
-          show={openTarifasCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Transações Tarifas"
-          path="/dashboard/transacoes-tarifas"
-          Icon={AutoAwesomeMotionIcon}
-          index={5.3}
-          show={openTarifasCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Visualizar logs"
-          path="/dashboard/logs"
-          Icon={VisibilityIcon}
+          disabled={props.cadastro}
+          show={userType.isGestao}
           index={6}
-          show={hasPermission(PERMISSIONS.logs.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Logs Auditoria"
-          path="/dashboard/logs-auditoria"
-          Icon={VisibilityIcon}
-          index={25}
-          show={
-            hasPermission("Concorrência - Acesso Audits Logs") ||
-            hasPermission(PERMISSIONS.logs_auditoria.list.view)
-          }
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Representantes"
-          path="/dashboard/representantes"
-          Icon={AccessibilityNewIcon}
-          index={21}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Parceiros"
-          path="/dashboard/parceiros"
-          Icon={GroupIcon}
-          index={7}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Blacklist Selfie"
-          path="/dashboard/blacklist-selfie"
-          Icon={BlockIcon}
-          index={8}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Banners"
-          path="/dashboard/banners"
-          Icon={ViewCarouselIcon}
-          index={9}
-          show={hasPermission(PERMISSIONS.banners.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Notificações"
-          path="/dashboard/notificacoes"
-          Icon={NotificationsIcon}
-          index={18}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Notificações"
-          path="/dashboard/notificacoes-gestao"
-          Icon={NotificationsIcon}
-          index={18}
-          show={AbaGestao && hasPermission(PERMISSIONS.notificacoes.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Planos de vendas"
-          path="/dashboard/plano-vendas"
-          Icon={MenuBookIcon}
-          index={19}
-          show={!AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Cartões"
-          path="/dashboard/cartoes"
-          Icon={CreditCardIcon}
-          index={10}
-          show={APP_CONFIG.AbaCartoes}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
@@ -638,120 +544,171 @@ function CustomSideBar(props) {
           text="Arquivos exportados"
           path="/dashboard/arquivos-exportados"
           Icon={Download}
-          index={20}
-          show={
-            AbaGestao &&
-            hasPermission(PERMISSIONS.arquivos_exportados.list.view)
-          }
+          disabled={props.cadastro}
+          show={true}
+          index={16}
           selectedIndex={selectedIndex}
           handleListItemClick={handleListItemClick}
         />
+        {beneficios?.map((item, index) => {
+          const hasPermission = () => {
+            return me?.tipo_beneficios?.find((obj) => obj?.id === item?.id);
+          };
 
-        <MenuItem
-          text="Relatórios"
-          path="/dashboard/relatorios"
-          Icon={ListAlt}
-          index={28}
-          show={APP_CONFIG.estado === "GO" && AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Relatórios"
-          path="#"
-          Icon={ListAlt}
-          index={false}
-          show={APP_CONFIG.estado === "MT" && AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={() => setOpenRelatoriosCollapse((open) => !open)}
-          showMoreIcon={openRelatoriosCollapse}
-        />
-        <MenuSubItem
-          text="Relatórios"
-          path="/dashboard/relatorios"
-          Icon={ListAlt}
-          index={28}
-          show={openRelatoriosCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-        <MenuSubItem
-          text="Relatório BI"
-          path="/dashboard/relatorio-bi"
-          Icon={AttachMoney}
-          index={29}
-          show={openRelatoriosCollapse}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Tokens públicos"
-          path="/dashboard/tokens-publicos"
-          Icon={Key}
-          index={23}
-          show={hasPermission(PERMISSIONS.tokens_publicos.list.view)}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
-
-        <MenuItem
-          text="Condições Comerciais"
-          path="/dashboard/condicoes-comerciais"
-          Icon={DocumentScanner}
-          index={32}
-          show={AbaGestao}
-          selectedIndex={selectedIndex}
-          handleListItemClick={handleListItemClick}
-        />
+          if (!hasPermission()) return null;
+          return (
+            <MenuItem
+              text={item?.nome_beneficio}
+              Icon={AssignmentIcon}
+              path={`/dashboard/beneficiarios/${item.id}?type=${
+                item.tipo
+              }&is_contrato=${item?.is_contrato || false}`}
+              disabled={props.cadastro}
+              show={userType.isGestao}
+              index={50 + index}
+              selectedIndex={selectedIndex}
+              handleListItemClick={handleListItemClick}
+            />
+          );
+        })}
       </List>
 
-      {id &&
-      token &&
-      section !== "taxa" &&
-      section !== "apoio-financeiro" &&
-      section !== "detalhes-pre-conta" ? (
+      {userData?.saldo?.valor && (
         <Box
-          style={{ color: "black" }}
-          display="flex"
-          flexDirection="column"
-          alignContent="center"
-          alignItems="center"
-          marginBottom="30px"
+          style={{
+            display: "flex",
+            alignSelf: "center",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         >
-          <Typography variant="h5" style={{ color: "white" }}>
-            Conta Selecionada:
-          </Typography>
           <Typography
-            style={{ wordWrap: "break-word", color: "white" }}
-            align="center"
+            style={{
+              fontFamily: "Montserrat-Regular",
+              fontSize: "20px",
+              color: "white",
+              marginTop: "30px",
+            }}
           >
-            {contaSelecionada?.nome}
+            Saldo disponível:
           </Typography>
-          <Typography
-            style={{ wordWrap: "break-word", color: "white" }}
-            align="center"
-          >
-            {contaSelecionada?.razao_social}
-          </Typography>
-          <Typography style={{ color: "white" }}>
-            {contaSelecionada?.cnpj ?? contaSelecionada?.documento}
-          </Typography>
-          <Typography style={{ color: "white" }}>
-            {contaSelecionada.saldo ? (
-              <CurrencyFormat
-                value={contaSelecionada.saldo.valor.replace(".", ",")}
-                displayType={"text"}
-                thousandSeparator={"."}
-                decimalSeparator={","}
-                prefix={"R$ "}
-                renderText={(value) => <div> Saldo: {value}</div>}
-              />
-            ) : null}
-          </Typography>
+          {isSaldoVisible ? (
+            <>
+              <Typography
+                style={{
+                  fontFamily: "Montserrat-Regular",
+                  fontSize: "25px",
+                  color: "white",
+                  marginTop: "10px",
+                }}
+              >
+                R${" "}
+                {parseFloat(userData?.saldo?.valor).toLocaleString("pt-br", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Typography>
+            </>
+          ) : (
+            <Typography
+              style={{
+                fontFamily: "Montserrat-Regular",
+                fontSize: "25px",
+                color: "white",
+                marginTop: "10px",
+              }}
+            >
+              *******
+            </Typography>
+          )}
+
+          <Button onClick={() => setIsSaldoVisible(!isSaldoVisible)}>
+            {isSaldoVisible ? (
+              <VisibilityOffIcon style={{ color: "white" }} />
+            ) : (
+              <VisibilityIcon style={{ color: "white" }} />
+            )}
+          </Button>
+
+          {userType?.isBanking &&
+            userData?.agencia &&
+            userData?.conta_sem_digito && (
+              <>
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-Regular",
+                    fontSize: "20px",
+                    color: "white",
+                    marginTop: "30px",
+                  }}
+                >
+                  Agência: {userData?.agencia}
+                </Typography>
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-Regular",
+                    fontSize: "20px",
+                    color: "white",
+                  }}
+                >
+                  Conta: {userData?.conta_sem_digito}-{userData?.digito_conta}
+                </Typography>
+              </>
+            )}
         </Box>
-      ) : null}
+      )}
+
+      {/* {id &&
+			token &&
+			section !== 'taxa' &&
+			section !== 'detalhes-pre-conta' ? (
+				<Box
+					style={{ color: 'black' }}
+					display="flex"
+					flexDirection="column"
+					alignContent="center"
+					alignItems="center"
+					marginBottom="30px"
+				>
+					<Typography variant="h5" style={{ color: 'white' }}>
+						Conta Selecionada:{' '}
+					</Typography>
+					<Typography
+						style={{ wordWrap: 'break-word', color: 'white' }}
+						align="center"
+					>
+						{contaSelecionada.nome ? contaSelecionada.nome : null}
+					</Typography>
+					<Typography
+						style={{ wordWrap: 'break-word', color: 'white' }}
+						align="center"
+					>
+						{contaSelecionada.razao_social
+							? contaSelecionada.razao_social
+							: null}
+					</Typography>
+					<Typography style={{ color: 'white' }}>
+						{contaSelecionada.documento
+							? contaSelecionada.documento
+							: null}
+					</Typography>
+					<Typography style={{ color: 'white' }}>
+						{contaSelecionada.cnpj ? contaSelecionada.cnpj : null}
+					</Typography>
+					<Typography style={{ color: 'white' }}>
+						{contaSelecionada.saldo ? (
+							<CurrencyFormat
+								value={contaSelecionada.saldo.valor.replace('.', ',')}
+								displayType={'text'}
+								thousandSeparator={'.'}
+								decimalSeparator={','}
+								prefix={'R$ '}
+								renderText={(value) => <div> Saldo: {value}</div>}
+							/>
+						) : null}
+					</Typography>
+				</Box>
+			) : null} */}
 
       <Box
         style={{
@@ -764,43 +721,24 @@ function CustomSideBar(props) {
       >
         <Box
           style={{
-            display: "flex",
-            marginBottom: "10px",
-            alignItems: "center",
-            flexDirection: "column",
-          }}
-        >
-          <Typography style={{ fontSize: "12px", color: "white" }}>
-            Versão: {APP_CONFIG.versao}
-          </Typography>
-          <Typography style={{ fontSize: "12px", color: "white" }}>
-            Data da Versão: {APP_CONFIG.dataVersao}
-          </Typography>
-        </Box>
-        <Box
-          style={{
-            marginBottom: "20px",
+            marginBottom: "0px",
             justifyContent: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          {/* <img
-						src={ItaLogo}
-						alt=""
-						style={{ width: '200px', marginBottom: 10 }}
-					/> */}
-          <Button
-            style={{ width: "0.9rem" }}
-            variant="contained"
-            onClick={() => {
-              localStorage.removeItem("@auth");
-              history.push("/login");
-            }}
-          >
-            Sair
-          </Button>
+          {/* <CustomButton
+						color="purple"
+						style={{ width: '0.9rem' }}
+						variant="contained"
+						onClick={() => {
+							localStorage.removeItem('@auth');
+							history.push('/login');
+						}}
+					>
+						Sair
+					</CustomButton> */}
         </Box>
       </Box>
     </Box>
@@ -860,52 +798,21 @@ export default CustomSideBar;
 
 function MenuItem({
   text,
+  Icon,
   path,
-  Icon = () => null,
+  disabled = false,
+  show = false,
   index,
-  show = true,
   selectedIndex,
-  handleListItemClick,
-  showMoreIcon = null,
+  handleListItemClick = () => null,
 }) {
   const isSelected = selectedIndex === index;
-  const getSideBarItemBackgroundColor = (index) =>
-    isSelected ? "white" : null;
-  const getSideBarItemColor = (index) =>
-    isSelected ? APP_CONFIG.mainCollors.primary : "white";
-
-  const ShowMoreIcon = () => {
-    if (showMoreIcon === null) return null;
-
-    if (showMoreIcon)
-      return (
-        <ExpandLess
-          style={{
-            fontSize: "32px",
-            color: "white",
-          }}
-        />
-      );
-    else
-      return (
-        <ExpandMore
-          style={{
-            fontSize: "32px",
-            color: "white",
-          }}
-        />
-      );
-  };
 
   if (!show) return null;
 
   return (
     <ListItem
-      component={Link}
-      button
-      selected={isSelected}
-      onClick={(event) => handleListItemClick(event, index)}
-      to={path}
+      disabled={disabled}
       style={
         isSelected
           ? {
@@ -915,40 +822,43 @@ function MenuItem({
             }
           : {}
       }
+      button
+      selected={isSelected}
+      onClick={(event) => handleListItemClick(event, index)}
+      component={Link}
+      to={path}
     >
-      <ListItemIcon style={{ width: "60px" }}>
+      <ListItemIcon>
         <Icon
-          fontSize="50px"
           style={{
-            backgroundColor: getSideBarItemBackgroundColor(index),
-            color: getSideBarItemColor(index),
             width: "48px",
             marginRight: "10px",
             fontSize: "48px",
+            backgroundColor: isSelected ? "white" : null,
+            color: isSelected ? APP_CONFIG.mainCollors.primary : "white",
             borderRadius: "33px",
             padding: "5px",
           }}
         />
       </ListItemIcon>
-      <ListItemText>
-        <Typography
-          style={{
-            fontFamily: "Montserrat-Regular",
-            fontSize: "14px",
-            ...(isSelected
-              ? {
-                  fontWeight: "bold",
-                  color: APP_CONFIG.mainCollors.primary,
-                }
-              : {
-                  color: "white",
-                }),
-          }}
-        >
-          {text}
-        </Typography>
-      </ListItemText>
-      <ShowMoreIcon />
+      <Typography
+        style={
+          isSelected
+            ? {
+                fontWeight: "bold",
+                fontFamily: "Montserrat-SemiBold",
+                fontSize: "14px",
+                color: APP_CONFIG.mainCollors.primary,
+              }
+            : {
+                fontFamily: "Montserrat-Regular",
+                fontSize: "14px",
+                color: "white",
+              }
+        }
+      >
+        {text}
+      </Typography>
     </ListItem>
   );
 }
@@ -956,70 +866,46 @@ function MenuItem({
 function MenuSubItem({
   text,
   path,
-  Icon = () => null,
-  index,
   show = false,
+  index,
   selectedIndex,
-  handleListItemClick,
+  handleListItemClick = () => null,
 }) {
-  const classes = useStyles();
   const isSelected = selectedIndex === index;
-  const getSideBarItemBackgroundColor = (index) =>
-    isSelected ? "white" : null;
-  const getSideBarItemColor = (index) =>
-    isSelected ? APP_CONFIG.mainCollors.primary : "white";
+
+  if (!show) return null;
 
   return (
-    <Collapse in={show} timeout="auto" unmountOnExit>
-      <List component="div" disablePadding>
-        <ListItem
-          button
-          selected={isSelected}
-          onClick={(event) => handleListItemClick(event, index)}
-          component={Link}
-          to={path}
-          className={classes.nested}
-          style={
-            isSelected
-              ? {
-                  backgroundColor: "white",
-                  borderTopLeftRadius: 32,
-                  borderBottomLeftRadius: 32,
-                }
-              : {}
-          }
-        >
-          <ListItemIcon>
-            <Icon
-              style={{
-                width: "38px",
-                marginRight: "10px",
-                fontSize: "48px",
-                backgroundColor: getSideBarItemBackgroundColor(index),
-                color: getSideBarItemColor(index),
-                borderRadius: "33px",
-                padding: "5px",
-              }}
-            />
-          </ListItemIcon>
-          <Typography
-            style={{
-              fontFamily: "Montserrat-Regular",
-              fontSize: "14px",
-              ...(isSelected
-                ? {
-                    fontWeight: "bold",
-                    color: APP_CONFIG.mainCollors.primary,
-                  }
-                : {
-                    color: "white",
-                  }),
-            }}
-          >
-            {text}
-          </Typography>
-        </ListItem>
-      </List>
-    </Collapse>
+    <ListItem
+      style={{
+        marginBottom: 10,
+        marginTop: 10,
+        ...(isSelected
+          ? {
+              backgroundColor: "white",
+              borderTopLeftRadius: 32,
+              borderBottomLeftRadius: 32,
+            }
+          : {}),
+      }}
+      button
+      selected={isSelected}
+      onClick={(event) => {
+        handleListItemClick(event, index);
+      }}
+      to={path}
+      component={Link}
+    >
+      <Typography
+        style={{
+          fontWeight: "bold",
+          fontFamily: "Montserrat-SemiBold",
+          fontSize: "14px",
+          color: isSelected ? APP_CONFIG.mainCollors.primary : "white",
+        }}
+      >
+        {text}
+      </Typography>
+    </ListItem>
   );
 }

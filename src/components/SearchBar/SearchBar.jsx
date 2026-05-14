@@ -2,7 +2,6 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { InputAdornment, TextField } from "@material-ui/core";
 import { makeStyles } from "@material-ui/styles";
-import React from "react";
 
 const useStyles = makeStyles((theme) => ({
   textField: {

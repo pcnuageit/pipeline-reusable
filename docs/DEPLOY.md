@@ -47,7 +47,7 @@ Nessa etapa, você criará uma nova branch que corresponde à versão da tag que
 **a) Crie a nova branch:**
 
 ```# bash
-git checkout -b dashboard-banco_{NOME PROJECT}-v1.0.4
+git checkout -b pj-banco_{NOME PROJECT}-v1.0.4
 ```
 
 **b) Atualize a versão no `package.json` (ou em outros arquivos relevantes se necessário). Certifique-se de alterar a versão conforme sua tag.**
@@ -82,7 +82,7 @@ git commit -m "Atualizando versão para v1.0.4"
 **d) Publique a branch de release:**
 
 ```# bash
-git push origin dashboard-banco_{NOME PROJECT}-v1.0.4
+git push origin pj-banco_{NOME PROJECT}-v1.0.4
 ```
 
 **e) Crie um Pull Request com essa branch, e faca o deploy para main**

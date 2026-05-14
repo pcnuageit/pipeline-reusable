@@ -2,7 +2,7 @@ import { faCreditCard } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { InputAdornment, TextField } from "@material-ui/core";
 import { toast } from "react-toastify";
@@ -42,7 +42,7 @@ const CardFee = ({ cardFee, editable, setIsLoading }) => {
     if (changed) {
       setIsLoading(true);
       const resPutFees = await dispatch(
-        putFeesAction(token, cardFee.id, (feeValue * 100).toFixed(0), "")
+        putFeesAction(token, cardFee.id, (feeValue * 100).toFixed(0), ""),
       );
       if (resPutFees) {
         toast.error("Erro ao atualizar taxa!");

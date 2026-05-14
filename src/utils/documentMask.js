@@ -21,7 +21,7 @@ export function documentMask(doc = "", secure = false) {
     if (parsedDoc.length === 11) {
       return `${parsedDoc.substring(0, 3)}.${parsedDoc.substring(
         3,
-        6
+        6,
       )}.${parsedDoc.substring(6, 9)}-${parsedDoc.substring(9, 11)}`;
     }
   }
@@ -30,10 +30,10 @@ export function documentMask(doc = "", secure = false) {
   if (parsedDoc.length === 14) {
     return `${parsedDoc.substring(0, 2)}.${parsedDoc.substring(
       2,
-      5
+      5,
     )}.${parsedDoc.substring(5, 8)}/${parsedDoc.substring(
       8,
-      12
+      12,
     )}-${parsedDoc.substring(12)}`;
   }
 

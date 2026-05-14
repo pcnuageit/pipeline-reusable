@@ -1,5 +1,4 @@
 import { TextField } from "@material-ui/core";
-import React from "react";
 
 const TextFieldCpfCnpj = ({
   value,
@@ -28,20 +27,20 @@ const TextFieldCpfCnpj = ({
       } else if (limitedDigits.length <= 8) {
         return `${limitedDigits.slice(0, 2)}.${limitedDigits.slice(
           2,
-          5
+          5,
         )}.${limitedDigits.slice(5)}`;
       } else if (limitedDigits.length <= 12) {
         return `${limitedDigits.slice(0, 2)}.${limitedDigits.slice(
           2,
-          5
+          5,
         )}.${limitedDigits.slice(5, 8)}/${limitedDigits.slice(8)}`;
       } else {
         return `${limitedDigits.slice(0, 2)}.${limitedDigits.slice(
           2,
-          5
+          5,
         )}.${limitedDigits.slice(5, 8)}/${limitedDigits.slice(
           8,
-          12
+          12,
         )}-${limitedDigits.slice(12)}`;
       }
     }
@@ -58,12 +57,12 @@ const TextFieldCpfCnpj = ({
       } else if (limitedDigits.length <= 9) {
         return `${limitedDigits.slice(0, 3)}.${limitedDigits.slice(
           3,
-          6
+          6,
         )}.${limitedDigits.slice(6)}`;
       } else {
         return `${limitedDigits.slice(0, 3)}.${limitedDigits.slice(
           3,
-          6
+          6,
         )}.${limitedDigits.slice(6, 9)}-${limitedDigits.slice(9)}`;
       }
     }

@@ -2,7 +2,6 @@ import "../../fonts/Montserrat-SemiBold.otf";
 
 import { Button } from "@material-ui/core";
 import { makeStyles } from "@material-ui/styles";
-import React from "react";
 
 import CloseIcon from "@mui/icons-material/Close";
 import { APP_CONFIG } from "../../constants/config";
@@ -35,18 +34,15 @@ const CustomCloseButton = (props) => {
         props.color === "black"
           ? { backgroundColor: "#443D38", color: "white" }
           : props.color === "yellow"
-          ? { backgroundColor: "#ffdc00", color: "black" }
-          : props.color === "purple"
-          ? {
-              backgroundColor: APP_CONFIG.mainCollors.primary,
-              color: "white",
-            }
-          : props.color === "red"
-          ? { backgroundColor: "#ED757D", color: "white" }
-          : {
-              backgroundColor: "white",
-              color: APP_CONFIG.mainCollors.primary,
-            })
+            ? { backgroundColor: "#ffdc00", color: "black" }
+            : props.color === "purple"
+              ? {
+                  backgroundColor: APP_CONFIG.mainCollors.primary,
+                  color: "white",
+                }
+              : props.color === "red"
+                ? { backgroundColor: "#ED757D", color: "white" }
+                : { backgroundColor: "white", color: "#9D9CC6" })
       }
     >
       <CloseIcon style={{ fontSize: "15px" }} />

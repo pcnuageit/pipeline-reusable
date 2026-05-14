@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   ArgumentAxis,
   Chart,
@@ -16,18 +14,17 @@ const labelColor = "#fff";
 
 const makeLabel =
   (symbol, color) =>
-  ({ text, style, ...restProps }) =>
-    (
-      <ValueAxis.Label
-        text={`${text} ${symbol}`}
-        style={{
-          fontSize: "10px",
-          fill: color,
-          ...style,
-        }}
-        {...restProps}
-      />
-    );
+  ({ text, style, ...restProps }) => (
+    <ValueAxis.Label
+      text={`${text} ${symbol}`}
+      style={{
+        fontSize: "10px",
+        fill: color,
+        ...style,
+      }}
+      {...restProps}
+    />
+  );
 
 const labelColorFunction = makeLabel("", labelColor);
 

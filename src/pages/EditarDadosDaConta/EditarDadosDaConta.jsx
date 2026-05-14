@@ -1,14 +1,9 @@
 import {
   AppBar,
   Box,
-  Button,
   Card,
   CardActionArea,
   CardMedia,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   IconButton,
   LinearProgress,
@@ -28,7 +23,6 @@ import { useHistory, useParams } from "react-router";
 import {
   delDocumento,
   getEnviarDocumentoIdWallAction,
-  getSincronizarContaAction,
   loadContaId,
   loadPerfilTaxaAction,
   postDesvincularPerfilTaxaAction,
@@ -44,8 +38,6 @@ import ClearIcon from "@material-ui/icons/Clear";
 import SettingsIcon from "@material-ui/icons/Settings";
 import WarningIcon from "@material-ui/icons/Warning";
 import { DropzoneAreaBase } from "material-ui-dropzone";
-import moment from "moment";
-import "moment/locale/pt-br";
 import CurrencyFormat from "react-currency-format";
 import SwipeableViews from "react-swipeable-views";
 import { toast } from "react-toastify";
@@ -53,12 +45,9 @@ import CustomButton from "../../components/CustomButton/CustomButton";
 import CustomCollapseTable from "../../components/CustomCollapseTable/CustomCollapseTable";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import NewAccount from "../../components/NewAccount/NewAccount";
+import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
-
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import CustomCollapseTableEmpresa from "../../components/CustomCollapseTableEmpresa/CustomCollapseTable";
-import { APP_CONFIG } from "../../constants/config";
 import { documentMask } from "../../utils/documentMask";
 import { phoneMask } from "../../utils/phoneMask";
 
@@ -151,9 +140,7 @@ const itemColumns = [
   {
     headerText: "Documento",
     key: "documento",
-    CustomValue: (documento) => (
-      <Typography>{documentMask(documento)}</Typography>
-    ),
+    CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
   },
   {
     headerText: "Celular",
@@ -176,47 +163,6 @@ const itemColumns = [
     headerText: "CNPJ",
     key: "cnpj",
     CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
-  },
-];
-
-const columnsEmpresa = [
-  {
-    headerText: "Empresa",
-    key: "conta.razao_social",
-  },
-  {
-    headerText: "Funcionário desde:",
-    key: "created_at",
-    CustomValue: (data) => {
-      return (
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          {moment.utc(data).format("DD MMMM YYYY, HH:mm")}
-        </Box>
-      );
-    },
-  },
-];
-
-const itemColumnsEmpresa = [
-  {
-    headerText: "Data",
-    key: "created_at",
-    CustomValue: (created_at) => {
-      return <>{moment.utc(created_at).format("DD MMMM YYYY")}</>;
-    },
-  },
-  { headerText: "Folha", key: "folha.descricao" },
-  { headerText: "Tipo", key: "tipo_pagamento" },
-  { headerText: "Status", key: "status" },
-  {
-    headerText: "Valor",
-    key: "valor_pagamento",
   },
 ];
 
@@ -248,7 +194,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dropzoneAreaBaseClasses: {
     width: "70%",
-    minHeight: "250px",
+    height: "250px",
     backgroundColor: APP_CONFIG.mainCollors.backgrounds,
   },
   dropzoneContainer: {
@@ -257,7 +203,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "column",
     alignItems: "center",
     padding: "12px",
-    minHeight: "122px",
+    minHeight: "422px",
     fontSize: "12px",
   },
   textoDropzone: {
@@ -303,11 +249,16 @@ const TabPanel = (props) => {
 const EditarDadosDaConta = () => {
   const [disabled, setDisabled] = useState(false);
   const classes = useStyles();
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const token = useAuth();
   const dispatch = useDispatch();
   const contaId = useSelector((state) => state.conta);
   const perfilTaxas = useSelector((state) => state.perfilTaxas);
+
+  useEffect(() => {
+    dispatch(loadContaId(token, id));
+  }, []);
+
   const theme = useTheme();
   const history = useHistory();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
@@ -346,24 +297,17 @@ const EditarDadosDaConta = () => {
     conta: "",
   });
 
-  const [openModalExcluir, setOpenModalExcluir] = useState(false);
-  const [excluirId, setExcluirId] = useState("");
-
   useEffect(() => {
     setConta({ ...contaId });
   }, [contaId]);
 
   useEffect(() => {
-    dispatch(loadContaId(token, id, true, false, true));
-  }, [token, id]);
+    dispatch(loadContaId(token, id));
+  }, []);
 
   useEffect(() => {
     dispatch(loadPerfilTaxaAction(token, filters.like));
   }, [page, debouncedLike]);
-
-  const handleChangePage = (e, value) => {
-    setPage(value);
-  };
 
   const handleAlterar = async () => {
     setLoading(true);
@@ -379,19 +323,6 @@ const EditarDadosDaConta = () => {
     }
   };
 
-  const handleSincronizarDados = async () => {
-    setLoading(true);
-    const resSincronizar = await dispatch(getSincronizarContaAction(token, id));
-    if (resSincronizar) {
-      toast.error("Erro ao sincronizar dados");
-      setLoading(false);
-    } else {
-      toast.success("Dados sincronizados com sucesso!");
-      setLoading(false);
-      dispatch(loadContaId(token, id, false, true));
-    }
-  };
-
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -403,16 +334,7 @@ const EditarDadosDaConta = () => {
     index === value ? `2px solid ${APP_CONFIG.mainCollors.primary}` : null;
 
   const handleExcluirArquivo = async (item) => {
-    setLoading(true);
-    const resExcluirArquivo = await dispatch(delDocumento(token, excluirId));
-    if (resExcluirArquivo) {
-      toast.error("Erro ao excluir documento");
-      setLoading(false);
-    } else {
-      toast.success("Documento excluído com sucesso!");
-      setLoading(false);
-      await dispatch(loadContaId(token, id, false, true));
-    }
+    await dispatch(delDocumento(token, item.id));
   };
 
   const onDropCNHfrente = async (picture) => {
@@ -420,7 +342,7 @@ const EditarDadosDaConta = () => {
 
     const categoria = "CNH_FRENTE";
     await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
+    await dispatch(loadContaId(token, id));
     setLoading(false);
   };
 
@@ -429,7 +351,7 @@ const EditarDadosDaConta = () => {
 
     const categoria = "CNH_VERSO";
     await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
+    await dispatch(loadContaId(token, id));
     setLoading(false);
   };
 
@@ -438,7 +360,7 @@ const EditarDadosDaConta = () => {
 
     const categoria = "RG_FRENTE";
     await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
+    await dispatch(loadContaId(token, id));
     setLoading(false);
   };
 
@@ -447,7 +369,7 @@ const EditarDadosDaConta = () => {
 
     const categoria = "RG_VERSO";
     await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
+    await dispatch(loadContaId(token, id));
     setLoading(false);
   };
 
@@ -456,16 +378,7 @@ const EditarDadosDaConta = () => {
 
     const categoria = "SELFIE";
     await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
-    setLoading(false);
-  };
-
-  const onDropCPF = async (picture) => {
-    setLoading(true);
-
-    const categoria = "CPF";
-    await dispatch(postDocumentoActionAdm(token, picture, categoria, id));
-    await dispatch(loadContaId(token, id, false, true));
+    await dispatch(loadContaId(token, id));
     setLoading(false);
   };
 
@@ -569,15 +482,15 @@ const EditarDadosDaConta = () => {
         style={
           value === 3
             ? {
-              width: "100%",
-              borderTopRightRadius: 27,
-              borderTopLeftRadius: 27,
-            }
+                width: "100%",
+                borderTopRightRadius: 27,
+                borderTopLeftRadius: 27,
+              }
             : {
-              width: "70%",
-              borderTopRightRadius: 27,
-              borderTopLeftRadius: 27,
-            }
+                width: "70%",
+                borderTopRightRadius: 27,
+                borderTopLeftRadius: 27,
+              }
         }
       >
         <AppBar
@@ -616,14 +529,14 @@ const EditarDadosDaConta = () => {
               }}
               {...a11yProps(1)}
             />
-            {/* <Tab
-							label="IdWall"
-							style={{
-								width: '200%',
-								borderBottom: getIndicatorColor(2),
-							}}
-							{...a11yProps(2)}
-						/> */}
+            <Tab
+              label="IdWall"
+              style={{
+                width: "200%",
+                borderBottom: getIndicatorColor(2),
+              }}
+              {...a11yProps(2)}
+            />
             <Tab
               label="Taxas"
               style={{
@@ -631,14 +544,6 @@ const EditarDadosDaConta = () => {
                 borderBottom: getIndicatorColor(3),
               }}
               {...a11yProps(3)}
-            />
-            <Tab
-              label="Funcionário"
-              style={{
-                width: "200%",
-                borderBottom: getIndicatorColor(4),
-              }}
-              {...a11yProps(4)}
             />
           </Tabs>
         </AppBar>
@@ -655,62 +560,34 @@ const EditarDadosDaConta = () => {
               disableEditar="true"
             />
             <Box display="flex" justifyContent="flex-end" marginTop="16px">
-              {contaId &&
-                (contaId.status === "divergence" ||
-                  contaId.status === "pending" ||
-                  contaId.status === "incomplete") ? (
-                <CustomButton onClick={handleAlterar}>Alterar</CustomButton>
-              ) : (
-                <Box
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-Regular",
-                      fontSize: "14px",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Para alteração de dados cadastrais em contas aprovadas, será
-                    necessário solicitação via ticket no zendesk.
-                  </Typography>
-                  <Box style={{ marginTop: "10px" }}>
-                    <CustomButton onClick={handleSincronizarDados}>
-                      Sincronizar Dados
-                    </CustomButton>
-                  </Box>
-                </Box>
-              )}
+              <CustomButton onClick={handleAlterar}>Alterar</CustomButton>
             </Box>
           </TabPanel>
           <TabPanel value={value} index={1} dir={theme.direction}>
-            <Grid container spacing={2} style={{ marginTop: "15px" }}>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  RG FRENTE
-                </Typography>
+            <Box
+              display="flex"
+              style={matches ? { flexDirection: "column" } : null}
+              justifyContent="center"
+            >
+              <Box display="flex" flexDirection="column" margin="8px">
                 <Box className={classes.dropzoneContainer} boxShadow={3}>
+                  <Typography
+                    variant="h6"
+                    style={{ color: APP_CONFIG.mainCollors.primary }}
+                  >
+                    RG FRENTE
+                  </Typography>
+
                   <DropzoneAreaBase
                     dropzoneParagraphClass={classes.textoDropzone}
                     maxFileSize={3145728}
                     onDropRejected={() => {
-                      toast.error("Tamanho máximo: 3mb ");
+                      toast.error("Tamanho máximo: 3mb");
                       toast.error("Arquivos suportados: .pdf .png .jpg .jpeg");
                     }}
                     acceptedFiles={["image/*", "application/pdf"]}
                     dropzoneClass={classes.dropzoneAreaBaseClasses}
-                    /* onAdd={onDropCartaoCNPJ} */
+                    onAdd={onDropRGfrente}
                     filesLimit={1}
                     dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
                     showPreviews={false}
@@ -718,883 +595,202 @@ const EditarDadosDaConta = () => {
                   />
                   <Box width="300px">
                     <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
-                          item.categoria === "RG_FRENTE" ? (
-                            <Grid item xs={6}>
-                              <Card className={classes.card}>
-                                <CardActionArea>
-                                  <Box position="absolute">
-                                    <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
-                                      size="small"
-                                      style={{
-                                        color: "white",
-                                        backgroundColor: "red",
-                                      }}
-                                    >
-                                      <ClearIcon />
-                                    </IconButton>
-                                  </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
-                                </CardActionArea>
-                              </Card>
-                            </Grid>
-                          ) : (
-                            false
-                          ),
-                        )
-                        : null}
+                      {contaId.documentos.map((item) =>
+                        item.categoria === "RG_FRENTE" ? (
+                          <Grid item xs={6}>
+                            <Card className={classes.card}>
+                              <CardActionArea>
+                                <Box position="absolute">
+                                  <IconButton
+                                    onClick={() => handleExcluirArquivo(item)}
+                                    size="small"
+                                    style={{
+                                      color: "white",
+                                      backgroundColor: "red",
+                                    }}
+                                  >
+                                    <ClearIcon />
+                                  </IconButton>
+                                </Box>
+                                <CardMedia
+                                  component="img"
+                                  alt="Arquivo de Identificação"
+                                  height="100"
+                                  image={item.arquivo}
+                                  onClick={() => window.open(item.arquivo)}
+                                />
+                              </CardActionArea>
+                            </Card>
+                          </Grid>
+                        ) : (
+                          false
+                        ),
+                      )}
                     </Grid>
                   </Box>
                 </Box>
-              </Grid>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  RG VERSO
-                </Typography>
                 <Box className={classes.dropzoneContainer} boxShadow={3}>
-                  {/* <DropzoneAreaBase
-												dropzoneParagraphClass={
-													classes.textoDropzone
-												}
-												maxFileSize={3145728}
-												onDropRejected={() => {
-													toast.error('Tamanho máximo: 3mb ');
-													toast.error(
-														'Arquivos suportados: .pdf .png .jpg .jpeg'
-													);
-												}}
-												acceptedFiles={[
-													'image/*',
-													'application/pdf',
-												]}
-												dropzoneClass={
-													classes.dropzoneAreaBaseClasses
-												}
-												onAdd={onDropPaginaProcuracao}
-												filesLimit={1}
-												dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
-												showPreviews={false}
-												showPreviewsInDropzone={false}
-											/> */}
+                  <Typography
+                    variant="h6"
+                    style={{ color: APP_CONFIG.mainCollors.primary }}
+                  >
+                    CNH
+                  </Typography>
+
+                  <DropzoneAreaBase
+                    dropzoneParagraphClass={classes.textoDropzone}
+                    maxFileSize={3145728}
+                    onDropRejected={() => {
+                      toast.error("Tamanho máximo: 3mb");
+                      toast.error("Arquivos suportados: .pdf .png .jpg .jpeg");
+                    }}
+                    acceptedFiles={["image/*", "application/pdf"]}
+                    dropzoneClass={classes.dropzoneAreaBaseClasses}
+                    onAdd={onDropCNHfrente}
+                    filesLimit={1}
+                    dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
+                    showPreviews={false}
+                    showPreviewsInDropzone={false}
+                  />
                   <Box width="300px">
                     <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
-                          item.categoria === "RG_VERSO" ? (
-                            <Grid item xs={6}>
-                              <Card className={classes.card}>
-                                <CardActionArea>
-                                  <Box position="absolute">
-                                    <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
-                                      size="small"
-                                      style={{
-                                        color: "white",
-                                        backgroundColor: "red",
-                                      }}
-                                    >
-                                      <ClearIcon />
-                                    </IconButton>
-                                  </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
-                                </CardActionArea>
-                              </Card>
-                            </Grid>
-                          ) : (
-                            false
-                          ),
-                        )
-                        : null}
+                      {contaId.documentos.map((item) =>
+                        item.categoria === "CNH_FRENTE" ? (
+                          <Grid item xs={6}>
+                            <Card className={classes.card}>
+                              <CardActionArea>
+                                <Box position="absolute">
+                                  <IconButton
+                                    onClick={() => handleExcluirArquivo(item)}
+                                    size="small"
+                                    style={{
+                                      color: "white",
+                                      backgroundColor: "red",
+                                    }}
+                                  >
+                                    <ClearIcon />
+                                  </IconButton>
+                                </Box>
+                                <CardMedia
+                                  component="img"
+                                  alt="Arquivo de Identificação"
+                                  height="100"
+                                  image={item.arquivo}
+                                  onClick={() => window.open(item.arquivo)}
+                                />
+                              </CardActionArea>
+                            </Card>
+                          </Grid>
+                        ) : (
+                          false
+                        ),
+                      )}
                     </Grid>
                   </Box>
                 </Box>
-              </Grid>
-            </Grid>
-            <Grid container spacing={2} style={{ marginTop: "15px" }}>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  CNH FRENTE
-                </Typography>
+              </Box>
+              <Box display="flex" flexDirection="column" margin="8px">
                 <Box className={classes.dropzoneContainer} boxShadow={3}>
-                  {/* <DropzoneAreaBase
-												dropzoneParagraphClass={
-													classes.textoDropzone
-												}
-												maxFileSize={3145728}
-												onDropRejected={() => {
-													toast.error('Tamanho máximo: 3mb ');
-													toast.error(
-														'Arquivos suportados: .pdf .png .jpg .jpeg'
-													);
-												}}
-												acceptedFiles={[
-													'image/*',
-													'application/pdf',
-												]}
-												dropzoneClass={
-													classes.dropzoneAreaBaseClasses
-												}
-												onAdd={onDropContratoSocial}
-												filesLimit={1}
-												dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
-												showPreviews={false}
-												showPreviewsInDropzone={false}
-											/> */}
+                  <Typography
+                    variant="h6"
+                    style={{ color: APP_CONFIG.mainCollors.primary }}
+                  >
+                    RG VERSO
+                  </Typography>
+
+                  <DropzoneAreaBase
+                    dropzoneParagraphClass={classes.textoDropzone}
+                    maxFileSize={3145728}
+                    onDropRejected={() => {
+                      toast.error("Tamanho máximo: 3mb");
+                      toast.error("Arquivos suportados: .pdf .png .jpg .jpeg");
+                    }}
+                    acceptedFiles={["image/*", "application/pdf"]}
+                    dropzoneClass={classes.dropzoneAreaBaseClasses}
+                    onAdd={onDropRGverso}
+                    filesLimit={1}
+                    dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
+                    showPreviews={false}
+                    showPreviewsInDropzone={false}
+                  />
                   <Box width="300px">
                     <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
-                          item.categoria === "CNH_FRENTE" ||
-                            item.categoria === "cnh" ? (
-                            <Grid item xs={6}>
-                              <Card className={classes.card}>
-                                <CardActionArea>
-                                  <Box position="absolute">
-                                    <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
-                                      size="small"
-                                      style={{
-                                        color: "white",
-                                        backgroundColor: "red",
-                                      }}
-                                    >
-                                      <ClearIcon />
-                                    </IconButton>
-                                  </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
-                                </CardActionArea>
-                              </Card>
-                            </Grid>
-                          ) : (
-                            false
-                          ),
-                        )
-                        : null}
+                      {contaId.documentos.map((item) =>
+                        item.categoria === "RG_VERSO" ? (
+                          <Grid item xs={6}>
+                            <Card className={classes.card}>
+                              <CardActionArea>
+                                <Box position="absolute">
+                                  <IconButton
+                                    onClick={() => handleExcluirArquivo(item)}
+                                    size="small"
+                                    style={{
+                                      color: "white",
+                                      backgroundColor: "red",
+                                    }}
+                                  >
+                                    <ClearIcon />
+                                  </IconButton>
+                                </Box>
+                                <CardMedia
+                                  component="img"
+                                  alt="Arquivo de Identificação"
+                                  height="100"
+                                  image={item.arquivo}
+                                  onClick={() => window.open(item.arquivo)}
+                                />
+                              </CardActionArea>
+                            </Card>
+                          </Grid>
+                        ) : (
+                          false
+                        ),
+                      )}
                     </Grid>
                   </Box>
                 </Box>
-              </Grid>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  CNH VERSO
-                </Typography>
-                <Box className={classes.dropzoneContainer} boxShadow={3}>
-                  {/* <DropzoneAreaBase
-												dropzoneParagraphClass={
-													classes.textoDropzone
-												}
-												maxFileSize={3145728}
-												onDropRejected={() => {
-													toast.error('Tamanho máximo: 3mb ');
-													toast.error(
-														'Arquivos suportados: .pdf .png .jpg .jpeg'
-													);
-												}}
-												acceptedFiles={[
-													'image/*',
-													'application/pdf',
-												]}
-												dropzoneClass={
-													classes.dropzoneAreaBaseClasses
-												}
-												onAdd={onDropContratoSocial}
-												filesLimit={1}
-												dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
-												showPreviews={false}
-												showPreviewsInDropzone={false}
-											/> */}
-                  <Box width="300px">
-                    <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
-                          item.categoria === "CNH_VERSO" ? (
-                            <Grid item xs={6}>
-                              <Card className={classes.card}>
-                                <CardActionArea>
-                                  <Box position="absolute">
-                                    <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
-                                      size="small"
-                                      style={{
-                                        color: "white",
-                                        backgroundColor: "red",
-                                      }}
-                                    >
-                                      <ClearIcon />
-                                    </IconButton>
-                                  </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
-                                </CardActionArea>
-                              </Card>
-                            </Grid>
-                          ) : (
-                            false
-                          ),
-                        )
-                        : null}
-                    </Grid>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-            <Grid container spacing={2} style={{ marginTop: "15px" }}>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  SELFIE
-                </Typography>
-                <Box className={classes.dropzoneContainer} boxShadow={3}>
-                  {/* <DropzoneAreaBase
-												dropzoneParagraphClass={
-													classes.textoDropzone
-												}
-												maxFileSize={3145728}
-												onDropRejected={() => {
-													toast.error('Tamanho máximo: 3mb ');
-													toast.error(
-														'Arquivos suportados: .pdf .png .jpg .jpeg'
-													);
-												}}
-												acceptedFiles={[
-													'image/*',
-													'application/pdf',
-												]}
-												dropzoneClass={
-													classes.dropzoneAreaBaseClasses
-												}
-												onAdd={onDropPaginaAtaEleicaoDiretores}
-												filesLimit={1}
-												dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
-												showPreviews={false}
-												showPreviewsInDropzone={false}
-											/> */}
-                  <Box width="300px">
-                    <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
+                <Box style={{ display: "flex", justifyContent: "center" }}>
+                  <Box
+                    /* style={{ width: '80%' }} */
+                    className={classes.dropzoneContainer}
+                    boxShadow={3}
+                  >
+                    <Typography
+                      variant="h6"
+                      style={{
+                        color: APP_CONFIG.mainCollors.primary,
+                      }}
+                    >
+                      SELFIE
+                    </Typography>
+
+                    <DropzoneAreaBase
+                      dropzoneParagraphClass={classes.textoDropzone}
+                      maxFileSize={3145728}
+                      onDropRejected={() => {
+                        toast.error("Tamanho máximo: 3mb");
+                        toast.error(
+                          "Arquivos suportados: .pdf .png .jpg .jpeg",
+                        );
+                      }}
+                      acceptedFiles={["image/*", "application/pdf"]}
+                      dropzoneClass={classes.dropzoneAreaBaseClasses}
+                      onAdd={onDropSelfie}
+                      filesLimit={1}
+                      dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
+                      showPreviews={false}
+                      showPreviewsInDropzone={false}
+                    />
+                    <Box width="300px">
+                      <Grid container>
+                        {contaId.documentos.map((item) =>
                           item.categoria === "SELFIE" ? (
                             <Grid item xs={6}>
                               <Card className={classes.card}>
                                 <CardActionArea>
                                   <Box position="absolute">
                                     <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
+                                      onClick={() => handleExcluirArquivo(item)}
                                       size="small"
                                       style={{
                                         color: "white",
@@ -1604,408 +800,28 @@ const EditarDadosDaConta = () => {
                                       <ClearIcon />
                                     </IconButton>
                                   </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      <Box
-                                        style={{
-                                          padding: "10px",
-                                        }}
-                                      >
-                                        <Typography
-                                          style={{
-                                            color:
-                                              item.status ===
-                                                "Aguardando validação"
-                                                ? "#F8D837"
-                                                : item.status === "Validado"
-                                                  ? "#3EBA59"
-                                                  : item.status === "Inválido"
-                                                    ? "#B54444"
-                                                    : item.status ===
-                                                      "Expirado"
-                                                      ? "#B54444"
-                                                      : item.status ===
-                                                        "Enviado"
-                                                        ? "#3EBA59"
-                                                        : item.status ===
-                                                          "Reenviado"
-                                                          ? "#3EBA59"
-                                                          : item.status ===
-                                                            "Reprovado"
-                                                            ? "#B54444"
-                                                            : item.status ===
-                                                              "Erro"
-                                                              ? "#B54444"
-                                                              : item.status ===
-                                                                "Inexistente"
-                                                                ? "#B54444"
-                                                                : item.status ===
-                                                                  "Suspenso"
-                                                                  ? "#F8D837"
-                                                                  : item.status ===
-                                                                    "Resultado da tipificação"
-                                                                    ? "#F8D837"
-                                                                    : null,
-                                          }}
-                                        >
-                                          {item.status}
-                                        </Typography>
-                                        <Typography
-                                          style={{
-                                            color: "#F8D837",
-                                          }}
-                                        >
-                                          {item.rasao}
-                                        </Typography>
-                                      </Box>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
+                                  <CardMedia
+                                    component="img"
+                                    alt="Arquivo de Identificação"
+                                    height="100"
+                                    image={item.arquivo}
+                                    onClick={() => window.open(item.arquivo)}
+                                  />
                                 </CardActionArea>
                               </Card>
                             </Grid>
                           ) : (
                             false
                           ),
-                        )
-                        : null}
-                    </Grid>
+                        )}
+                      </Grid>
+                    </Box>
                   </Box>
                 </Box>
-              </Grid>
-              <Grid item sm={6} xs={12}>
-                <Typography
-                  style={{
-                    fontFamily: "Montserrat-Regular",
-                    fontSize: "14px",
-                    color: APP_CONFIG.mainCollors.primary,
-                    marginTop: "0px",
-                  }}
-                >
-                  Documento Complementar
-                </Typography>
-                <Box className={classes.dropzoneContainer} boxShadow={3}>
-                  <DropzoneAreaBase
-                    dropzoneParagraphClass={classes.textoDropzone}
-                    maxFileSize={3145728}
-                    onDropRejected={() => {
-                      toast.error("Tamanho máximo: 3mb ");
-                      toast.error("Arquivos suportados: .pdf .png .jpg .jpeg");
-                    }}
-                    acceptedFiles={["image/*", "application/pdf"]}
-                    dropzoneClass={classes.dropzoneAreaBaseClasses}
-                    onAdd={onDropCPF}
-                    filesLimit={1}
-                    dropzoneText="Arraste e solte o arquivo aqui ou clique para escolher"
-                    showPreviews={false}
-                    showPreviewsInDropzone={false}
-                  />
-                  <Box width="300px">
-                    <Grid container>
-                      {contaId.documentos && contaId.documentos.length > 0
-                        ? contaId.documentos.map((item) =>
-                          item.categoria === "CPF" ? (
-                            <Grid item xs={6}>
-                              <Card className={classes.card}>
-                                <CardActionArea>
-                                  <Box position="absolute">
-                                    <IconButton
-                                      onClick={() => {
-                                        setOpenModalExcluir(true);
-                                        setExcluirId(item?.id);
-                                      }}
-                                      size="small"
-                                      style={{
-                                        color: "white",
-                                        backgroundColor: "red",
-                                      }}
-                                    >
-                                      <ClearIcon />
-                                    </IconButton>
-                                  </Box>
-                                  {item.arquivo.includes(".pdf") ? (
-                                    <>
-                                      <Box
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          height: "100px",
-                                        }}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      >
-                                        <PictureAsPdfIcon
-                                          style={{
-                                            color: "black",
-                                            fontSize: "70px",
-                                          }}
-                                        />
-                                      </Box>
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CardMedia
-                                        component="img"
-                                        alt="Arquivo de Identificação"
-                                        height="100"
-                                        image={item.arquivo}
-                                        onClick={() =>
-                                          window.open(item.arquivo)
-                                        }
-                                      />
-                                      {/* <Box
-																					style={{
-																						padding:
-																							'10px',
-																					}}
-																				>
-																					<Typography
-																						style={{
-																							color:
-																								item.status ===
-																								'Aguardando validação'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Validado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Inválido'
-																									? '#B54444'
-																									: item.status ===
-																									  'Expirado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Enviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reenviado'
-																									? '#3EBA59'
-																									: item.status ===
-																									  'Reprovado'
-																									? '#B54444'
-																									: item.status ===
-																									  'Erro'
-																									? '#B54444'
-																									: item.status ===
-																									  'Inexistente'
-																									? '#B54444'
-																									: item.status ===
-																									  'Suspenso'
-																									? '#F8D837'
-																									: item.status ===
-																									  'Resultado da tipificação'
-																									? '#F8D837'
-																									: null,
-																						}}
-																					>
-																						{item.status}
-																					</Typography>
-																					<Typography
-																						style={{
-																							color: '#F8D837',
-																						}}
-																					>
-																						{item.rasao}
-																					</Typography>
-																				</Box> */}
-                                    </>
-                                  )}
-                                </CardActionArea>
-                              </Card>
-                            </Grid>
-                          ) : (
-                            false
-                          ),
-                        )
-                        : null}
-                    </Grid>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-            <Dialog
-              open={openModalExcluir}
-              onClose={() => setOpenModalExcluir(false)}
-              aria-labelledby="form-dialog-title"
-              fullWidth
-            >
-              <DialogTitle
-                style={{
-                  color: APP_CONFIG.mainCollors.primary,
-                  fontFamily: "Montserrat-SemiBold",
-                }}
-              >
-                Deseja excluir esse documento?
-              </DialogTitle>
-
-              <DialogContent
-                style={{
-                  minWidth: 500,
-                }}
-              ></DialogContent>
-
-              <DialogActions>
-                <Button
-                  variant="outlined"
-                  onClick={() => handleExcluirArquivo()}
-                  style={{ marginRight: "10px" }}
-                >
-                  Sim
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => {
-                    setOpenModalExcluir(false);
-                    setExcluirId("");
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </DialogActions>
-            </Dialog>
+              </Box>
+            </Box>
           </TabPanel>
+
           <TabPanel value={value} index={2} dir={theme.direction}>
             <Box
               style={{
@@ -2032,31 +848,15 @@ const EditarDadosDaConta = () => {
                 >
                   <Box>
                     {contaId.validacao_idwall &&
-                      contaId.validacao_idwall.mensagem
+                    contaId.validacao_idwall.mensagem
                       ? contaId.validacao_idwall.mensagem
                       : null}
                   </Box>
                   <Box>
                     {contaId.validacao_idwall &&
-                      contaId.validacao_idwall.resultado &&
-                      contaId.validacao_idwall.resultado === "VALID" ? (
-                      <Box
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "end",
-                        }}
-                      >
-                        <Typography style={{ color: "green" }}>
-                          VÁLIDO
-                        </Typography>
-
-                        <Typography>
-                          {moment
-                            .utc(contaId.validacao_idwall.validado_em)
-                            .format("DD MMMM YYYY, HH:mm")}
-                        </Typography>
-                      </Box>
+                    contaId.validacao_idwall.resultado &&
+                    contaId.validacao_idwall.resultado === "VALID" ? (
+                      <Typography style={{ color: "green" }}>VÁLIDO</Typography>
                     ) : contaId.validacao_idwall &&
                       contaId.validacao_idwall.resultado &&
                       contaId.validacao_idwall.resultado === "INVALID" ? (
@@ -2090,73 +890,73 @@ const EditarDadosDaConta = () => {
                 >
                   {contaId.documentos.length > 0 && contaId.validacao_idwall
                     ? contaId.validacao_idwall.validacoes.map((item, index) => {
-                      return (
-                        <Box
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            width: "100%",
-                          }}
-                        >
-                          <Card
+                        return (
+                          <Box
                             style={{
-                              padding: "10px",
-                              marginTop: "10px",
+                              display: "flex",
+                              alignItems: "flex-start",
                               width: "100%",
                             }}
                           >
-                            <Box
+                            <Card
                               style={{
-                                display: "flex",
-                                alignItems: "center",
                                 padding: "10px",
+                                marginTop: "10px",
+                                width: "100%",
                               }}
                             >
-                              <AnnouncementIcon
-                                style={
-                                  contaId.validacao_idwall.resultado ===
-                                    "INVALID"
-                                    ? { color: "red" }
-                                    : {
-                                      color: "#ffdc00",
-                                    }
-                                }
-                              />
                               <Box
                                 style={{
-                                  marginLeft: "15px",
                                   display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-start",
+                                  alignItems: "center",
+                                  padding: "10px",
                                 }}
                               >
-                                <Box>
-                                  <Typography variant="h6">
-                                    {item.nome}
-                                  </Typography>
-                                </Box>
+                                <AnnouncementIcon
+                                  style={
+                                    contaId.validacao_idwall.resultado ===
+                                    "INVALID"
+                                      ? { color: "red" }
+                                      : {
+                                          color: "#ffdc00",
+                                        }
+                                  }
+                                />
                                 <Box
                                   style={{
-                                    marginTop: "5px",
+                                    marginLeft: "15px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
                                   }}
                                 >
-                                  <Typography>{item.descricao}</Typography>
-                                </Box>
-                                <Box
-                                  style={{
-                                    marginTop: "5px",
-                                  }}
-                                >
-                                  <Typography>
-                                    {item.mensagem && item.mensagem}
-                                  </Typography>
+                                  <Box>
+                                    <Typography variant="h6">
+                                      {item.nome}
+                                    </Typography>
+                                  </Box>
+                                  <Box
+                                    style={{
+                                      marginTop: "5px",
+                                    }}
+                                  >
+                                    <Typography>{item.descricao}</Typography>
+                                  </Box>
+                                  <Box
+                                    style={{
+                                      marginTop: "5px",
+                                    }}
+                                  >
+                                    <Typography>
+                                      {item.mensagem && item.mensagem}
+                                    </Typography>
+                                  </Box>
                                 </Box>
                               </Box>
-                            </Box>
-                          </Card>
-                        </Box>
-                      );
-                    })
+                            </Card>
+                          </Box>
+                        );
+                      })
                     : null}
                 </Box>
               </Box>
@@ -2176,6 +976,7 @@ const EditarDadosDaConta = () => {
               </Box>
             </Box>
           </TabPanel>
+
           <TabPanel value={value} index={3} dir={theme.direction}>
             <Box
               style={{
@@ -2209,31 +1010,6 @@ const EditarDadosDaConta = () => {
                 <LinearProgress />
               )}
             </Box>
-          </TabPanel>
-          <TabPanel value={value} index={4} dir={theme.direction}>
-            {contaId && contaId.empresa && contaId.empresa.length > 0 ? (
-              <CustomCollapseTableEmpresa
-                itemColumns={itemColumnsEmpresa ? itemColumnsEmpresa : null}
-                columns={columnsEmpresa ? columnsEmpresa : null}
-                data={contaId.empresa}
-                Editar={Editar}
-              />
-            ) : (
-              <LinearProgress />
-            )}
-            {/* <Box alignSelf="flex-end" marginTop="8px">
-							<Pagination
-								variant="outlined"
-								color="secondary"
-								size="large"
-								count={
-									contaId.empresa.last_page &&
-									contaId.empresa.last_page
-								}
-								onChange={handleChangePage}
-								page={page}
-							/>
-						</Box> */}
           </TabPanel>
         </SwipeableViews>
       </Paper>

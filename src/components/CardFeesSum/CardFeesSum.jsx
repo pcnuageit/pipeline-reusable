@@ -2,7 +2,6 @@ import { faCreditCard } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
-import React from "react";
 import flags from "../../constants/flags";
 
 const CardFeesSum = ({
@@ -62,18 +61,20 @@ const CardFeesSum = ({
                 (parseInt(
                   partnerFees
                     ? getPercentFeeByBrand(cardBrand, partnerFees)
-                    : 0.0
+                    : 0.0,
                 ) +
                   parseInt(
-                    zoopFees ? getPercentFeeByBrand(cardBrand, zoopFees) : 0.0
+                    zoopFees ? getPercentFeeByBrand(cardBrand, zoopFees) : 0.0,
                   ) +
                   parseInt(
                     aplicationFees
                       ? getPercentFeeByBrand(cardBrand, aplicationFees)
-                      : 0.0
+                      : 0.0,
                   ) +
                   parseInt(
-                    agentFees ? getPercentFeeByBrand(cardBrand, agentFees) : 0.0
+                    agentFees
+                      ? getPercentFeeByBrand(cardBrand, agentFees)
+                      : 0.0,
                   )) /
                 100
               ).toFixed(2)}

@@ -11,12 +11,14 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
+import CustomHeader from "../../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../../components/CustomTable/CustomTable";
+import { APP_CONFIG } from "../../../constants/config";
 
 const columns = [
   {
@@ -163,7 +165,11 @@ const columns = [
             variant=""
             style={{ fontSize: 17, fontWeight: 600, color: "red" }}
           >
-            R$ {amount}
+            R${" "}
+            {parseFloat(amount).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </Typography>
         );
       } else {
@@ -172,7 +178,11 @@ const columns = [
             variant=""
             style={{ fontSize: 17, fontWeight: 600, color: "green" }}
           >
-            R$ {amount}
+            R${" "}
+            {parseFloat(amount).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </Typography>
         );
       }
@@ -222,17 +232,32 @@ const TransactionDetailsCommission = ({ transacaoId }) => {
   }, [transaction.status]);
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        padding: "10px",
+      }}
+    >
+      <CustomHeader pageTitle="Detalhes" />
       <Paper
         style={{
           padding: "24px",
           margin: "12px 0",
-
+          backgroundColor: APP_CONFIG.mainCollors.backgrounds,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Typography variant="h4"> Detalhes da Transação </Typography>
+        <Typography
+          style={{ color: APP_CONFIG.mainCollors.primary }}
+          variant="h4"
+        >
+          {" "}
+          Detalhes da Transação{" "}
+        </Typography>
 
         <Box
           display="flex"
@@ -262,21 +287,37 @@ const TransactionDetailsCommission = ({ transacaoId }) => {
               }}
             >
               <Box>
-                <Typography variant="h6" align="center">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                  align="center"
+                >
                   {transaction.payment_type === "pix" ? "Pix" : "Comissão"}
                 </Typography>
               </Box>
             </Box>
             <Box display="flex" marginTop="6px" flexDirection="column">
               <Box>
-                <Typography variant="h6">
-                  Valor: R${transaction.amount}
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
+                  Valor: R$
+                  {parseFloat(transaction.amount).toLocaleString("pt-br", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </Typography>
               </Box>
               <Box display="flex" alignItems="center" width="100%">
                 {transaction.transaction_number ? (
                   <Box width="100%" display="flex" alignItems="center">
-                    <Typography variant="h6">
+                    <Typography
+                      style={{
+                        color: APP_CONFIG.mainCollors.primary,
+                      }}
+                      variant="h6"
+                    >
                       Código de autorização:
                       <br />
                       <TextField
@@ -300,7 +341,7 @@ const TransactionDetailsCommission = ({ transacaoId }) => {
                                 "Copiado para area de transferência",
                                 {
                                   autoClose: 2000,
-                                }
+                                },
                               )
                             }
                           >
@@ -325,7 +366,10 @@ const TransactionDetailsCommission = ({ transacaoId }) => {
                 marginTop="12px"
                 style={matches ? { flexDirection: "column" } : null}
               >
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   ID da transação: <br />
                   <TextField value={transaction.id} />
                   <Tooltip title="Copiar">
@@ -358,29 +402,48 @@ const TransactionDetailsCommission = ({ transacaoId }) => {
                 </Typography>
               </Box>
               <Divider style={{ margin: "6px" }} />
-              <Typography variant="h6" align="center">
+              <Typography
+                style={{ color: APP_CONFIG.mainCollors.primary }}
+                variant="h6"
+                align="center"
+              >
                 Conta
               </Typography>
               <Box>
                 <Typography>Razao Social:</Typography>
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {conta.razao_social ? conta.razao_social : "-"}
                 </Typography>
 
                 <Typography>Nome:</Typography>
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {conta.nome ? conta.nome : "-"}
                 </Typography>
                 <Typography>Documento:</Typography>
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {conta.documento !== "..-" ? conta.documento : "-"}
                 </Typography>
                 <Typography>Cnpj:</Typography>
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {conta.cnpj ? conta.cnpj : "-"}
                 </Typography>
                 <Typography>E-mail:</Typography>
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {conta.email ? conta.email : "-"}
                 </Typography>
               </Box>

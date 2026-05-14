@@ -6,7 +6,7 @@ import {
   Tabs,
   Typography,
 } from "@material-ui/core";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { isEmpty } from "lodash";
 import { useCallback } from "react";
@@ -88,7 +88,7 @@ const FeeDetails = ({ feeDetails, baseFeeDetails }) => {
 
   const getTabIndex = useCallback(
     (value) => tabs.findIndex((tab) => value === tab),
-    [tabs]
+    [tabs],
   );
 
   return (

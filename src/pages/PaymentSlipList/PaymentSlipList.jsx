@@ -11,13 +11,14 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import { getAllContasAction, loadBoletosFilter } from "../../actions/actions";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import SplitModal from "../../components/SplitModal/SplitModal";
 import { APP_CONFIG } from "../../constants/config";
@@ -114,7 +115,7 @@ const PaymentSlipList = () => {
   const history = useHistory();
   const contasUser = useSelector((state) => state.contas);
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   useEffect(() => {
     dispatch(getAllContasAction(token));
   }, []);
@@ -134,8 +135,8 @@ const PaymentSlipList = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar, id]);
 
@@ -206,23 +207,15 @@ const PaymentSlipList = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Boletos" />
+      </Box>
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
-        <Typography
-          style={{
-            marginTop: "8px",
-            marginBottom: 30,
-            color: APP_CONFIG.mainCollors.primary,
-          }}
-          variant="h4"
-        >
-          Boletos
-        </Typography>
-
         {/* {token && userData === '' ? null : (
 					<Box>
 						<Button
@@ -250,7 +243,7 @@ const PaymentSlipList = () => {
           <TextField
             variant="outlined"
             fullWidth
-            placeholder="Procurar por documento, nome..."
+            label="Procurar por documento, nome..."
             value={filters.like}
             onChange={(e) =>
               setFilters({

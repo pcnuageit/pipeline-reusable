@@ -1,5 +1,4 @@
 import { MuiThemeProvider } from "@material-ui/core";
-import React from "react";
 import MetaTags from "react-meta-tags";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";

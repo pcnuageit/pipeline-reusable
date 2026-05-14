@@ -50,7 +50,7 @@ on:
       node_version:
         required: false
         type: string
-        default: "16"
+        default: "18"
       build_command:
         required: false
         type: string

@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import { useHistory } from "react-router";
 import { toast } from "react-toastify";
 import { postSolicitarReset } from "../../actions/actions";
+import vBankLogo from "../../assets/vBankPJAssets/vBankLogo.svg";
 import { APP_CONFIG } from "../../constants/config";
 
 const useStyles = makeStyles((theme) => ({
@@ -52,7 +53,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   paper: {
-    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+    backgroundColor: "#EDEDF4",
     marginTop: theme.spacing(8),
     display: "flex",
     flexDirection: "column",
@@ -170,7 +171,7 @@ const Cadastro = () => {
                 justifySelf: "flex-start",
                 marginTop: "100px",
               }}
-              src={APP_CONFIG.assets.smallColoredLogo}
+              src={vBankLogo}
               alt="Itapemirim logo"
             />
           </Box>

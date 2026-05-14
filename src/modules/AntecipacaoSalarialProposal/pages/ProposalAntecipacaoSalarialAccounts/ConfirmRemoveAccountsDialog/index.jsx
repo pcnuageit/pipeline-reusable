@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "@material-ui/core";
-import React from "react";
 import { APP_CONFIG } from "../../../../../constants/config";
 
 function ConfirmRemoveAccountsDialog({

@@ -15,13 +15,12 @@ import {
   useTheme,
 } from "@material-ui/core";
 import Pagination from "@material-ui/lab/Pagination";
-import moment from "moment";
-import "moment/locale/pt-br";
 import { useEffect, useState } from "react";
 import NumberFormat from "react-number-format";
 import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory, useParams } from "react-router-dom";
 import { loadListarProdutosGiftCardAdmin } from "../../actions/actions";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
@@ -33,34 +32,20 @@ const columns = [
     headerText: "Criado em",
     key: "created_at",
     CustomValue: (data) => {
-      /* const date = new Date(data);
-			const option = {
-				year: 'numeric',
-				month: 'numeric',
-				day: 'numeric',
-				hour: 'numeric',
-				minute: 'numeric',
-				second: 'numeric',
-			};
-			const formatted = date.toLocaleDateString('pt-br', option);
-			return (
-				<Box display="flex" justifyContent="center">
-					<FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-					<Typography style={{ marginLeft: '6px' }}>
-						{formatted}
-					</Typography>
-				</Box>
-			); */
+      const date = new Date(data);
+      const option = {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      };
+      const formatted = date.toLocaleDateString("pt-br", option);
       return (
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        <Box display="flex" justifyContent="center">
           <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-          {moment.utc(data).format("DD MMMM YYYY, HH:mm")}
+          <Typography style={{ marginLeft: "6px" }}>{formatted}</Typography>
         </Box>
       );
     },
@@ -193,7 +178,13 @@ const columns = [
     CustomValue: (valor) => {
       return (
         <Typography>
-          R$ <b>{valor}</b>
+          R${" "}
+          <b>
+            {parseFloat(valor).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </b>
         </Typography>
       );
     },
@@ -205,7 +196,7 @@ const GiftCardsList = () => {
   const history = useHistory();
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const userData = useSelector((state) => state.userData);
   const [filters, setFilters] = useState({
     day: "",
@@ -227,8 +218,6 @@ const GiftCardsList = () => {
   const [page, setPage] = useState(1);
   const giftCards = useSelector((state) => state.giftCards);
 
-  moment.locale("pt-br");
-
   useEffect(() => {
     dispatch(
       loadListarProdutosGiftCardAdmin(
@@ -244,8 +233,8 @@ const GiftCardsList = () => {
         filters.value_start,
         filters.value_end,
         filters.order,
-        filters.mostrar
-      )
+        filters.mostrar,
+      ),
     );
   }, [
     page,
@@ -275,7 +264,7 @@ const GiftCardsList = () => {
         {
           id: row.conta.id,
           giftCardId: row.id,
-        }
+        },
       );
       history.push(path);
     } else {
@@ -294,6 +283,15 @@ const GiftCardsList = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="giftCards"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="GiftCards" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
@@ -302,7 +300,7 @@ const GiftCardsList = () => {
         <Typography
           style={{
             marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
+            color: "#9D9CC6",
             marginBottom: "30px",
           }}
           variant="h4"
@@ -580,13 +578,15 @@ const GiftCardsList = () => {
                         status: " ",
                         cpf: "",
                         nsu_transaction: " ",
+                        email: "",
                         name: "",
-                        value: "",
-                        created_at_between_start: "",
-                        created_at_between_end: "",
+                        ddd_phone: "",
                         value_start: "",
                         value_end: "",
-                        id_transaction: "",
+                        expiration_date_start: "",
+                        expiration_date_end: "",
+                        created_at_between_start: "",
+                        created_at_between_end: "",
                       })
                     }
                   >

@@ -1,28 +1,23 @@
 import { InputLabel, MenuItem, Select } from "@material-ui/core";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom/cjs/react-router-dom.min";
-import { getBeneficios } from "../../services/beneficiarios";
+import { useSelector } from "react-redux";
 
 import useAuth from "../../hooks/useAuth";
+import { getBeneficios } from "../../services/beneficiarios";
 
-export default function SelectBeneficio({
-  state,
-  setState,
-  multiple = false,
-  filterList = true,
-}) {
-  const [tiposBeneficio, setTiposBeneficio] = useState([]);
+export default function SelectBeneficio({ state, setState, multiple = false }) {
+  const me = useSelector((state) => state.me);
+  const userData = useSelector((state) => state.userData);
   const token = useAuth();
-  const id = useParams()?.id ?? "";
+  const documento = me?.documento;
+  const is_estabelecimento = userData?.is_estabelecimento;
+  const [tiposBeneficio, setTiposBeneficio] = useState([]);
 
   const getTiposBeneficio = async () => {
     try {
       const { data } = await getBeneficios(
         token,
-        filterList ? id : "",
-        1,
-        "",
-        "mostrar=1000"
+        is_estabelecimento ? "" : documento,
       );
       setTiposBeneficio(data.data);
     } catch (err) {
@@ -36,11 +31,16 @@ export default function SelectBeneficio({
 
   return (
     <>
-      <InputLabel id="select-label" shrink="true">
+      <InputLabel
+        id="select-label"
+        shrink="true"
+        style={{ marginBottom: "-14px" }}
+      >
         Nome do benefício
       </InputLabel>
       <Select
         labelId="select-label"
+        style={{ marginTop: "10px" }}
         variant="outlined"
         fullWidth
         required
@@ -50,10 +50,7 @@ export default function SelectBeneficio({
       >
         {tiposBeneficio.map((item) => (
           <MenuItem key={item?.id} value={item?.id}>
-            {item?.nome_beneficio
-              .normalize("NFD")
-              .replace(/\p{Diacritic}/gu, "")
-              .toUpperCase()}
+            {item?.nome_beneficio}
           </MenuItem>
         ))}
       </Select>

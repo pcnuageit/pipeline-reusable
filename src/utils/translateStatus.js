@@ -2,13 +2,9 @@ export function translateStatus(status = "") {
   switch (status) {
     case "created":
       return "Criado";
-    case "succeeded":
     case "success":
+    case "succeeded":
       return "Sucesso";
-    case "sent":
-      return "Enviado";
-    case "received":
-      return "Recebido";
     case "confirmed":
       return "Confirmado";
     case "pending":

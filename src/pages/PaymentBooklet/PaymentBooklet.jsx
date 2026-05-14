@@ -7,13 +7,14 @@ import {
   useTheme,
 } from "@material-ui/core";
 import Pagination from "@material-ui/lab/Pagination";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
 import { loadCarneFilters } from "../../actions/actions";
 
 import CustomTable from "../../components/CustomTable/CustomTable";
 
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
@@ -85,7 +86,7 @@ const PaymentBooklet = () => {
   const [page, setPage] = useState(1);
   const carneList = useSelector((state) => state.carneList);
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const [filters, setFilters] = useState({
     like: "",
     order: "",
@@ -102,8 +103,8 @@ const PaymentBooklet = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, filters.order, filters.mostrar, debouncedLike, id]);
 
@@ -118,23 +119,15 @@ const PaymentBooklet = () => {
 		history.push(path);
 	}; */
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Lista de Carnês" />
+      </Box>
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
-        <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
-          variant="h4"
-        >
-          Lista de Carnês
-        </Typography>
-
         {/* {token && userData === '' ? null : (
 					<Link to="novo-carne">
 						<GradientButton buttonText="+ Nova Cobrança" />
@@ -153,7 +146,7 @@ const PaymentBooklet = () => {
           <TextField
             variant="outlined"
             fullWidth
-            placeholder="Pesquisar por nome, documento..."
+            label="Pesquisar por nome, documento..."
             value={filters.like}
             onChange={(e) =>
               setFilters({

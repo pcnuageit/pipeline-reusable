@@ -69,7 +69,7 @@ export default class Query {
   parseQuery() {
     if (!this.model) {
       throw new Error(
-        "Please call the for() method before adding filters or calling url() / get()."
+        "Please call the for() method before adding filters or calling url() / get().",
       );
     }
 
@@ -82,7 +82,7 @@ export default class Query {
   includes(...include) {
     if (!include.length) {
       throw new Error(
-        `The ${this.queryParameters.includes}s() function takes at least one argument.`
+        `The ${this.queryParameters.includes}s() function takes at least one argument.`,
       );
     }
 
@@ -94,7 +94,7 @@ export default class Query {
   appends(...append) {
     if (!append.length) {
       throw new Error(
-        `The ${this.queryParameters.appends}s() function takes at least one argument.`
+        `The ${this.queryParameters.appends}s() function takes at least one argument.`,
       );
     }
 
@@ -106,7 +106,7 @@ export default class Query {
   select(...fields) {
     if (!fields.length) {
       throw new Error(
-        `The ${this.queryParameters.fields}() function takes a single argument of an array.`
+        `The ${this.queryParameters.fields}() function takes a single argument of an array.`,
       );
     }
 
@@ -128,12 +128,12 @@ export default class Query {
   where(key, value) {
     if (key === undefined || value === undefined)
       throw new Error(
-        "The where() function takes 2 arguments both of string values."
+        "The where() function takes 2 arguments both of string values.",
       );
 
     if (Array.isArray(value) || value instanceof Object)
       throw new Error(
-        "The second argument to the where() function must be a string. Use whereIn() if you need to pass in an array."
+        "The second argument to the where() function must be a string. Use whereIn() if you need to pass in an array.",
       );
 
     this.filters[key] = value;
@@ -144,19 +144,19 @@ export default class Query {
   whereIn(key, array) {
     if (!key || !array) {
       throw new Error(
-        "The whereIn() function takes 2 arguments of (string, array)."
+        "The whereIn() function takes 2 arguments of (string, array).",
       );
     }
 
     if ((!key && Array.isArray(key)) || typeof key === "object") {
       throw new Error(
-        "The first argument for the whereIn() function must be a string or integer."
+        "The first argument for the whereIn() function must be a string or integer.",
       );
     }
 
     if (!Array.isArray(array)) {
       throw new Error(
-        "The second argument for the whereIn() function must be an array."
+        "The second argument for the whereIn() function must be an array.",
       );
     }
 
@@ -174,7 +174,7 @@ export default class Query {
   page(value) {
     if (!Number.isInteger(value)) {
       throw new Error(
-        "The page() function takes a single argument of a number"
+        "The page() function takes a single argument of a number",
       );
     }
 
@@ -186,7 +186,7 @@ export default class Query {
   limit(value) {
     if (!Number.isInteger(value)) {
       throw new Error(
-        "The limit() function takes a single argument of a number."
+        "The limit() function takes a single argument of a number.",
       );
     }
 
@@ -198,7 +198,7 @@ export default class Query {
   params(params) {
     if (params === undefined || params.constructor !== Object) {
       throw new Error(
-        "The params() function takes a single argument of an object."
+        "The params() function takes a single argument of an object.",
       );
     }
 

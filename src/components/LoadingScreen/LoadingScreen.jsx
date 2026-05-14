@@ -1,5 +1,4 @@
 import { Backdrop, CircularProgress, makeStyles } from "@material-ui/core";
-import React from "react";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -19,7 +18,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   backdrop: {
-    zIndex: theme.zIndex.drawer + 2,
+    zIndex: theme.zIndex.drawer + 100,
     color: "#fff",
   },
 }));

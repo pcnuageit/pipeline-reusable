@@ -8,7 +8,6 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import { get } from "lodash";
-import React from "react";
 
 const StyledTableCell = withStyles((theme) => ({
   head: {

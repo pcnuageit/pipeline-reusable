@@ -20,6 +20,7 @@ import {
   loadPartnerTransactions,
 } from "../../actions/actions";
 
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 /* import CustomTable from '../../components/CustomTablePartner/CustomTable'; */
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import RefreshIcon from "@material-ui/icons/Refresh";
@@ -41,7 +42,7 @@ const JeittoAdm = () => {
   const historico = useSelector((state) => state.partnerTransactions);
   const exportTransacao = useSelector((state) => state.exportTransacao);
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
 
   const handleChangePage = (e, value) => {
     setPage(value);
@@ -90,8 +91,8 @@ const JeittoAdm = () => {
         filters.ddd_phone,
         filters.value_start,
         filters.value_end,
-        debouncedAgencyCode
-      )
+        debouncedAgencyCode,
+      ),
     );
   }, [
     debouncedAgencyCode,
@@ -124,6 +125,7 @@ const JeittoAdm = () => {
 
   const handleExportarTransacao = async () => {
     setLoading(true);
+    toast.warning("A exportação pode demorar um pouco, por favor aguarde...");
     const res = await dispatch(
       loadExportPartnerTransactions(
         token,
@@ -142,13 +144,10 @@ const JeittoAdm = () => {
         filters.ddd_phone,
         filters.value_start,
         filters.value_end,
-        filters.agency_code
-      )
+        filters.agency_code,
+      ),
     );
-    toast.warning(
-      res?.message ?? "A exportação pode demorar um pouco, por favor aguarde..."
-    );
-    if (res?.url) {
+    if (res && res.url !== undefined) {
       window.open(`${res.url}`, "", "");
     }
     setLoading(false);
@@ -167,17 +166,27 @@ const JeittoAdm = () => {
     /* style: { width: '100%' }, */
   };
 
+  console.log(filters.value_start);
+
   return (
     <Box display="flex" flexDirection="column" style={{ marginBottom: 30 }}>
       <LoadingScreen isLoading={loading} />
-
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Parceiros"
+          to1="/dashboard/partners"
+          path2="Transações Jeitto"
+        />
+      ) : (
+        <CustomBreadcrumbs
+          path1="Parceiros"
+          to1="/dashboard/partners"
+          path2="Transações Jeitto"
+        />
+      )}
       <Box display="flex" justifyContent="">
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Transações Jeitto
@@ -427,7 +436,7 @@ const JeittoAdm = () => {
 									borderColor: 'white',
 									borderLeftColor: 'white',
 									borderTopColor: 'white !important',
-									backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+									backgroundColor: '#EFEFF6',
 								}}
 								aria-label="Valor inicial"
 								prefix="R$"
@@ -566,14 +575,12 @@ const JeittoAdm = () => {
                         email: "",
                         name: "",
                         ddd_phone: "",
-                        value: "",
+                        value_start: "",
+                        value_end: "",
                         expiration_date_start: "",
                         expiration_date_end: "",
                         created_at_between_start: "",
                         created_at_between_end: "",
-                        value_start: "",
-                        value_end: "",
-                        agency_code: "",
                       })
                     }
                   >
@@ -604,7 +611,7 @@ const JeittoAdm = () => {
             />
           </Box>
         ) : (
-          <Box>
+          <Box width="60vw">
             <LinearProgress color="secondary" />
           </Box>
         )}

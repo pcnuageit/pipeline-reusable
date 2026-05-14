@@ -1,14 +1,15 @@
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogTitle,
   Divider,
   IconButton,
   makeStyles,
   TextField,
   Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@material-ui/core";
 import { useCallback, useEffect, useState } from "react";
 
@@ -27,16 +28,19 @@ import CopyToClipboard from "react-copy-to-clipboard";
 
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 /* import FeeDetails from "./FeeDetails"; */
-import { APP_CONFIG } from "../../constants/config";
-import useAuth from "../../hooks/useAuth";
-import useDebounce from "../../hooks/useDebounce";
-
 import {
+  deletePlanoAssinaturaAction,
+  deletePlanoAssinaturaECAction,
   getMinhasAssinaturasAction,
   getMinhasTaxasAction,
   loadUserData,
 } from "../../actions/actions";
+import AddSalesPlanSubscriptionModal from "../../components/AddSalesPlanSubscriptionModal/AddSalesPlanSubscriptionModal";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import FeeDetails from "../../components/FeeDetails/FeeDetails";
+import { APP_CONFIG } from "../../constants/config";
+import useAuth from "../../hooks/useAuth";
+import useDebounce from "../../hooks/useDebounce";
 import { documentMask } from "../../utils/documentMask";
 
 const useStyles = makeStyles((theme) => ({
@@ -51,10 +55,8 @@ const useStyles = makeStyles((theme) => ({
 
 const ListaTarifas = () => {
   const classes = useStyles();
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const history = useHistory();
-  const theme = useTheme();
-  const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const token = useAuth();
   const subscriptions = useSelector((state) => state.minhasTaxas);
   const salesPlan = useSelector((state) => state.minhasAssinaturas);
@@ -91,11 +93,13 @@ const ListaTarifas = () => {
     {
       headerText: "Documento",
       key: "teste_1",
-      Teste: (item) => (
-        <Typography>
-          {documentMask(item?.conta?.cnpj ?? item?.conta?.documento)}
-        </Typography>
-      ),
+      Teste: (item) => {
+        return (
+          <Typography>
+            {documentMask(item?.conta?.cnpj ?? item?.conta?.documento)}
+          </Typography>
+        );
+      },
     },
     {
       headerText: "Menu",
@@ -123,15 +127,85 @@ const ListaTarifas = () => {
 
   useEffect(() => {
     if (userData) {
-      dispatch(getMinhasAssinaturasAction(token, id));
+      dispatch(getMinhasAssinaturasAction(token, userData.id));
     }
   }, [userData]);
 
   useEffect(() => {
     if (userData) {
-      dispatch(getMinhasTaxasAction(token, id));
+      dispatch(getMinhasTaxasAction(token, userData.id));
     }
   }, [userData]);
+
+  useEffect(() => {
+    console.log(subscriptions);
+  }, [subscriptions]);
+
+  /* const {
+		data: salesPlan,
+		isLoading: isLoadingSalesPlan,
+		isError: isErrorSalesPlan,
+		isUninitialized: isUninitializedSalesPlan,
+		refetch: refetchSalesPlan,
+	} = useShowSalesPlanQuery(
+		{
+			plan_id: id,
+		},
+		{
+			refetchOnMountOrArgChange: true,
+		}
+	); */
+
+  /* const {
+		data: subscriptions,
+		isLoading: isLoadingSubscriptions,
+		isError: isErrorSubscriptions,
+		isUninitialized: isUninitializedSubscriptions,
+		refetch: refetchSubscriptions,
+	} = useIndexSalesPlanSubscriptionQuery(
+		{
+			page,
+			plano_venda_id: id,
+			filters: debouncedFilters,
+		},
+		{
+			refetchOnMountOrArgChange: true,
+		}
+	); */
+
+  const handleDeleteSalesPlan = async () => {
+    setLoading(true);
+    const resDeletePlano = await dispatch(
+      deletePlanoAssinaturaAction(token, userData.id),
+    );
+    if (resDeletePlano) {
+      toast.error("Erro ao excluir Plano de Venda!");
+      setOpenDeleteDialog(false);
+      setLoading(false);
+    } else {
+      toast.success("Plano de Venda excluído!");
+      setOpenDeleteDialog(false);
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveEcSubscription = async () => {
+    setLoading(true);
+    const resDeletePlanoEC = await dispatch(
+      deletePlanoAssinaturaECAction(token, subscriptionToDelete.id),
+    );
+    if (resDeletePlanoEC) {
+      toast.error("Erro ao remover assinatura!");
+      setSubscriptionToDelete({});
+      setOpenRemoveSubscriptionDialog(false);
+      setLoading(false);
+    } else {
+      toast.success("Assinatura removida!");
+      setSubscriptionToDelete({});
+      setOpenRemoveSubscriptionDialog(false);
+      setLoading(false);
+    }
+  };
 
   /* useEffect(() => {
 		if (isErrorSalesPlan) {
@@ -150,22 +224,62 @@ const ListaTarifas = () => {
         <Box display="flex" flexDirection="column">
           <LoadingScreen style={{ zIndex: "10" }} isLoading={loading} />
 
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            flexDirection={matches ? "column" : null}
-          >
-            <Typography
-              style={{
-                marginTop: "8px",
-                marginBottom: 30,
-                color: APP_CONFIG.mainCollors.primary,
+          <AddSalesPlanSubscriptionModal
+            openDialog={openAddSubscriptionDialog}
+            setOpenDialog={setOpenAddSubscriptionDialog}
+            planId={userData.id}
+            loading={loading}
+            setLoading={setLoading}
+            style={{ zIndex: 1 }}
+          />
+
+          {openRemoveSubscriptionDialog && (
+            <Dialog
+              open={openRemoveSubscriptionDialog}
+              onClose={() => {
+                setSubscriptionToDelete({});
+                setOpenRemoveSubscriptionDialog(false);
               }}
-              variant="h4"
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+              style={{ zIndex: "1" }}
             >
-              Plano de Vendas
-            </Typography>
-          </Box>
+              <DialogTitle className={classes.dialogHeader}>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  align="center"
+                  variant="h6"
+                >
+                  Remover assinatura
+                </Typography>
+              </DialogTitle>
+              <Box display="flex" flexDirection="column" padding="12px 24px">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {`Deseja realmente remover a assinatura deste EC do Plano de Vendas ${salesPlan.name}?`}
+                </Typography>
+              </Box>
+              <DialogActions>
+                <Button
+                  onClick={handleRemoveEcSubscription}
+                  variant="outlined"
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                >
+                  Remover
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSubscriptionToDelete({});
+                    setOpenRemoveSubscriptionDialog(false);
+                  }}
+                  variant="outlined"
+                  autoFocus
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                >
+                  Cancelar
+                </Button>
+              </DialogActions>
+            </Dialog>
+          )}
 
           {/* {openDeleteDialog && (
 						<Dialog
@@ -216,8 +330,9 @@ const ListaTarifas = () => {
 							</DialogActions>
 						</Dialog>
 					)} */}
+          <CustomHeader pageTitle="Plano de vendas" />
 
-          <Box style={{ padding: "10px" }}>
+          <Box style={{ padding: "40px" }}>
             <Box
               style={{
                 display: "flex",
@@ -268,7 +383,7 @@ const ListaTarifas = () => {
                                   "Copiado para area de transferência",
                                   {
                                     autoClose: 2000,
-                                  }
+                                  },
                                 )
                               }
                             >
@@ -403,7 +518,7 @@ const ListaTarifas = () => {
                                   "Copiado para area de transferência",
                                   {
                                     autoClose: 2000,
-                                  }
+                                  },
                                 )
                               }
                             >

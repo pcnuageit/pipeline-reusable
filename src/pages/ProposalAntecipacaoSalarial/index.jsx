@@ -7,7 +7,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import { Settings } from "@material-ui/icons";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useHistory } from "react-router";
 import CustomButton from "../../components/CustomButton/CustomButton";
 import CustomTable from "../../components/CustomTable/CustomTable";
@@ -16,11 +16,10 @@ import { formatMoney } from "../../modules/AntecipacaoSalarial/utils/money";
 import ProposalPublicBadge from "../../modules/AntecipacaoSalarial/components/ProposalPublicBadge";
 import ProposalStatusBadge from "../../modules/AntecipacaoSalarial/components/ProposalStatusBadge";
 
-import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import { APP_CONFIG } from "../../constants/config";
 import { PERMISSIONS } from "../../constants/permissions";
-import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
 import usePermission from "../../hooks/usePermission";
 import {
@@ -34,8 +33,8 @@ import EditProposalDialog from "./components/EditProposalDialog";
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
-    flexDirection: "column",
-    height: "100%",
+    /* flexDirection: 'column',
+		height: '100%', */
   },
   headerContainer: {
     display: "flex",
@@ -65,6 +64,19 @@ const useStyles = makeStyles((theme) => ({
     height: "100%",
     marginTop: "10px",
   },
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    height: "100%",
+    padding: "10px",
+  },
+  dadosBox: {
+    display: "flex",
+    flexDirection: "row",
+    marginTop: "30px",
+    marginLeft: "0px",
+  },
 }));
 
 function ProposalAtencipacaoSalarial() {
@@ -73,8 +85,6 @@ function ProposalAtencipacaoSalarial() {
     like: "",
   });
   const debouncedLike = useDebounce(filters.like, 800);
-  const dispatch = useDispatch();
-  const token = useAuth();
   const {
     data: antecipacaoSalarialProposalApi,
     isLoading,
@@ -89,25 +99,22 @@ function ProposalAtencipacaoSalarial() {
     },
     {
       refetchOnMountOrArgChange: true,
-    }
+    },
   );
 
   const [deleteProposal] = useDeleteAntecipacaoSalarialProposalMutation();
 
-  const canModifyProposals = usePermission([
-    PERMISSIONS.FULL_ACCESS,
+  const canModifyProposals = usePermission(
     PERMISSIONS.MODIFY_FINANCIAL_PROPOSAL,
-  ]);
+  );
 
-  const canManageProposal = usePermission([
-    PERMISSIONS.FULL_ACCESS,
+  const canManageProposal = usePermission(
     PERMISSIONS.MANAGE_FINANCIAL_PROPOSAL,
-  ]);
+  );
 
-  const canManageFinancialSupport = usePermission([
+  const canManageFinancialSupport = usePermission(
     PERMISSIONS.MANAGE_FINANCIAL_SUPPORT,
-    PERMISSIONS.FULL_ACCESS,
-  ]);
+  );
 
   const [openCreateProposal, setOpenCreateProposal] = useState(false);
 
@@ -211,7 +218,7 @@ function ProposalAtencipacaoSalarial() {
                 style={{ color: APP_CONFIG.mainCollors.secondary }}
                 onClick={() =>
                   history.push(
-                    `/dashboard/antecipacao-salarial/${row.id}/listagem`
+                    `/dashboard/antecipacao-salarial/${row.id}/listagem`,
                   )
                 }
               >
@@ -270,63 +277,91 @@ function ProposalAtencipacaoSalarial() {
   return (
     !isLoading && (
       <Box className={classes.root}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          bgcolor={APP_CONFIG.mainCollors.backgrounds}
-          borderRadius="28px 28px 0 0"
-          paddingBottom={4}
-        >
-          <Typography
-            style={{
-              color: APP_CONFIG.mainCollors.primary,
-              fontFamily: "Montserrat-SemiBold",
-              marginTop: "20px",
-              alignSelf: "center",
-              marginLeft: "30px",
-            }}
-          >
-            Propostas de Antecipação Salarial
-          </Typography>
-
-          {canModifyProposals ? (
+        <Box className={classes.main}>
+          <CustomHeader pageTitle="Antecipação Salarial" />
+          <Box className={classes.dadosBox}>
             <Box
               style={{
-                marginTop: "20px",
-                marginRight: "10px",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
               }}
             >
-              <CustomButton
-                size="small"
-                color="purple"
-                onClick={() => setOpenCreateProposal(true)}
-              >
-                Nova Proposta
-              </CustomButton>
-              <CreateProposalDialog
-                filters={filters}
-                setFilters={setFilters}
-                accounts={accounts}
-                open={openCreateProposal}
-                onClose={() => {
-                  setOpenCreateProposal(false);
-                  refetch();
+              <Box
+                style={{
+                  display: "flex",
+                  backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                  /* alignItems: 'center', */
+                  borderTopRightRadius: "17px",
+                  borderTopLeftRadius: "17px",
+                  flexDirection: "column",
+                  /* maxWidth: '90%', */
+                  minWidth: "100%",
+
+                  /* alignItems: 'center', */
                 }}
-              />
+              >
+                <Box
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography
+                    style={{
+                      color: APP_CONFIG.mainCollors.primary,
+                      fontFamily: "Montserrat-SemiBold",
+                      marginTop: "20px",
+                      alignSelf: "center",
+                      marginLeft: "30px",
+                    }}
+                  >
+                    Propostas de Antecipação Salarial
+                  </Typography>
+
+                  {canModifyProposals ? (
+                    <Box
+                      style={{
+                        marginTop: "20px",
+                        marginRight: "10px",
+                      }}
+                    >
+                      <CustomButton
+                        size="small"
+                        color="purple"
+                        onClick={() => setOpenCreateProposal(true)}
+                      >
+                        Nova Proposta
+                      </CustomButton>
+                      <CreateProposalDialog
+                        filters={filters}
+                        setFilters={setFilters}
+                        accounts={accounts}
+                        open={openCreateProposal}
+                        onClose={() => {
+                          setOpenCreateProposal(false);
+                          refetch();
+                        }}
+                      />
+                    </Box>
+                  ) : null}
+                </Box>
+              </Box>
+              <Box style={{ marginBottom: "40px", width: "100%" }}>
+                {antecipacaoSalarialProposalApi &&
+                antecipacaoSalarialProposalApi.data &&
+                antecipacaoSalarialProposalApi.per_page ? (
+                  <CustomTable
+                    boxShadowTop={true}
+                    columns={columns}
+                    data={antecipacaoSalarialProposalApi.data || []}
+                    Editar={EditFinancialProposalMenu}
+                  />
+                ) : null}
+              </Box>
             </Box>
-          ) : null}
-        </Box>
-        <Box style={{ marginBottom: "40px", width: "100%" }}>
-          {antecipacaoSalarialProposalApi &&
-          antecipacaoSalarialProposalApi.data &&
-          antecipacaoSalarialProposalApi.per_page ? (
-            <CustomTable
-              boxShadowTop={true}
-              columns={columns}
-              data={antecipacaoSalarialProposalApi.data || []}
-              Editar={EditFinancialProposalMenu}
-            />
-          ) : null}
+          </Box>
         </Box>
       </Box>
     )

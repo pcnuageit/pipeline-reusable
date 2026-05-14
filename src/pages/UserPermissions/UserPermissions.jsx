@@ -6,22 +6,26 @@ import {
   faCreditCard,
   faDesktop,
   faDollarSign,
-  faEye,
-  faFileContract,
   faForward,
   faGift,
   faHistory,
   faLink,
   faList,
   faMobileAlt,
-  faMoneyBillWave,
   faSignOutAlt,
   faUndo,
 } from "@fortawesome/free-solid-svg-icons";
-import { Box, Switch, Typography, makeStyles } from "@material-ui/core";
+import {
+  Box,
+  Switch,
+  Typography,
+  makeStyles,
+  useMediaQuery,
+  useTheme,
+} from "@material-ui/core";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { useParams } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory, useParams } from "react-router";
 import {
   delPermissao,
   loadPermissaoGerenciar,
@@ -29,10 +33,9 @@ import {
 } from "../../actions/actions";
 
 import AccountCollectionItem from "../../components/AccountCollections/AccountCollectionItem/AccountCollectionItem";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
-import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
-import usePermission from "../../hooks/usePermission";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -60,7 +63,6 @@ const useStyles = makeStyles((theme) => ({
     marginTop: "20px",
   },
   responsiveContainer: {
-    marginTop: "10px",
     display: "flex",
     justifyContent: "center",
     [theme.breakpoints.down(850)]: {
@@ -72,39 +74,54 @@ const useStyles = makeStyles((theme) => ({
 
 const UserPermissions = () => {
   const classes = useStyles();
-  const id = useParams()?.id ?? "";
   const token = useAuth();
+  const history = useHistory();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
-  const { hasPermission, PERMISSIONS } = usePermission();
+  const matches = useMediaQuery(theme.breakpoints.down("sm"));
+  const { id } = useParams();
   const dispatch = useDispatch();
+
+  const gerenciarPermissao = useSelector((state) => state.gerenciarPermissao);
+  const [permissoes, setPermissoes] = useState([]);
 
   useEffect(() => {
     dispatch(loadPermissaoGerenciar(token, id));
-  }, [dispatch, token, id]);
+  }, []);
+
+  useEffect(() => {
+    const { permissao } = gerenciarPermissao;
+    setPermissoes(permissao.map((item) => item.tipo));
+  }, [gerenciarPermissao, gerenciarPermissao.permissao.length]);
+
+  useEffect(() => {
+    return () => {
+      setPermissoes([]);
+    };
+  }, []);
 
   const handlePermissoes = async (event) => {
     setLoading(true);
-    try {
-      if (hasPermission(event.target.name)) {
-        await dispatch(delPermissao(token, id, event.target.value));
-      } else {
-        await dispatch(postPermissaoAction(token, id, event.target.value));
-      }
+    if (permissoes.includes(event.target.name)) {
+      await dispatch(delPermissao(token, id, event.target.value));
       await dispatch(loadPermissaoGerenciar(token, id));
-    } catch (err) {
-      console.log(err);
+      setLoading(false);
+    } else {
+      await dispatch(postPermissaoAction(token, id, event.target.value));
+      await dispatch(loadPermissaoGerenciar(token, id));
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <Box display="flex" flexDirection="column" className={classes.root}>
       <LoadingScreen isLoading={loading} />
-
-      <Typography
-        style={{ marginTop: "8px", color: APP_CONFIG.mainCollors.primary }}
-        variant="h4"
-      >
+      <CustomBreadcrumbs
+        path1="Administradores"
+        to1="goBack"
+        path2="Gerenciar Permissões"
+      />
+      <Typography style={{ marginTop: "8px" }} variant="h4">
         Gerenciar Permissões
       </Typography>
 
@@ -114,43 +131,34 @@ const UserPermissions = () => {
           <Switch
             name={"Administrador - Acesso total"}
             value={1}
-            checked={hasPermission("Administrador - Acesso total")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.full_access
-              )
+            checked={
+              permissoes.includes("Administrador - Acesso total") ? true : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem text="Bloquear device" icon={faBarcode} />
           <Switch
             name={"Operações - Bloquear device"}
             value={2}
-            checked={hasPermission("Operações - Bloquear device")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.block_device
-              )
+            checked={
+              permissoes.includes("Operações - Bloquear device") ? true : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem text="Cancelamento de conta" icon={faCopy} />
           <Switch
             name={"Operações - Cancelamento de conta"}
             value={3}
-            checked={hasPermission("Operações - Cancelamento de conta")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.cancel_account
-              )
+            checked={
+              permissoes.includes("Operações - Cancelamento de conta")
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
       </Box>
@@ -166,18 +174,16 @@ const UserPermissions = () => {
               "Operações - Histórico de transações, extrato, pix, cobrança recorrente, carnê, boleto, chave pix cadastrada, exceto permissão para aprovação de cadastro, reenvio de token de aprovação e editar"
             }
             value={4}
-            checked={hasPermission(
-              "Operações - Histórico de transações, extrato, pix, cobrança recorrente, carnê, boleto, chave pix cadastrada, exceto permissão para aprovação de cadastro, reenvio de token de aprovação e editar"
-            )}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.manage_account
+            checked={
+              permissoes.includes(
+                "Operações - Histórico de transações, extrato, pix, cobrança recorrente, carnê, boleto, chave pix cadastrada, exceto permissão para aprovação de cadastro, reenvio de token de aprovação e editar",
               )
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem
             text="Transações e histórico de transações não concluídas"
@@ -189,18 +195,16 @@ const UserPermissions = () => {
               "Operações - Transações e histórico de transações não concluídas"
             }
             value={5}
-            checked={hasPermission(
-              "Operações - Transações e histórico de transações não concluídas"
-            )}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.view_transactions
+            checked={
+              permissoes.includes(
+                "Operações - Transações e histórico de transações não concluídas",
               )
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem
             text="Bloqueio de dispositivo por perda ou roubo"
@@ -209,15 +213,14 @@ const UserPermissions = () => {
           <Switch
             name={"Atendimento - Bloqueio de dispositivo por perda ou roubo"}
             value={11}
-            checked={hasPermission(
-              "Atendimento - Bloqueio de dispositivo por perda ou roubo"
-            )}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.block_device_loss
+            checked={
+              permissoes.includes(
+                "Atendimento - Bloqueio de dispositivo por perda ou roubo",
               )
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
       </Box>
@@ -231,16 +234,14 @@ const UserPermissions = () => {
           <Switch
             name={"Atendimento - Consulta de extrato"}
             value={6}
-            checked={hasPermission("Atendimento - Consulta de extrato")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.view_extract
-              )
+            checked={
+              permissoes.includes("Atendimento - Consulta de extrato")
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem
             text="Consulta de status da conta"
@@ -249,13 +250,12 @@ const UserPermissions = () => {
           <Switch
             name={"Atendimento - Consulta de status da conta"}
             value={7}
-            checked={hasPermission("Atendimento - Consulta de status da conta")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.view_account_status
-              )
+            checked={
+              permissoes.includes("Atendimento - Consulta de status da conta")
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
         <Box display="flex" alignItems="center">
@@ -269,15 +269,14 @@ const UserPermissions = () => {
               "Atendimento - Consulta ao motivo de pendências de abertura de conta"
             }
             value={8}
-            checked={hasPermission(
-              "Atendimento - Consulta ao motivo de pendências de abertura de conta"
-            )}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.view_pending_reasons
+            checked={
+              permissoes.includes(
+                "Atendimento - Consulta ao motivo de pendências de abertura de conta",
               )
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
       </Box>
@@ -294,43 +293,45 @@ const UserPermissions = () => {
               "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)"
             }
             value={9}
-            checked={hasPermission(
-              "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)"
-            )}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(
-                PERMISSIONS.administradores.permissions.view_personal_data
+            checked={
+              permissoes.includes(
+                "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)",
               )
+                ? true
+                : false
             }
+            onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem text="Número da conta" icon={faCheck} />
           <Switch
             name={"Atendimento - Número da conta"}
             value={10}
-            checked={hasPermission("Atendimento - Número da conta")}
+            checked={
+              permissoes.includes("Atendimento - Número da conta")
+                ? true
+                : false
+            }
             onClick={handlePermissoes}
           />
-
           <AccountCollectionItem
             typographyStyle={{ fontSize: 14 }}
-            text="Gerenciamento de administradores"
+            text="Gerencimento de administradores"
             icon={faBan}
           />
           <Switch
-            name={"Operações - Gerenciamento de administradores"}
+            name={"Operações - Gerencimento de administradores"}
             value={12}
-            checked={hasPermission(
-              "Operações - Gerenciamento de administradores"
-            )}
+            checked={
+              permissoes.includes("Operações - Gerencimento de administradores")
+                ? true
+                : false
+            }
             onClick={handlePermissoes}
           />
         </Box>
       </Box>
-
       <Box className={classes.responsiveContainer}>
         <Box display="flex" alignItems="center">
           <AccountCollectionItem
@@ -340,11 +341,14 @@ const UserPermissions = () => {
           <Switch
             name={"Parceiros - Visualizar Jeitto"}
             value={14}
-            checked={hasPermission("Parceiros - Visualizar Jeitto")}
+            checked={
+              permissoes.includes("Parceiros - Visualizar Jeitto")
+                ? true
+                : false
+            }
             onClick={handlePermissoes}
           />
         </Box>
-
         <Box display="flex" alignItems="center">
           <AccountCollectionItem
             text="Parceiros - Visualizar Recargar"
@@ -353,10 +357,13 @@ const UserPermissions = () => {
           <Switch
             name={"Parceiros - Visualizar Recargar"}
             value={15}
-            checked={hasPermission("Parceiros - Visualizar Recargar")}
+            checked={
+              permissoes.includes("Parceiros - Visualizar Recargar")
+                ? true
+                : false
+            }
             onClick={handlePermissoes}
           />
-
           <AccountCollectionItem
             text="Parceiros - Visualizar GiftCard"
             icon={faGift}
@@ -364,99 +371,27 @@ const UserPermissions = () => {
           <Switch
             name={"Parceiros - Visualizar GiftCard"}
             value={16}
-            checked={hasPermission("Parceiros - Visualizar GiftCard")}
+            checked={
+              permissoes.includes("Parceiros - Visualizar GiftCard")
+                ? true
+                : false
+            }
             onClick={handlePermissoes}
           />
         </Box>
       </Box>
-
       <Box className={classes.responsiveContainer}>
         <Box display="flex" alignItems="center">
           <AccountCollectionItem text="Visualizar Logs" icon={faList} />
           <Switch
             name={"Operações - Visualizar Logs"}
             value={13}
-            checked={hasPermission("Operações - Visualizar Logs")}
-            onClick={handlePermissoes}
-            disabled={
-              !hasPermission(PERMISSIONS.administradores.permissions.view_logs)
+            checked={
+              permissoes.includes("Operações - Visualizar Logs") ? true : false
             }
-          />
-        </Box>
-
-        <Box display="flex" alignItems="center">
-          <AccountCollectionItem
-            text="Apoio Financeiro"
-            icon={faMoneyBillWave}
-          />
-          <Switch
-            name={"Crédito - Apoio Financeiro"}
-            value={17}
-            checked={hasPermission("Crédito - Apoio Financeiro")}
             onClick={handlePermissoes}
           />
         </Box>
-
-        <Box display="flex" alignItems="center">
-          <AccountCollectionItem
-            text="Proposta de Apoio Financeiro"
-            icon={faFileContract}
-          />
-          <Switch
-            name={"Crédito - Proposta Apoio Financeiro"}
-            value={18}
-            checked={hasPermission("Crédito - Proposta Apoio Financeiro")}
-            onClick={handlePermissoes}
-          />
-        </Box>
-      </Box>
-
-      <Box display="flex" alignItems="center">
-        <AccountCollectionItem
-          text="Gerenciar Proposta de Apoio Financeiro"
-          icon={faFileContract}
-        />
-        <Switch
-          name={"Crédito - Gerenciar Proposta Apoio Financeiro"}
-          value={19}
-          checked={hasPermission(
-            "Crédito - Gerenciar Proposta Apoio Financeiro"
-          )}
-          onClick={handlePermissoes}
-        />
-
-        <AccountCollectionItem
-          text="Gerenciar Autorização Bancária de benefícios"
-          icon={faFileContract}
-        />
-        <Switch
-          name={"Concorrência - Autorização Bancárias"}
-          value={26}
-          checked={hasPermission("Concorrência - Autorização Bancárias")}
-          onClick={handlePermissoes}
-          disabled={
-            !hasPermission(
-              PERMISSIONS.administradores.permissions
-                .manage_banking_authorization
-            )
-          }
-        />
-
-        <AccountCollectionItem
-          text="Gerenciar Acesso Logs Auditoria"
-          icon={faEye}
-        />
-        <Switch
-          name={"Concorrência - Acesso Audits Logs"}
-          value={27}
-          checked={hasPermission("Concorrência - Acesso Audits Logs")}
-          onClick={handlePermissoes}
-          disabled={
-            !hasPermission(
-              PERMISSIONS.administradores.permissions.manage_audit_logs
-            )
-          }
-        />
       </Box>
     </Box>
   );

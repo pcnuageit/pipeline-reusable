@@ -10,7 +10,7 @@ import {
   Typography,
   makeStyles,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import CurrencyInput from "react-currency-input";
 import { useDispatch } from "react-redux";
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
     padding: "20px",
   },
   saqueHeader: {
-    background: theme.gradient.main,
+    background: APP_CONFIG.mainCollors.backgrounds,
     color: "white",
   },
   currency: {

@@ -6,7 +6,7 @@ import {
   DialogTitle,
   Typography,
 } from "@material-ui/core";
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useRetryAntecipacaoSalarialTransferMutation } from "../../../services/AntecipacaoSalarial";
 

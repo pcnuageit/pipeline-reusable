@@ -1,15 +1,21 @@
 import {
+  faCreditCard,
+  faGift,
+  faMobileAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import {
   Box,
   makeStyles,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useHistory, useParams } from "react-router";
+import AccountCollectionItem from "../../components/AccountCollections/AccountCollectionItem/AccountCollectionItem";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
-import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 
 const useStyles = makeStyles((theme) => ({
@@ -54,35 +60,44 @@ const ListPartner = () => {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const dispatch = useDispatch();
 
   return (
     <Box display="flex" flexDirection="column" className={classes.root}>
       <LoadingScreen isLoading={loading} />
-
-      <Typography
-        style={{ marginTop: "8px", color: APP_CONFIG.mainCollors.primary }}
-        variant="h4"
-      >
+      <CustomBreadcrumbs
+        path1="Contas"
+        path2="Usuários"
+        to1="/dashboard/contas"
+        to2={`/dashboard/contas/1/users`}
+        path3="Parceiros"
+      />
+      <Typography style={{ marginTop: "8px", color: "#9D9CC6" }} variant="h4">
         Parceiros
       </Typography>
 
       <Box className={classes.responsiveContainer}>
         <Box display="flex" alignItems="center">
-          {/* <AccountCollectionItem link='jeitto' text="Jeitto" icon={faCreditCard} /> */}
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "jeitto"
+            /*  : null} */ text="Jeitto"
+            icon={faCreditCard}
+          />
         </Box>
         <Box display="flex" alignItems="center">
-          <Typography
-            variant="h6"
-            style={{ color: APP_CONFIG.mainCollors.primary }}
-          >
-            Não há dados para serem exibidos
-          </Typography>
-          {/* <AccountCollectionItem link='recarga-celular-admin' text="Celcoin Recargar" icon={faMobileAlt} /> */}
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "recarga-celular-admin"
+            /*  : null} */ text="Celcoin Recargar"
+            icon={faMobileAlt}
+          />
         </Box>
         <Box display="flex" alignItems="center">
-          {/* <AccountCollectionItem link='gift-cards-admin' text="Celcoin GiftCard" icon={faGift} /> */}
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "gift-cards-admin"
+            /*  : null} */ text="Celcoin GiftCard"
+            icon={faGift}
+          />
         </Box>
       </Box>
     </Box>

@@ -8,12 +8,11 @@ import {
   TextField,
 } from "@material-ui/core";
 import { useFormik } from "formik";
-import React from "react";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 import CurrencyFieldText from "../../../../modules/AntecipacaoSalarial/components/CurrencyField";
 
-import { Autocomplete } from "@material-ui/lab";
+import { APP_CONFIG } from "../../../../constants/config";
 import {
   useUpdateAntecipacaoSalarialProposalMutation,
   useUpdateIsPublicInAntecipacaoSalarialProposalMutation,
@@ -92,17 +91,17 @@ function EditProposalDialog({
 
       if (lastPublicStatus) {
         toast.success(
-          "Status público removido da Proposta de Antecipação Salarial!"
+          "Status público removido da Proposta de Antecipação Salarial!",
         );
       } else {
         toast.success(
-          "Status público adicionado na Proposta de Antecipação Salarial!"
+          "Status público adicionado na Proposta de Antecipação Salarial!",
         );
       }
       onClose();
     } catch (e) {
       toast.error(
-        "Erro ao modificar visualização da Proposta de Antecipação Salarial!"
+        "Erro ao modificar visualização da Proposta de Antecipação Salarial!",
       );
     }
   };
@@ -112,6 +111,7 @@ function EditProposalDialog({
       <DialogTitle
         style={{
           paddingBottom: 0,
+          color: APP_CONFIG.mainCollors.primary,
         }}
       >
         Editar proposta de antecipação salarial
@@ -119,7 +119,8 @@ function EditProposalDialog({
       <form onSubmit={formik.handleSubmit}>
         <DialogContent
           style={{
-            paddingTop: 0,
+            marginTop: "10px",
+            marginBottom: "30px",
             minWidth: 500,
           }}
         >
@@ -194,86 +195,86 @@ function EditProposalDialog({
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <Autocomplete
-                disabled={proposal.conta_debit_id === false}
-                fullWidth
-                defaultValue={proposal.conta_debit}
-                options={accounts.data}
-                getOptionLabel={(account) =>
-                  account.razao_social
-                    ? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                    : `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                }
-                onInputChange={(_event, value, reason) => {
-                  if (reason !== "reset") {
-                    setFilters({ ...filters, like: value });
-                  }
-                }}
-                onChange={(_event, option) => {
-                  formik.setFieldValue(
-                    "conta_debit_id",
-                    option ? option.id : ""
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Conta débito"
-                    error={
-                      formik.touched.conta_debit_id &&
-                      Boolean(formik.errors.conta_debit_id)
-                    }
-                    helperText={
-                      formik.touched.conta_debit_id &&
-                      formik.errors.conta_debit_id
-                        ? formik.errors.conta_debit_id
-                        : "Conta de onde será debitado valor da proposta"
-                    }
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-                disabled={proposal.conta_credit_id === false}
-                fullWidth
-                defaultValue={proposal.conta_credit}
-                options={accounts.data}
-                getOptionLabel={(account) =>
-                  account.razao_social
-                    ? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                    : `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                }
-                onInputChange={(_event, value, reason) => {
-                  if (reason !== "reset") {
-                    setFilters({ ...filters, like: value });
-                  }
-                }}
-                onChange={(_event, option) => {
-                  formik.setFieldValue(
-                    "conta_credit_id",
-                    option ? option.id : ""
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Conta crédito"
-                    error={
-                      formik.touched.conta_credit_id &&
-                      Boolean(formik.errors.conta_credit_id)
-                    }
-                    helperText={
-                      formik.touched.conta_credit_id &&
-                      formik.errors.conta_credit_id
-                        ? formik.errors.conta_credit_id
-                        : "Conta onde será depositada o pagamento da proposta"
-                    }
-                  />
-                )}
-              />
-            </Grid>
+            {/* 	<Grid item xs={12}>
+							<Autocomplete
+								disabled={proposal.conta_debit_id === false}
+								fullWidth
+								defaultValue={proposal.conta_debit}
+								options={accounts.data}
+								getOptionLabel={(account) =>
+									account.razao_social
+										? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+										: `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+								}
+								onInputChange={(_event, value, reason) => {
+									if (reason !== 'reset') {
+										setFilters({ ...filters, like: value });
+									}
+								}}
+								onChange={(_event, option) => {
+									formik.setFieldValue(
+										'conta_debit_id',
+										option ? option.id : ''
+									);
+								}}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Conta débito"
+										error={
+											formik.touched.conta_debit_id &&
+											Boolean(formik.errors.conta_debit_id)
+										}
+										helperText={
+											formik.touched.conta_debit_id &&
+											formik.errors.conta_debit_id
+												? formik.errors.conta_debit_id
+												: 'Conta de onde será debitado valor da proposta'
+										}
+									/>
+								)}
+							/>
+						</Grid>
+						<Grid item xs={12}>
+							<Autocomplete
+								disabled={proposal.conta_credit_id === false}
+								fullWidth
+								defaultValue={proposal.conta_credit}
+								options={accounts.data}
+								getOptionLabel={(account) =>
+									account.razao_social
+										? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+										: `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+								}
+								onInputChange={(_event, value, reason) => {
+									if (reason !== 'reset') {
+										setFilters({ ...filters, like: value });
+									}
+								}}
+								onChange={(_event, option) => {
+									formik.setFieldValue(
+										'conta_credit_id',
+										option ? option.id : ''
+									);
+								}}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Conta crédito"
+										error={
+											formik.touched.conta_credit_id &&
+											Boolean(formik.errors.conta_credit_id)
+										}
+										helperText={
+											formik.touched.conta_credit_id &&
+											formik.errors.conta_credit_id
+												? formik.errors.conta_credit_id
+												: 'Conta onde será depositada o pagamento da proposta'
+										}
+									/>
+								)}
+							/>
+						</Grid> */}
           </Grid>
         </DialogContent>
         <DialogActions>

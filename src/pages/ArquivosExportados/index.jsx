@@ -1,131 +1,176 @@
 import {
   Box,
-  Grid,
-  IconButton,
-  InputLabel,
   LinearProgress,
-  MenuItem,
-  Select,
-  TableContainer,
-  TextField,
   Typography,
-  makeStyles,
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import RefreshIcon from "@material-ui/icons/Refresh";
-import { Pagination } from "@material-ui/lab";
+import { makeStyles } from "@material-ui/styles";
+import { Pagination } from "@mui/material";
 import moment from "moment";
 import "moment/locale/pt-br";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 
-import { postAuthMeAction } from "../../actions/actions";
+import { loadUserData } from "../../actions/actions";
 import { APP_CONFIG } from "../../constants/config";
-import "../../fonts/Montserrat-SemiBold.otf";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
+
+import { Download } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
+import CustomTable from "../../components/CustomTable/CustomTable";
+import { TableHeaderButton } from "../../components/TableHeaderButtons";
 import {
   getArquivosExportados,
-  getDownloadArquivoExportadoVoucher,
+  getDownloadArquivoExportado,
 } from "../../services/services";
-import px2vw from "../../utils/px2vw";
-
-import { Delete, Download } from "@mui/icons-material";
-import { toast } from "react-toastify";
-import CustomTable from "../../components/CustomTable/CustomTable";
-import TableHeaderButton from "../../components/TableHeaderButton";
-import usePermission from "../../hooks/usePermission";
 import { translateStatus } from "../../utils/translateStatus";
 
-moment.locale("pt-br");
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: "flex",
+  },
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    height: "100%",
+    padding: "10px",
+  },
+  header: {
+    display: "flex",
+    alignContent: "center",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+  },
+  dadosBox: {
+    display: "flex",
+    flexDirection: "row",
+    marginTop: "24px",
+    marginLeft: "0px",
+  },
+  cardContainer: {
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
+  },
+  contadorStyle: {
+    display: "flex",
+    fontSize: "30px",
+    fontFamily: "Montserrat-SemiBold",
+  },
+  paper: {
+    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+    display: "flex",
+    width: "100%",
+    flexDirection: "column",
+    boxShadow: "none",
+    borderRadius: "0px",
+    alignSelf: "center",
+  },
+  modal: {
+    outline: " none",
+    display: "flex",
+    flexDirection: "column",
+    alignSelf: "center",
+    position: "absolute",
+
+    top: "10%",
+    left: "35%",
+    width: "30%",
+    height: "80%",
+    backgroundColor: "white",
+    border: "0px solid #000",
+    boxShadow: 24,
+  },
+
+  closeModalButton: {
+    alignSelf: "end",
+    padding: "5px",
+    "&:hover": {
+      backgroundColor: APP_CONFIG.mainCollors.primaryVariant,
+      cursor: "pointer",
+    },
+  },
+  dropzoneAreaBaseClasses: {
+    width: "70%",
+    height: "250px",
+    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+  },
+  dropzoneContainer: {
+    margin: "6px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "12px",
+    minHeight: "422px",
+    fontSize: "12px",
+  },
+  textoDropzone: {
+    fontSize: "1.2rem",
+    color: APP_CONFIG.mainCollors.primary,
+  },
+}));
+
+const columns = [
+  {
+    headerText: "DATA",
+    key: "created_at",
+    CustomValue: (value) => moment.utc(value).format("DD/MM/YYYY HH:mm"),
+  },
+  { headerText: "TIPO", key: "filters.export_type" },
+  {
+    headerText: "STATUS",
+    key: "status",
+    CustomValue: (v) => <Typography>{translateStatus(v)}</Typography>,
+  },
+  { headerText: "DOWNLOAD", key: "menu" },
+];
 
 export default function ArquivosExportados() {
-  const token = useAuth();
+  const history = useHistory();
+  const classes = useStyles();
+  const theme = useTheme();
   const dispatch = useDispatch();
-  const id = useParams()?.id ?? "";
+  const userData = useSelector((state) => state.userData);
+  const matches = useMediaQuery(theme.breakpoints.down("sm"));
+  const token = useAuth();
   const [loading, setLoading] = useState(false);
-  const { hasPermission, PERMISSIONS } = usePermission();
-  const [listaArquivos, setListaArquivos] = useState();
+  const [listaArquivos, setListaArquivos] = useState([]);
+  const [page, setPage] = useState(1);
   const [filter, setFilter] = useState({
-    created_at: "",
-    status: " ", // processing, success e failed
-    type: " ", // xlsx, pdf
-    mostrar: "15",
+    nome_beneficio: "",
+    tipo: " ",
+    external_id: "",
   });
   const debouncedFilter = useDebounce(filter, 800);
-  const [page, setPage] = useState(1);
 
-  const theme = useTheme();
-  const matches = useMediaQuery(theme.breakpoints.down("md"));
-  const useStyles = makeStyles((theme) => ({
-    root: {
-      width: "100%",
-      display: "flex",
-      flexDirection: "column",
-    },
-    headerContainer: {
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      marginBottom: "25px",
-      width: px2vw("100%"),
-      "@media (max-width: 1440px)": {
-        width: "950px",
-      },
-      "@media (max-width: 1280px)": {
-        width: "850px",
-      },
-    },
-    tableContainer: { marginTop: "1px" },
-    pageTitle: {
-      color: APP_CONFIG.mainCollors.primary,
-      fontFamily: "Montserrat-SemiBold",
-    },
-  }))();
+  // const resetFilters = () => {
+  //   setFilter({
+  //     nome_beneficio: "",
+  //     tipo: " ",
+  //     external_id: "",
+  //   });
+  // };
 
-  const columns = [
-    {
-      headerText: "DATA",
-      key: "created_at",
-      CustomValue: (value) => moment.utc(value).format("DD/MM/YYYY HH:mm"),
-    },
-    { headerText: "TIPO", key: "filters.export_type" },
-    {
-      headerText: "ORIGEM",
-      key: "origem",
-      // key: "class_name",
-      // CustomValue: (v) => <Typography>{parseClassNameResponse(v)}</Typography>,
-    },
-    {
-      headerText: "STATUS",
-      key: "status",
-      CustomValue: (v) => <Typography>{translateStatus(v)}</Typography>,
-    },
-    hasPermission(PERMISSIONS.arquivos_exportados.actions.download)
-      ? { headerText: "DOWNLOAD", key: "menu" }
-      : {},
-  ];
+  // const filters = `nome_beneficio=${filter.nome_beneficio}&tipo=${filter.tipo}&external_id=${filter.external_id}`;
 
-  const resetFilters = () => {
-    setPage(1);
-    setFilter({
-      created_at: "",
-      status: " ",
-      type: " ",
-      mostrar: "15",
-    });
-  };
-
-  const filters = `created_at=${filter.created_at}&status=${filter.status}&type=${filter.type}&mostrar=${filter.mostrar}`;
-
-  const getData = async (token, page = 1) => {
+  const getData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data } = await getArquivosExportados(token, page, "", filters);
-      console.log(data);
-      setListaArquivos(data);
+      const res = await getArquivosExportados(
+        token,
+        userData?.id,
+        page,
+        "",
+        "",
+      );
+      setListaArquivos(res.data);
     } catch (err) {
       console.log(err);
     } finally {
@@ -134,14 +179,13 @@ export default function ArquivosExportados() {
   };
 
   const handleDownload = async (row) => {
-    if (!row?.url) {
-      toast.error("Este arquivo não está mais disponível.");
-      return;
-    }
-
     try {
       toast.warning("Carregando arquivo...");
-      const { data } = await getDownloadArquivoExportadoVoucher(token, row?.id);
+      const { data } = await getDownloadArquivoExportado(
+        token,
+        row?.id,
+        userData?.id,
+      );
       const newWindow = window.open(data, "_blank", "noopener,noreferrer");
       if (newWindow) newWindow.opener = null;
     } catch (err) {
@@ -150,213 +194,186 @@ export default function ArquivosExportados() {
   };
 
   useEffect(() => {
-    getData(token, page);
-  }, [token, page, debouncedFilter]);
+    dispatch(loadUserData(token));
+  }, [dispatch, token]);
 
   useEffect(() => {
-    dispatch(postAuthMeAction(token));
-  }, [token, dispatch]);
+    getData(page);
+  }, [token, page, debouncedFilter]);
 
   return (
-    <Box className={useStyles.root}>
-      <Box className={useStyles.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography className={useStyles.pageTitle}>
-            Arquivos exportados
-          </Typography>
+    <Box className={classes.root}>
+      <Box className={classes.main}>
+        <CustomHeader pageTitle="Arquivos exportados" customButtons={[]} />
 
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
-          </Box>
-        </Box>
-        <Box
-          style={{
-            width: "100%",
-            backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-            borderTopLeftRadius: 27,
-            borderTopRightRadius: 27,
-          }}
-        >
-          <Box style={{ margin: 30 }}>
-            <Grid
-              container
-              spacing={3}
-              style={{ alignItems: "center", marginBottom: "8px" }}
-            >
-              <Grid item xs={12} sm={3}>
-                <TextField
-                  fullWidth
-                  label="Pesquisar por data"
-                  size="small"
-                  variant="outlined"
-                  style={{
-                    marginRight: "10px",
-                  }}
-                  InputLabelProps={{
-                    color: APP_CONFIG.mainCollors.secondary,
-                    shrink: true,
-                    pattern: "d {4}- d {2}- d {2} ",
-                  }}
-                  type="date"
-                  value={filter.created_at}
-                  onChange={(e) => {
-                    setPage(1);
-                    setFilter((prev) => ({
-                      ...prev,
-                      created_at: e.target.value,
-                    }));
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={3}>
-                <InputLabel id="tipo_label" shrink="true">
-                  Tipo
-                </InputLabel>
-                <Select
-                  labelId="tipo_label"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={filter.type}
-                  onChange={(e) => {
-                    setPage(1);
-                    setFilter((prev) => ({
-                      ...prev,
-                      type: e.target.value,
-                    }));
-                  }}
-                >
-                  <MenuItem value={" "}>Todos</MenuItem>
-                  <MenuItem value={"statement"}>statement</MenuItem>
-                  <MenuItem value={"transfer"}>transfer</MenuItem>
-                  <MenuItem value={"transaction"}>transaction</MenuItem>
-                </Select>
-              </Grid>
-
-              <Grid item xs={12} sm={3}>
-                <InputLabel id="status_label" shrink="true">
-                  Status
-                </InputLabel>
-                <Select
-                  labelId="status_label"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  value={filter.status}
-                  onChange={(e) => {
-                    setPage(1);
-                    setFilter((prev) => ({
-                      ...prev,
-                      status: e.target.value,
-                    }));
-                  }}
-                >
-                  <MenuItem value={" "}>Todos</MenuItem>
-                  <MenuItem value={"processing"}>
-                    {translateStatus("processing")}
-                  </MenuItem>
-                  <MenuItem value={"success"}>
-                    {translateStatus("success")}
-                  </MenuItem>
-                  <MenuItem value={"failed"}>
-                    {translateStatus("failed")}
-                  </MenuItem>
-                </Select>
-              </Grid>
-
-              <Grid item xs={12} sm={3}>
-                <InputLabel id="mostrar_label" shrink="true">
-                  Itens por página
-                </InputLabel>
-                <Select
-                  labelId="mostrar_label"
-                  value={filter.mostrar}
-                  onChange={(e) => {
-                    setPage(1);
-                    setFilter({ ...filter, mostrar: e.target.value });
-                  }}
-                  variant="outlined"
-                  fullWidth
-                >
-                  <MenuItem value={"15"}>15</MenuItem>
-                  <MenuItem value={"30"}>30</MenuItem>
-                  <MenuItem value={"45"}>45</MenuItem>
-                  <MenuItem value={"50"}>50</MenuItem>
-                </Select>
-              </Grid>
-
-              <TableHeaderButton
-                text="Limpar"
-                onClick={resetFilters}
-                Icon={Delete}
-                color="red"
-              />
-            </Grid>
-          </Box>
-        </Box>
-
-        {hasPermission(PERMISSIONS.arquivos_exportados.list.view) && (
-          <Box className={useStyles.tableContainer}>
-            {!loading && listaArquivos?.data && listaArquivos?.per_page ? (
-              <Box minWidth={!matches ? "800px" : null}>
-                <TableContainer style={{ overflowX: "auto" }}>
-                  <CustomTable
-                    columns={columns}
-                    data={listaArquivos?.data}
-                    Editar={({ row }) => (
-                      <Download onClick={() => handleDownload(row)} />
-                    )}
-                  />
-                </TableContainer>
-              </Box>
-            ) : (
-              <Box>
-                <LinearProgress color="secondary" />
-              </Box>
-            )}
-
+        <Box className={classes.dadosBox}>
+          <Box
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <Box
-              display="flex"
-              alignSelf="flex-end"
-              marginTop="8px"
-              justifyContent="space-between"
+              style={{
+                display: "flex",
+                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                borderRadius: "17px",
+                flexDirection: "column",
+                width: "100%",
+              }}
             >
-              <Pagination
-                variant="outlined"
-                color="secondary"
-                size="large"
-                count={listaArquivos?.last_page}
-                onChange={(e, value) => setPage(value)}
-                page={page}
-              />
+              <Box
+                style={{
+                  width: "100%",
+                  borderRadius: 27,
+                  borderTopLeftRadius: 27,
+                  borderTopRightRadius: 27,
+                }}
+              >
+                <Box style={{ margin: 30, flex: 1 }}>
+                  <TableHeaderButton
+                    text="Atualizar"
+                    onClick={() => {
+                      getData();
+                      setPage(1);
+                    }}
+                  />
+
+                  {/* <Grid container spacing={3}>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Pesquisar por nome"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        size="small"
+                        variant="outlined"
+                        value={filter.nome_beneficio}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilter((prev) => ({
+                            ...prev,
+                            nome_beneficio: e.target.value,
+                          }));
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Pesquisar por ID"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        size="small"
+                        variant="outlined"
+                        value={filter.external_id}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilter((prev) => ({
+                            ...prev,
+                            external_id: e.target.value,
+                          }));
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={4}>
+                      <Select
+                        variant="outlined"
+                        fullWidth
+                        required
+                        value={filter.tipo}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilter((prev) => ({
+                            ...prev,
+                            tipo: e.target.value,
+                          }));
+                        }}
+                      >
+                        <MenuItem value={" "}>Tipo</MenuItem>
+                        <MenuItem value={"beneficiario"}>Voucher</MenuItem>
+                        <MenuItem value={"cartao"}>Cartão</MenuItem>
+                      </Select>
+                    </Grid>
+
+                    <Grid item xs={12} sm={2}>
+                      <Box
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          alignItems: "center",
+                          height: "100%",
+                          width: "100%",
+                        }}
+                      >
+                        <CustomButton color="red" onClick={resetFilters}>
+                          <Box display="flex" alignItems="center">
+                            <Delete />
+                            Limpar
+                          </Box>
+                        </CustomButton>
+                      </Box>
+                    </Grid>
+                  </Grid> */}
+                </Box>
+
+                <Box
+                  display="flex"
+                  style={{
+                    marginTop: "10px",
+                    marginBottom: "16px",
+                    margin: 30,
+                  }}
+                >
+                  <Box
+                    style={{
+                      width: "100%",
+                      borderTopRightRadius: 27,
+                      borderTopLeftRadius: 27,
+                    }}
+                  >
+                    {!loading &&
+                    listaArquivos.data &&
+                    listaArquivos.per_page ? (
+                      <>
+                        <Box minWidth={!matches ? "800px" : null}>
+                          <CustomTable
+                            columns={columns ? columns : null}
+                            data={listaArquivos.data}
+                            Editar={({ row }) => (
+                              <Download onClick={() => handleDownload(row)} />
+                            )}
+                          />
+                        </Box>
+
+                        <Box alignSelf="flex-end" marginTop="8px">
+                          <Pagination
+                            variant="outlined"
+                            color="secondary"
+                            size="large"
+                            count={listaArquivos.last_page}
+                            onChange={(e, v) => setPage(v)}
+                            page={page}
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <Box>
+                        <LinearProgress color="primary" />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
             </Box>
           </Box>
-        )}
+        </Box>
       </Box>
     </Box>
   );
-}
-
-function parseClassNameResponse(str) {
-  return str
-    ?.split("\\")
-    ?.pop()
-    ?.replace(/([A-Z])/g, " $1")
-    ?.trim();
 }

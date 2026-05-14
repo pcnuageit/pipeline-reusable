@@ -1,33 +1,22 @@
 import {
   faArchive,
   faBarcode,
-  faBuilding,
-  faCheck,
   faCopy,
   faCreditCard,
   faDesktop,
-  faDollarSign,
-  faFileInvoiceDollar,
-  faFileSignature,
-  faHistory,
   faLink,
   faList,
-  faListAlt,
   faMobile,
-  faMobileAlt,
   faMoneyBill,
-  faTags,
-  faTicketAlt,
   faUndo,
-  faUserCheck,
   faUsers,
-  faWallet,
 } from "@fortawesome/free-solid-svg-icons";
 import { Box, makeStyles, Typography } from "@material-ui/core";
-import { useDispatch } from "react-redux";
-import { APP_CONFIG } from "../../constants/config";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
+import { loadPermissao, postAuthMeAction } from "../../actions/actions";
 import useAuth from "../../hooks/useAuth";
-import usePermission from "../../hooks/usePermission";
 import AccountCollectionItem from "./AccountCollectionItem/AccountCollectionItem";
 
 const useStyles = makeStyles((theme) => ({
@@ -44,7 +33,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const AccountCollections = ({
-  title,
   ted,
   pix,
   pagamentoConta,
@@ -53,62 +41,70 @@ const AccountCollections = ({
   boleto,
   carne,
   assinaturas,
+  cobranca,
   link,
   extrato,
   historicoTransacoes,
+  lancamentosFuturos,
+  realizarTransferencia,
   historicoTransferencia,
+  criarContaDigital,
   pagadores,
+  solicitarCartao,
+  cartoesPre,
   terminais,
+  area,
+  todos,
+  giftCard,
   recarga,
   folhaPagamento,
-  contasAutorizadas,
   exportacoesSolicitadas,
   tarifas,
   extrato_adquirencia,
-  extrato_beneficios,
-  beneficiarios,
-  cartoesBeneficiarios,
-  voucherBeneficiarios,
-  pagamentoCartaoPrivado,
-  liberarCartoes,
-  pagamentoContaVoucher,
-  autorizaPagamentoContaVoucher,
-  listaBeneficios,
-  listaContratoAluguel,
-  pagamentoContratoAluguel,
-  autorizaPagamentoContratoAluguel,
 }) => {
+  const [permissoes, setPermissoes] = useState([]);
   const token = useAuth();
+  const me = useSelector((state) => state.me);
+  const userPermissao = useSelector((state) => state.userPermissao);
   const dispatch = useDispatch();
   const classes = useStyles();
-  const { hasPermission, PERMISSIONS } = usePermission();
-  const AbaGestao = APP_CONFIG.AbaGestao;
+  const { id } = useParams();
 
-  // useEffect(() => {
-  //   dispatch(postAuthMeAction(token));
-  // }, [dispatch, token]);
+  /* const userPermissao = useSelector((state) => state.userPermissao);
+	const [permissoes, setPermissoes] = useState([]);
 
-  if (AbaGestao && !hasPermission(PERMISSIONS.secretarias.actions.manage))
-    return null;
+	useEffect(() => {
+		const { permissao } = userPermissao;
+		setPermissoes(permissao.map((item) => item.tipo));
+	}, [userPermissao]);
+
+	useEffect(() => {
+		return () => {
+			setPermissoes([]);
+		};
+	}, []); */
+  useEffect(() => {
+    dispatch(postAuthMeAction(token));
+  }, []);
+
+  useEffect(() => {
+    const { permissao } = userPermissao;
+    setPermissoes(permissao.map((item) => item.tipo));
+  }, [userPermissao]);
+
+  useEffect(() => {
+    if (me.id !== undefined) {
+      dispatch(loadPermissao(token, me.id));
+    }
+  }, [me.id]);
 
   return (
     <Box className={classes.accountCollectionContainer}>
-      <Typography variant="h6">{title}</Typography>
-
-      <Box display="flex">
-        {contasAutorizadas ? (
-          <AccountCollectionItem
-            link="contas-autorizadas"
-            text="Contas Autorizadas"
-            icon={faUserCheck}
-          />
-        ) : null}
-      </Box>
-
+      <Typography variant="h6">{area}</Typography>
       <Box display="flex">
         {cartao ? (
           <AccountCollectionItem
-            link="cobrancas-credito"
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "cobrancas-credito" /*  : null} */
             text="Máquina Virtual"
             icon={faCreditCard}
           />
@@ -119,14 +115,17 @@ const AccountCollections = ({
         ) : null}
 
         {carne ? (
-          <AccountCollectionItem link="carne" text="Carnê" icon={faCopy} />
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Carne') ?  */ "carne" /*  : null} */
+            text="Carnê"
+            icon={faCopy}
+          />
         ) : null}
       </Box>
-
       <Box display="flex">
         {link ? (
           <AccountCollectionItem
-            link="link-pagamento"
+            link=/* {permissoes.includes('Cobranca - Link Pagamento') ?  */ "link-pagamento" /*  : null} */
             text="Link de Pagamento"
             icon={faLink}
           />
@@ -140,33 +139,34 @@ const AccountCollections = ({
           />
         ) : null}
 
-        {extrato ? (
+        {/* {extrato ? (
+					<AccountCollectionItem
+						link={
+							permissoes.includes('Atendimento - Consulta de extrato') ||
+							permissoes.includes('Administrador - Acesso total')
+								? 'extrato'
+								: null
+						}
+						text="Extrato"
+						icon={faDollarSign}
+					/>
+				) : null} */}
+        {assinaturas ? (
           <AccountCollectionItem
-            link={
-              hasPermission("Atendimento - Consulta de extrato")
-                ? "extrato"
-                : null
-            }
-            text="Extrato"
-            icon={faDollarSign}
+            link=/* {permissoes.includes('Cobranca - Assinatura') ?  */ "assinaturas" /*  : null} */
+            text="Assinatura"
+            icon={faUndo}
           />
         ) : null}
       </Box>
 
       <Box display="flex">
-        {assinaturas ? (
-          <AccountCollectionItem
-            link="assinaturas"
-            text="Cobrança Recorrente"
-            icon={faUndo}
-          />
-        ) : null}
         {historicoTransacoes ? (
           <AccountCollectionItem
             link={
-              hasPermission(
+              permissoes.includes(
                 "Operações - Transações e histórico de transações não concluídas",
-              )
+              ) || permissoes.includes("Administrador - Acesso total")
                 ? "historico-de-transacoes"
                 : null
             }
@@ -175,64 +175,13 @@ const AccountCollections = ({
           />
         ) : null}
 
-        {historicoTransferencia ? (
-          <AccountCollectionItem
-            link="historico-transferencia"
-            text="Histórico de Transferência"
-            icon={faHistory}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {ted ? (
-          <AccountCollectionItem
-            link="transferencia-ted"
-            text="Transferência TED"
-            icon={faUsers}
-          />
-        ) : null}
-        {pix ? (
-          <AccountCollectionItem
-            link="transacoes-pix"
-            text="Transações PIX"
-            icon={faWallet}
-          />
-        ) : null}
-        {chavespix ? (
-          <AccountCollectionItem
-            link="chaves-pix"
-            text="Chaves PIX"
-            icon={faTags}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {pagamentoConta ? (
-          <AccountCollectionItem
-            link="pagamento-conta"
-            text="Pagamento Conta"
-            icon={faMoneyBill}
-          />
-        ) : null}
-
-        {/* {giftCard ? (
-						<AccountCollectionItem
-						link='gift-cards'
-						text="Gift Card"
-						icon={faGift}
+        {/* {historicoTransferencia ? (
+					<AccountCollectionItem
+						link="historico-transferencia"
+						text="Histórico de Transferência"
+						icon={faHistory}
 					/>
-					): null} */}
-
-        {recarga ? (
-          <AccountCollectionItem
-            link="recarga-celular"
-            text="Recarga"
-            icon={faMobileAlt}
-          />
-        ) : null}
-
+				) : null} */}
         {extrato_adquirencia ? (
           <AccountCollectionItem
             link={"extrato-adquirencia"}
@@ -240,9 +189,6 @@ const AccountCollections = ({
             icon={faList}
           />
         ) : null}
-      </Box>
-
-      <Box display="flex">
         {terminais ? (
           <AccountCollectionItem
             link="terminais-pos"
@@ -250,7 +196,55 @@ const AccountCollections = ({
             icon={faMobile}
           />
         ) : null}
+      </Box>
+      {/* 	<Box display="flex">
+				{ted ? (
+					<AccountCollectionItem
+						link="transferencia-ted"
+						text="Transferência TED"
+						icon={faUsers}
+					/>
+				) : null}
+				{pix ? (
+					<AccountCollectionItem
+						link="transacoes-pix"
+						text="Transações PIX"
+						icon={faWallet}
+					/>
+				) : null}
+				{chavespix ? (
+					<AccountCollectionItem
+						link="chaves-pix"
+						text="Chaves PIX"
+						icon={faTags}
+					/>
+				) : null}
+			</Box> */}
+      {/* <Box display="flex">
+				{pagamentoConta ? (
+					<AccountCollectionItem
+						link="pagamento-conta"
+						text="Pagamento Conta"
+						icon={faMoneyBill}
+					/>
+				) : null}
 
+				{giftCard ? (
+						<AccountCollectionItem
+						link='gift-cards'
+						text="Gift Card"
+						icon={faGift}
+					/>
+					): null}
+				{recarga ? (
+					<AccountCollectionItem
+						link="recarga-celular"
+						text="Recarga"
+						icon={faMobileAlt}
+					/>
+				) : null}
+			</Box> */}
+      <Box display="flex">
         {exportacoesSolicitadas ? (
           <AccountCollectionItem
             link={"exportacoes-solicitadas"}
@@ -258,7 +252,6 @@ const AccountCollections = ({
             icon={faArchive}
           />
         ) : null}
-
         {tarifas ? (
           <AccountCollectionItem
             link={"tarifas"}
@@ -267,150 +260,244 @@ const AccountCollections = ({
           />
         ) : null}
       </Box>
-
-      <Box display="flex">
-        {folhaPagamento ? (
-          <AccountCollectionItem
-            link="folha-de-pagamento"
-            text="Folha de Pagamento"
-            icon={faListAlt}
-          />
-        ) : null}
-
-        {extrato_beneficios ? (
-          <AccountCollectionItem
-            link={"extrato-adquirencia"}
-            text="Extrato Benefícios"
-            icon={faList}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {beneficiarios ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.beneficiarios.view)
-                ? "lista-beneficiarios"
-                : null
-            }
-            text="Beneficiários"
-            icon={faUsers}
-          />
-        ) : null}
-
-        {listaBeneficios ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.beneficios.view)
-                ? "lista-beneficios"
-                : null
-            }
-            text="Lista de benefícios"
-            icon={faList}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {cartoesBeneficiarios ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.cartoes.view)
-                ? "lista-beneficiarios-cartao"
-                : null
-            }
-            text="Cartões dos Beneficiários"
-            icon={faWallet}
-          />
-        ) : null}
-
-        {pagamentoCartaoPrivado ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.pagamento_cartao.view)
-                ? "pagamento-beneficiarios-cartao"
-                : null
-            }
-            text="Pagamento Cartão Privado"
-            icon={faCreditCard}
-          />
-        ) : null}
-
-        {liberarCartoes ? (
-          <AccountCollectionItem
-            link={"liberar-beneficiarios-cartao"}
-            text="Liberar Cartões"
-            icon={faCreditCard}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {voucherBeneficiarios ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.vouchers.view)
-                ? "lista-beneficiarios-voucher"
-                : null
-            }
-            text="Vouchers dos Beneficiários"
-            icon={faBuilding}
-          />
-        ) : null}
-
-        {pagamentoContaVoucher ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(PERMISSIONS.secretarias.pagamento_voucher.view)
-                ? "pagamento-beneficiarios-voucher"
-                : null
-            }
-            text="Pagamento Conta Voucher"
-            icon={faTicketAlt}
-          />
-        ) : null}
-
-        {autorizaPagamentoContaVoucher ? (
-          <AccountCollectionItem
-            link={
-              hasPermission(
-                PERMISSIONS.secretarias.autorizar_pagamento_voucher.view,
-              )
-                ? "autorizar-pagamento-beneficiarios-voucher"
-                : null
-            }
-            text="Autorizar Pagamento Conta Voucher"
-            icon={faCheck}
-          />
-        ) : null}
-      </Box>
-
-      <Box display="flex">
-        {listaContratoAluguel ? (
-          <AccountCollectionItem
-            link={"lista-contrato-aluguel"}
-            text="Contrato de Aluguel"
-            icon={faFileSignature}
-          />
-        ) : null}
-        {pagamentoContratoAluguel ? (
-          <AccountCollectionItem
-            link={"pagamento-contrato-aluguel"}
-            text="Pagamento Contrato de Aluguel"
-            icon={faFileInvoiceDollar}
-          />
-        ) : null}
-        {autorizaPagamentoContratoAluguel ? (
-          <AccountCollectionItem
-            link={"autorizar-pagamento-contrato-aluguel"}
-            text="Autorizar Pagamento Contrato de Aluguel"
-            icon={faCheck}
-          />
-        ) : null}
-      </Box>
+      {/* <Box display="flex">
+				{folhaPagamento ? (
+					<AccountCollectionItem
+						link="folha-de-pagamento"
+						text="Folha de Pagamento"
+						icon={faListAlt}
+					/>
+				) : null}
+			</Box> */}
     </Box>
   );
 };
 
 export default AccountCollections;
+
+/* import React, { useEffect, useState } from 'react';
+import {
+	faBarcode,
+	faCheck,
+	faCopy,
+	faCreditCard,
+	faDesktop,
+	faDollarSign,
+	faForward,
+	faHandHoldingUsd,
+	faHistory,
+	faLink,
+	faMobile,
+	faSignOutAlt,
+	faTags,
+	faUndo,
+	faUsers,
+	faWallet,
+	faGift,
+	faMobileAlt
+} from '@fortawesome/free-solid-svg-icons';
+import { Box, makeStyles, Typography } from '@material-ui/core';
+import AccountCollectionItem from './AccountCollectionItem/AccountCollectionItem';
+import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router';
+import { loadPermissao, postAuthMeAction } from '../../actions/actions';
+import useAuth from '../../hooks/useAuth';
+import { APP_CONFIG } from '../../constants/config';
+
+const useStyles = makeStyles((theme) => ({
+	accountCollectionContainer: {
+		width: '60%',
+		display: 'flex',
+		height: '100%',
+		flexDirection: 'column',
+		color: theme.palette.primary.main,
+		[theme.breakpoints.down(850)]: {
+			width: '100%',
+		},
+	},
+}));
+
+const AccountCollections = ({
+	ted,
+	pix,
+	chavespix,
+	cartao,
+	boleto,
+	carne,
+	assinaturas,
+	cobranca,
+	link,
+	extrato,
+	historicoTransacoes,
+	lancamentosFuturos,
+	realizarTransferencia,
+	historicoTransferencia,
+	criarContaDigital,
+	pagadores,
+	solicitarCartao,
+	cartoesPre,
+	terminais,
+	area,
+	todos,
+	giftCard,
+	recarga
+}) => {
+const [permissoes, setPermissoes] = useState([]);
+const token = useAuth();
+const me = useSelector((state) => state.me);
+const userPermissao = useSelector((state) => state.userPermissao);
+const dispatch = useDispatch();
+	const classes = useStyles();
+	const {id} = useParams();
+
+	
+	useEffect(() => {
+		dispatch(postAuthMeAction(token));
+	}, []);
+
+	useEffect(() => {
+		const { permissao } = userPermissao;
+		setPermissoes(permissao.map((item) => item.tipo));
+	}, [userPermissao]);
+
+	useEffect(() => {
+		if (me.id !== undefined) {
+			dispatch(loadPermissao(token, me.id));
+		}
+	}, [me.id]);
+
+	
+
+	
+
+	
+		return (
+			<Box className={classes.accountCollectionContainer}>
+				<Typography variant="h6">{area}</Typography>
+				<Box display="flex">
+					{cartao ? (
+						<AccountCollectionItem
+							link='cobrancas-credito'
+							text="Máquina Virtual"
+							icon={faCreditCard}
+						/>
+					) : null}
+
+					{boleto ? (
+						<AccountCollectionItem
+							link='boleto'
+							text="Boleto"
+							icon={faBarcode}
+						/>
+					) : null}
+
+					{carne ? (
+						<AccountCollectionItem
+							link='carne'
+							text="Carnê"
+							icon={faCopy}
+						/>
+					) : null}
+				</Box>
+				<Box display="flex">
+					{link ? (
+						<AccountCollectionItem
+							link='link-pagamento'
+							text="Link de Pagamento"
+							icon={faLink}
+						/>
+					) : null}
+
+					{pagadores ? (
+						<AccountCollectionItem
+							link='pagadores'
+							text="Pagadores"
+							icon={faUsers}
+						/>
+					) : null}
+
+					{extrato ? (
+						<AccountCollectionItem
+							link={permissoes.includes('Atendimento - Consulta de extrato') || permissoes.includes('Administrador - Acesso total') ? 'extrato' : null}
+							text="Extrato"
+							icon={faDollarSign}
+						/>
+					) : null}
+				</Box>
+
+				<Box display="flex">
+					{assinaturas ? (
+						<AccountCollectionItem
+							link='assinaturas'
+							text="Cobrança Recorrente"
+							icon={faUndo}
+						/>
+					) : null}
+					{historicoTransacoes ? (
+						<AccountCollectionItem
+							link={
+								permissoes.includes('Operações - Transações e histórico de transações não concluídas') || permissoes.includes('Administrador - Acesso total')
+									? 'historico-de-transacoes'
+									: null
+							}
+							text="Histórico de Transações"
+							icon={faDesktop}
+						/>
+					) : null}
+					
+					{historicoTransferencia ? (
+						<AccountCollectionItem
+							link='historico-transferencia'
+							text="Histórico de Transferência"
+							icon={faHistory}
+						/>
+					) : null}
+				</Box>
+				<Box display='flex'>
+					{ted ? (
+						<AccountCollectionItem
+						link='transferencia-ted'
+						text="Transferência TED"
+						icon={faUsers}
+					/>
+					): null}
+					{pix ? (
+						<AccountCollectionItem
+						link='transacoes-pix'
+						text="Transações PIX"
+						icon={faWallet}
+					/>
+					): null}
+					{chavespix ? (
+						<AccountCollectionItem
+						link='chaves-pix'
+						text="Chaves PIX"
+						icon={faTags}
+					/>
+					): null}
+				</Box>
+				<Box display='flex'>
+				{giftCard ? (
+						<AccountCollectionItem
+						link='gift-cards'
+						text="Gift Card"
+						icon={faGift}
+					/>
+					): null}
+					{recarga ? (
+						<AccountCollectionItem
+						link='recarga-celular'
+						text="Recarga"
+						icon={faMobileAlt}
+					/>
+					): null}
+					
+				</Box>
+			</Box>
+		);
+	} 
+
+
+export default AccountCollections;
+ */

@@ -1,0 +1,21 @@
+name: "Deploy Dashboard — SECTI"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "secti"
+      environment: "production"
+      s3_bucket: "web-pj-secti-prod-385697366782"
+      cloudfront_distribution_id: "E30KEHDGR7RJ5"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://d3go9dqhdncqk1.cloudfront.net/api"
+      react_app_front_app: "secti"
+      react_app_title: "SECTI"
+      react_app_description: "Dashboard da Secretaria Da Ciência, Tecnologia, Inovação E Educação Profissional - SECTI"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

@@ -2,40 +2,33 @@ import "../../fonts/Montserrat-SemiBold.otf";
 
 import {
   Box,
-  Grid,
   IconButton,
-  InputLabel,
   LinearProgress,
   makeStyles,
-  MenuItem,
-  Select,
   TextField,
   Typography,
 } from "@material-ui/core";
-import RefreshIcon from "@material-ui/icons/Refresh";
-import SettingsIcon from "@material-ui/icons/Settings";
-import { Pagination } from "@material-ui/lab";
-import { CalendarMonth } from "@mui/icons-material";
-import moment from "moment";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory } from "react-router";
-
 import { getLogsAction } from "../../actions/actions";
+
+import { faCalendar } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import RefreshIcon from "@material-ui/icons/Refresh";
+import SettingsIcon from "@material-ui/icons/Settings";
+import { Pagination } from "@material-ui/lab";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
+import CustomTable from "../../components/CustomTable/CustomTable";
+import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
-
-import { Delete } from "@material-ui/icons";
-import CustomTable from "../../components/CustomTable/CustomTable";
-import TableHeaderButton from "../../components/TableHeaderButton";
-import { APP_CONFIG } from "../../constants/config";
-import usePermission from "../../hooks/usePermission";
 
 const useStyles = makeStyles(() => ({
   root: {
     display: "flex",
     flexDirection: "column",
-    paddingRight: 50,
+    padding: "0px",
   },
   headerContainer: {
     display: "flex",
@@ -50,33 +43,43 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
+const options = {
+  displayType: "text",
+  thousandSeparator: ".",
+  decimalSeparator: ",",
+  prefix: "R$ ",
+  decimalScale: 2,
+  fixedDecimalScale: true,
+};
+
 const Logs = () => {
   const columns = [
     {
       headerText: "Criado em",
       key: "created_at",
-      CustomValue: (value) => {
+      CustomValue: (data) => {
+        const date = new Date(data);
+        const option = {
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+        };
+        const formatted = date.toLocaleDateString("pt-br", option);
         return (
-          <Box
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <CalendarMonth />
-
-            <Typography style={{ marginLeft: "6px" }}>
-              {moment.utc(value).format("DD/MM/YYYY HH:mm")}
-            </Typography>
+          <Box display="flex" justifyContent="center">
+            <FontAwesomeIcon icon={faCalendar} size="lg" />
+            <Typography style={{ marginLeft: "6px" }}>{formatted}</Typography>
           </Box>
         );
       },
     },
+
     {
       headerText: "Email",
       key: "",
-      FullObject: (row) => <Typography>{row?.user?.email}</Typography>,
+      FullObject: (row) => (
+        <Typography>{row && row.user ? row.user.email : ""}</Typography>
+      ),
     },
     {
       headerText: "Descrição",
@@ -86,6 +89,7 @@ const Logs = () => {
       headerText: "IP",
       key: "ip",
     },
+
     /* {
 			headerText: '',
 			key: 'menu',
@@ -97,28 +101,16 @@ const Logs = () => {
   const history = useHistory();
   const dispatch = useDispatch();
   const [page, setPage] = useState(1);
-  const { hasPermission, PERMISSIONS } = usePermission();
   const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const listaLogs = useSelector((state) => state.logs);
   const [filters, setFilters] = useState({
-    created_at: "",
     user_id: "",
     like: "",
     order: "",
-    mostrar: "15",
+    mostrar: "",
   });
   const debouncedLike = useDebounce(filters.like, 800);
-
-  const resetFilters = () => {
-    setPage(1);
-    setFilters({
-      created_at: "",
-      user_id: "",
-      like: "",
-      order: "",
-      mostrar: "15",
-    });
-  };
 
   useEffect(() => {
     dispatch(
@@ -129,10 +121,9 @@ const Logs = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        filters.created_at
-      )
+      ),
     );
-  }, [page, debouncedLike, filters.order, filters.mostrar, filters.created_at]);
+  }, [page, debouncedLike, filters.order, filters.mostrar]);
 
   const handleChangePage = (e, value) => {
     setPage(value);
@@ -173,28 +164,20 @@ const Logs = () => {
   return (
     <Box className={classes.root}>
       <Box className={classes.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography className={classes.pageTitle}>Logs</Typography>
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
-          </Box>
+        <Box style={{ marginBottom: "10px" }}>
+          <CustomHeader pageTitle="Logs" />
         </Box>
-
+        <Box style={{ alignSelf: "flex-end", marginBottom: "10px" }}>
+          <IconButton
+            style={{
+              backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+              color: APP_CONFIG.mainCollors.primary,
+            }}
+            onClick={() => window.location.reload(false)}
+          >
+            <RefreshIcon></RefreshIcon>
+          </IconButton>
+        </Box>
         <Box
           style={{
             width: "100%",
@@ -203,110 +186,60 @@ const Logs = () => {
             borderTopRightRadius: 27,
           }}
         >
-          <Box style={{ margin: 30 }}>
-            {hasPermission(PERMISSIONS.logs.list.search) && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    placeholder="Pesquisar por nome, documento, email..."
-                    variant="outlined"
-                    fullWidth
-                    onChange={(e) => {
-                      setPage(1);
-                      setFilters({
-                        ...filters,
-                        like: e.target.value,
-                      });
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={3}>
-                  <TextField
-                    fullWidth
-                    label="Pesquisar por data"
-                    size="small"
-                    variant="outlined"
-                    InputLabelProps={{
-                      color: APP_CONFIG.mainCollors.secondary,
-                      shrink: true,
-                      pattern: "d {4}- d {2}- d {2} ",
-                    }}
-                    type="date"
-                    value={filters.created_at}
-                    onChange={(e) => {
-                      setPage(1);
-                      setFilters((prev) => ({
-                        ...prev,
-                        created_at: e.target.value,
-                      }));
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={3}>
-                  <InputLabel id="mostrar_label" shrink="true">
-                    Itens por página
-                  </InputLabel>
-                  <Select
-                    labelId="mostrar_label"
-                    value={filters.mostrar}
-                    onChange={(e) => {
-                      setPage(1);
-                      setFilters({ ...filters, mostrar: e.target.value });
-                    }}
-                    variant="outlined"
-                    fullWidth
-                  >
-                    <MenuItem value={"15"}>15</MenuItem>
-                    <MenuItem value={"30"}>30</MenuItem>
-                    <MenuItem value={"45"}>45</MenuItem>
-                    <MenuItem value={"50"}>50</MenuItem>
-                  </Select>
-                </Grid>
-
-                <TableHeaderButton
-                  text="Limpar"
-                  onClick={resetFilters}
-                  Icon={Delete}
-                  color="red"
-                />
-              </Grid>
-            )}
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            style={{ margin: 30 }}
+          >
+            <TextField
+              label="Pesquisar por nome, documento, email..."
+              size="small"
+              variant="outlined"
+              style={{
+                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                width: "400px",
+              }}
+              onChange={(e) => {
+                setPage(1);
+                setFilters({
+                  ...filters,
+                  like: e.target.value,
+                });
+              }}
+            ></TextField>
           </Box>
         </Box>
       </Box>
 
-      {hasPermission(PERMISSIONS.logs.list.view) && (
-        <Box className={classes.tableContainer}>
-          {listaLogs.data && listaLogs.per_page ? (
-            <CustomTable
-              columns={columns ? columns : null}
-              data={listaLogs.data}
-              Editar={Editar}
-            />
-          ) : (
-            <Box>
-              <LinearProgress color="secondary" />
-            </Box>
-          )}
-          <Box
-            display="flex"
-            alignSelf="flex-end"
-            marginTop="8px"
-            justifyContent="space-between"
-          >
-            <Pagination
-              variant="outlined"
-              color="secondary"
-              size="large"
-              count={listaLogs.last_page}
-              onChange={handleChangePage}
-              page={page}
-            />
+      <Box className={classes.tableContainer}>
+        {listaLogs.data && listaLogs.per_page ? (
+          <CustomTable
+            columns={columns ? columns : null}
+            data={listaLogs.data}
+            Editar={Editar}
+          />
+        ) : (
+          <Box width="60vw">
+            <LinearProgress color="secondary" />
           </Box>
+        )}
+        <Box
+          display="flex"
+          alignSelf="flex-end"
+          marginTop="8px"
+          justifyContent="space-between"
+        >
+          <Pagination
+            variant="outlined"
+            color="secondary"
+            size="large"
+            count={listaLogs.last_page}
+            onChange={handleChangePage}
+            page={page}
+          />
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };

@@ -15,13 +15,15 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
 import GradientButton from "../../../components/CustomButton/CustomButton";
+import CustomHeader from "../../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../../components/CustomTable/CustomTable";
+import { APP_CONFIG } from "../../../constants/config";
 
 const columnsSplit = [
   {
@@ -64,7 +66,15 @@ const columnsSplit = [
   {
     headerText: "Valor repartido",
     key: "split.receivable_amount",
-    CustomValue: (valor) => <Typography>R$ {valor}</Typography>,
+    CustomValue: (valor) => (
+      <Typography>
+        R${" "}
+        {parseFloat(valor).toLocaleString("pt-br", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+      </Typography>
+    ),
   },
 ];
 const columns = [
@@ -222,7 +232,11 @@ const columns = [
             variant=""
             style={{ fontSize: 17, fontWeight: 600, color: "red" }}
           >
-            R$ {amount}
+            R${" "}
+            {parseFloat(amount).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </Typography>
         );
       } else {
@@ -231,7 +245,11 @@ const columns = [
             variant=""
             style={{ fontSize: 17, fontWeight: 600, color: "green" }}
           >
-            R$ {amount}
+            R${" "}
+            {parseFloat(amount).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </Typography>
         );
       }
@@ -288,11 +306,27 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
       day: "numeric",
     };
     const formatted = date.toLocaleDateString("pt-br", option);
-    return <Typography variant="h6">{formatted}</Typography>;
+    return (
+      <Typography
+        style={{ color: APP_CONFIG.mainCollors.primary }}
+        variant="h6"
+      >
+        {formatted}
+      </Typography>
+    );
   };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        padding: "10px",
+      }}
+    >
+      <CustomHeader pageTitle="Detalhes" />
       <Paper
         style={{
           padding: "24px",
@@ -300,10 +334,17 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
           borderRadius: "27px",
           display: "flex",
           flexDirection: "column",
+          backgroundColor: APP_CONFIG.mainCollors.backgrounds,
           boxShadow: "rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px",
         }}
       >
-        <Typography variant="h4"> Detalhes da Transação </Typography>
+        <Typography
+          style={{ color: APP_CONFIG.mainCollors.primary }}
+          variant="h4"
+        >
+          {" "}
+          Detalhes da Transação{" "}
+        </Typography>
 
         <Box
           display="flex"
@@ -317,7 +358,11 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
               <CustomTable data={arrayObjetos} columns={columns} />
             )}
             <Box marginTop="18px">
-              <Typography style={{ margin: "6px 0" }} variant="h4">
+              <Typography
+                style={{ color: APP_CONFIG.mainCollors.primary }}
+                style={{ margin: "6px 0" }}
+                variant="h4"
+              >
                 Repartições de valor
               </Typography>
               {split ? (
@@ -343,7 +388,11 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
               }}
             >
               <Box>
-                <Typography variant="h6" align="center">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                  align="center"
+                >
                   Boleto
                 </Typography>
               </Box>
@@ -401,7 +450,7 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                     window.open(
                       `${transaction.payment_method.url}`,
                       "Boleto",
-                      "height=1000,width=1000"
+                      "height=1000,width=1000",
                     )
                   }
                 >
@@ -418,7 +467,12 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                   flexDirection="column"
                   justifyContent="center"
                 >
-                  <Typography variant="h6">Vencimento:</Typography>
+                  <Typography
+                    style={{ color: APP_CONFIG.mainCollors.primary }}
+                    variant="h6"
+                  >
+                    Vencimento:
+                  </Typography>
 
                   <> {formatDate()}</>
                 </Box>
@@ -427,7 +481,12 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                   flexDirection="column"
                   justifyContent="center"
                 >
-                  <Typography variant="h6">N° Documento:</Typography>
+                  <Typography
+                    style={{ color: APP_CONFIG.mainCollors.primary }}
+                    variant="h6"
+                  >
+                    N° Documento:
+                  </Typography>
                   <Box>
                     <TextField
                       style={{ width: "40%" }}
@@ -451,7 +510,7 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                               "Copiado para area de transferência",
                               {
                                 autoClose: 2000,
-                              }
+                              },
                             )
                           }
                         >
@@ -469,7 +528,10 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                 </Box>
               </Box>
               <Box display="flex" alignContent="center" marginTop="12px">
-                <Typography variant="h6">
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   ID da transação: <br />
                   <TextField value={transaction.id} />
                   <Tooltip title="Copiar">
@@ -507,7 +569,12 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                 justifyContent="center"
                 marginTop="10px"
               >
-                <Typography variant="h6">ID do Vendedor:</Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
+                  ID do Vendedor:
+                </Typography>
                 {conta.id ? conta.id : ""}
               </Box>
               <Box
@@ -516,34 +583,68 @@ const TransactionDetailsSlip = ({ transacaoId }) => {
                 justifyContent="center"
                 marginTop="10px"
               >
-                <Typography variant="h6">Código de autorização</Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
+                  Código de autorização
+                </Typography>
                 {transaction.payment_authorization
                   ? transaction.payment_authorization
                   : "Não autorizada"}
               </Box>
               <Divider style={{ marginTop: "6px" }} />
-              <Typography variant="h6" align="center">
+              <Typography
+                style={{ color: APP_CONFIG.mainCollors.primary }}
+                variant="h6"
+                align="center"
+              >
                 Pagador
               </Typography>
               <Box>
-                <Typography>Nome:</Typography>
-                <Typography variant="h6">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  Nome:
+                </Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {pagador.nome ? pagador.nome : "-"}
                 </Typography>
-                <Typography>Id:</Typography>
-                <Typography variant="h6">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  Id:
+                </Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {pagador.id ? pagador.id : "-"}
                 </Typography>
-                <Typography>Documento:</Typography>
-                <Typography variant="h6">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  Documento:
+                </Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {pagador.documento !== "..-" ? pagador.documento : "-"}
                 </Typography>
-                <Typography>E-mail:</Typography>
-                <Typography variant="h6">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  E-mail:
+                </Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {pagador.email ? pagador.email : "-"}
                 </Typography>
-                <Typography>Contato:</Typography>
-                <Typography variant="h6">
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  Contato:
+                </Typography>
+                <Typography
+                  style={{ color: APP_CONFIG.mainCollors.primary }}
+                  variant="h6"
+                >
                   {pagador.celular ? pagador.celular : "-"}
                 </Typography>
               </Box>

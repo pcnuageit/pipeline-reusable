@@ -10,7 +10,7 @@ import {
   Typography,
   makeStyles,
 } from "@material-ui/core";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import CurrencyFormat from "react-currency-format";
 import { useDispatch } from "react-redux";
@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: "25px",
   },
   pageTitle: {
-    color: APP_CONFIG.mainCollors.primary,
+    color: "#9D9CC6",
     fontFamily: "Montserrat-SemiBold",
   },
 }));
@@ -50,14 +50,12 @@ const options = {
 const NewAccountFees = () => {
   const [tipoTaxa, setTipoTaxa] = useState({
     inBoleto: 1,
+    inTed: 1,
     inPix: 1,
     inP2p: 1,
-    inWallet: 1,
     outP2p: 1,
     outTed: 1,
     outPix: 1,
-    outWallet: 1,
-    outPagamentoConta: 1,
   });
   const token = useAuth();
   const classes = useStyles();
@@ -67,15 +65,14 @@ const NewAccountFees = () => {
   const [errors, setErrors] = useState({});
   const [taxa, setTaxa] = useState({
     nome: "",
+    cash_in_payout_zoop: "",
     cash_in_boleto: "",
+    cash_in_ted: "",
     cash_in_pix: "",
     cash_in_p2p: "",
     cash_out_p2p: "",
     cash_out_ted: "",
     cash_out_pix: "",
-    cash_in_wallet: "",
-    cash_out_wallet: "",
-    cash_out_pagamento_conta: "",
   });
 
   const handleCriar = async () => {
@@ -84,24 +81,24 @@ const NewAccountFees = () => {
       postPerfilTaxaAction(
         token,
         taxa.nome,
-
+        parseFloat(taxa.cash_in_payout_zoop),
         tipoTaxa.inBoleto,
         parseFloat(taxa.cash_in_boleto),
+        tipoTaxa.inTed,
+        parseFloat(taxa.cash_in_ted),
         tipoTaxa.inPix,
         parseFloat(taxa.cash_in_pix),
         tipoTaxa.inP2p,
+
         parseFloat(taxa.cash_in_p2p),
         tipoTaxa.outP2p,
         parseFloat(taxa.cash_out_p2p),
+        tipoTaxa.outTed,
+
+        parseFloat(taxa.cash_out_ted),
         tipoTaxa.outPix,
         parseFloat(taxa.cash_out_pix),
-        tipoTaxa.inWallet,
-        parseFloat(taxa.cash_in_wallet),
-        tipoTaxa.outWallet,
-        parseFloat(taxa.cash_out_wallet),
-        tipoTaxa.outPagamentoConta,
-        parseFloat(taxa.cash_out_pagamento_conta)
-      )
+      ),
     );
     if (res) {
       setErrors(res);
@@ -137,7 +134,7 @@ const NewAccountFees = () => {
               variant="h5"
               style={{
                 fontFamily: "Montserrat-SemiBold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
               }}
             >
               Insira os dados da tarifa
@@ -151,7 +148,7 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
               }}
             >
               Nome da tarifa
@@ -171,7 +168,26 @@ const NewAccountFees = () => {
               error={errors.nome}
             />
           </Grid>
-
+          {/* <Grid item xs={12} sm={6}>
+						<CurrencyFormat
+						variant='outlined'
+							{...options}
+							value={taxa.cash_in_payout_zoop}
+							onValueChange={({ value }) =>
+								setTaxa({
+									...taxa,
+									cash_in_payout_zoop: value,
+								})
+							}
+							label="Recebimento M. Virtual"
+							helperText={
+								errors.cash_in_payout_zoop
+									? errors.cash_in_payout_zoop[0]
+									: null
+							}
+							error={errors.cash_in_payout_zoop}
+						/>
+					</Grid> */}
           <Grid item xs={12} sm={6}>
             <Typography
               style={{
@@ -180,7 +196,7 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
               }}
             >
               Recebimento Boleto
@@ -199,9 +215,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inBoleto === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inBoleto === 1 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -213,9 +227,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inBoleto === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inBoleto === 2 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -243,77 +255,6 @@ const NewAccountFees = () => {
               error={errors.cash_in_boleto}
             />
           </Grid>
-          {/* <Grid item xs={12} sm={6}>
-						<Typography
-							style={{
-								fontFamily: 'Montserrat-SemiBold',
-								marginLeft: '15px',
-								marginBottom: '5px',
-								fontSize: 14,
-								fontWeight: 'bold',
-								color: APP_CONFIG.mainCollors.primary,
-							}}
-						>
-							Recebimento TED
-						</Typography>
-						<ButtonGroup
-							size="small"
-							style={{
-								marginBottom: '0px',
-								marginLeft: '15px',
-
-								fontSize: 5,
-							}}
-							color="primary"
-							aria-label="outlined primary button group"
-						>
-							<Button
-								style={{
-									backgroundColor: `${
-										tipoTaxa.inTed === 1
-											? APP_CONFIG.mainCollors.primary
-											: '#cfcfcf'
-									}`,
-									color: 'white',
-								}}
-								onClick={() => setTipoTaxa({ ...tipoTaxa, inTed: 1 })}
-								disabled={tipoTaxa.inTed === 1 ? true : false}
-							>
-								Fixo
-							</Button>
-							<Button
-								style={{
-									backgroundColor: `${
-										tipoTaxa.inTed === 2
-											? APP_CONFIG.mainCollors.primary
-											: '#cfcfcf'
-									}`,
-									color: 'white',
-								}}
-								onClick={() => setTipoTaxa({ ...tipoTaxa, inTed: 2 })}
-								disabled={tipoTaxa.inTed === 2 ? true : false}
-							>
-								%
-							</Button>
-						</ButtonGroup>
-						<CurrencyFormat
-							variant="outlined"
-							{...options}
-							prefix={tipoTaxa.inTed === 1 ? 'R$ ' : ''}
-							suffix={tipoTaxa.inTed === 2 ? '%' : ''}
-							value={taxa.cash_in_ted}
-							onValueChange={({ value }) =>
-								setTaxa({
-									...taxa,
-									cash_in_ted: value,
-								})
-							}
-							helperText={
-								errors.cash_in_ted ? errors.cash_in_ted[0] : null
-							}
-							error={errors.cash_in_ted}
-						/>
-					</Grid> */}
           <Grid item xs={12} sm={6}>
             <Typography
               style={{
@@ -322,7 +263,72 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
+              }}
+            >
+              Recebimento TED
+            </Typography>
+            <ButtonGroup
+              size="small"
+              style={{
+                marginBottom: "0px",
+                marginLeft: "15px",
+
+                fontSize: 5,
+              }}
+              color="primary"
+              aria-label="outlined primary button group"
+            >
+              <Button
+                style={{
+                  backgroundColor: `${
+                    tipoTaxa.inTed === 1 ? "#4C4B97" : "#cfcfcf"
+                  }`,
+                  color: "white",
+                }}
+                onClick={() => setTipoTaxa({ ...tipoTaxa, inTed: 1 })}
+                disabled={tipoTaxa.inTed === 1 ? true : false}
+              >
+                Fixo
+              </Button>
+              <Button
+                style={{
+                  backgroundColor: `${
+                    tipoTaxa.inTed === 2 ? "#4C4B97" : "#cfcfcf"
+                  }`,
+                  color: "white",
+                }}
+                onClick={() => setTipoTaxa({ ...tipoTaxa, inTed: 2 })}
+                disabled={tipoTaxa.inTed === 2 ? true : false}
+              >
+                %
+              </Button>
+            </ButtonGroup>
+            <CurrencyFormat
+              variant="outlined"
+              {...options}
+              prefix={tipoTaxa.inTed === 1 ? "R$ " : ""}
+              suffix={tipoTaxa.inTed === 2 ? "%" : ""}
+              value={taxa.cash_in_ted}
+              onValueChange={({ value }) =>
+                setTaxa({
+                  ...taxa,
+                  cash_in_ted: value,
+                })
+              }
+              helperText={errors.cash_in_ted ? errors.cash_in_ted[0] : null}
+              error={errors.cash_in_ted}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography
+              style={{
+                fontFamily: "Montserrat-SemiBold",
+                marginLeft: "15px",
+                marginBottom: "5px",
+                fontSize: 14,
+                fontWeight: "bold",
+                color: "#9D9CC6",
               }}
             >
               Recebimento Pix
@@ -341,9 +347,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inPix === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inPix === 1 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -355,9 +359,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inPix === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inPix === 2 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -391,7 +393,7 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
               }}
             >
               Recebimento P2P
@@ -410,9 +412,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inP2p === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inP2p === 1 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -424,9 +424,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.inP2p === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.inP2p === 2 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -460,7 +458,7 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
               }}
             >
               Transferência P2P
@@ -479,9 +477,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.outP2p === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.outP2p === 1 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -493,9 +489,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.outP2p === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.outP2p === 2 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -521,77 +515,6 @@ const NewAccountFees = () => {
               error={errors.cash_out_p2p}
             />
           </Grid>
-          {/* 	<Grid item xs={12} sm={6}>
-						<Typography
-							style={{
-								fontFamily: 'Montserrat-SemiBold',
-								marginLeft: '15px',
-								marginBottom: '5px',
-								fontSize: 14,
-								fontWeight: 'bold',
-								color: APP_CONFIG.mainCollors.primary,
-							}}
-						>
-							Transferência TED
-						</Typography>
-						<ButtonGroup
-							size="small"
-							style={{
-								marginBottom: '0px',
-								marginLeft: '15px',
-
-								fontSize: 5,
-							}}
-							color="primary"
-							aria-label="outlined primary button group"
-						>
-							<Button
-								style={{
-									backgroundColor: `${
-										tipoTaxa.outTed === 1
-											? APP_CONFIG.mainCollors.primary
-											: '#cfcfcf'
-									}`,
-									color: 'white',
-								}}
-								onClick={() => setTipoTaxa({ ...tipoTaxa, outTed: 1 })}
-								disabled={tipoTaxa.outTed === 1 ? true : false}
-							>
-								Fixo
-							</Button>
-							<Button
-								style={{
-									backgroundColor: `${
-										tipoTaxa.outTed === 2
-											? APP_CONFIG.mainCollors.primary
-											: '#cfcfcf'
-									}`,
-									color: 'white',
-								}}
-								onClick={() => setTipoTaxa({ ...tipoTaxa, outTed: 2 })}
-								disabled={tipoTaxa.outTed === 2 ? true : false}
-							>
-								%
-							</Button>
-						</ButtonGroup>
-						<CurrencyFormat
-							variant="outlined"
-							{...options}
-							prefix={tipoTaxa.outTed === 1 ? 'R$ ' : ''}
-							suffix={tipoTaxa.outTed === 2 ? '%' : ''}
-							value={taxa.cash_out_ted}
-							onValueChange={({ value }) =>
-								setTaxa({
-									...taxa,
-									cash_out_ted: value,
-								})
-							}
-							helperText={
-								errors.cash_out_ted ? errors.cash_out_ted[0] : null
-							}
-							error={errors.cash_out_ted}
-						/>
-					</Grid> */}
           <Grid item xs={12} sm={6}>
             <Typography
               style={{
@@ -600,7 +523,72 @@ const NewAccountFees = () => {
                 marginBottom: "5px",
                 fontSize: 14,
                 fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
+                color: "#9D9CC6",
+              }}
+            >
+              Transferência TED
+            </Typography>
+            <ButtonGroup
+              size="small"
+              style={{
+                marginBottom: "0px",
+                marginLeft: "15px",
+
+                fontSize: 5,
+              }}
+              color="primary"
+              aria-label="outlined primary button group"
+            >
+              <Button
+                style={{
+                  backgroundColor: `${
+                    tipoTaxa.outTed === 1 ? "#4C4B97" : "#cfcfcf"
+                  }`,
+                  color: "white",
+                }}
+                onClick={() => setTipoTaxa({ ...tipoTaxa, outTed: 1 })}
+                disabled={tipoTaxa.outTed === 1 ? true : false}
+              >
+                Fixo
+              </Button>
+              <Button
+                style={{
+                  backgroundColor: `${
+                    tipoTaxa.outTed === 2 ? "#4C4B97" : "#cfcfcf"
+                  }`,
+                  color: "white",
+                }}
+                onClick={() => setTipoTaxa({ ...tipoTaxa, outTed: 2 })}
+                disabled={tipoTaxa.outTed === 2 ? true : false}
+              >
+                %
+              </Button>
+            </ButtonGroup>
+            <CurrencyFormat
+              variant="outlined"
+              {...options}
+              prefix={tipoTaxa.outTed === 1 ? "R$ " : ""}
+              suffix={tipoTaxa.outTed === 2 ? "%" : ""}
+              value={taxa.cash_out_ted}
+              onValueChange={({ value }) =>
+                setTaxa({
+                  ...taxa,
+                  cash_out_ted: value,
+                })
+              }
+              helperText={errors.cash_out_ted ? errors.cash_out_ted[0] : null}
+              error={errors.cash_out_ted}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography
+              style={{
+                fontFamily: "Montserrat-SemiBold",
+                marginLeft: "15px",
+                marginBottom: "5px",
+                fontSize: 14,
+                fontWeight: "bold",
+                color: "#9D9CC6",
               }}
             >
               Transferência Pix
@@ -619,9 +607,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.outPix === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.outPix === 1 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -633,9 +619,7 @@ const NewAccountFees = () => {
               <Button
                 style={{
                   backgroundColor: `${
-                    tipoTaxa.outPix === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
+                    tipoTaxa.outPix === 2 ? "#4C4B97" : "#cfcfcf"
                   }`,
                   color: "white",
                 }}
@@ -659,226 +643,6 @@ const NewAccountFees = () => {
               }
               helperText={errors.cash_out_pix ? errors.cash_out_pix[0] : null}
               error={errors.cash_out_pix}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <Typography
-              style={{
-                fontFamily: "Montserrat-SemiBold",
-                marginLeft: "15px",
-                marginBottom: "5px",
-                fontSize: 14,
-                fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-            >
-              Transferência Wallet Recebida
-            </Typography>
-            <ButtonGroup
-              size="small"
-              style={{
-                marginBottom: "0px",
-                marginLeft: "15px",
-
-                fontSize: 5,
-              }}
-              color="primary"
-              aria-label="outlined primary button group"
-            >
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.inWallet === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() => setTipoTaxa({ ...tipoTaxa, inWallet: 1 })}
-                disabled={tipoTaxa.inWallet === 1 ? true : false}
-              >
-                Fixo
-              </Button>
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.inWallet === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() => setTipoTaxa({ ...tipoTaxa, inWallet: 2 })}
-                disabled={tipoTaxa.inWallet === 2 ? true : false}
-              >
-                %
-              </Button>
-            </ButtonGroup>
-            <CurrencyFormat
-              variant="outlined"
-              {...options}
-              prefix={tipoTaxa.inWallet === 1 ? "R$ " : ""}
-              suffix={tipoTaxa.inWallet === 2 ? "%" : ""}
-              value={taxa.cash_in_wallet}
-              onValueChange={({ value }) =>
-                setTaxa({
-                  ...taxa,
-                  cash_in_wallet: value,
-                })
-              }
-              helperText={
-                errors.cash_in_wallet ? errors.cash_in_wallet[0] : null
-              }
-              error={errors.cash_in_wallet}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography
-              style={{
-                fontFamily: "Montserrat-SemiBold",
-                marginLeft: "15px",
-                marginBottom: "5px",
-                fontSize: 14,
-                fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-            >
-              Transferência Wallet Efetuada
-            </Typography>
-            <ButtonGroup
-              size="small"
-              style={{
-                marginBottom: "0px",
-                marginLeft: "15px",
-
-                fontSize: 5,
-              }}
-              color="primary"
-              aria-label="outlined primary button group"
-            >
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.outWallet === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() => setTipoTaxa({ ...tipoTaxa, outWallet: 1 })}
-                disabled={tipoTaxa.outWallet === 1 ? true : false}
-              >
-                Fixo
-              </Button>
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.outWallet === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() => setTipoTaxa({ ...tipoTaxa, outWallet: 2 })}
-                disabled={tipoTaxa.outWallet === 2 ? true : false}
-              >
-                %
-              </Button>
-            </ButtonGroup>
-            <CurrencyFormat
-              variant="outlined"
-              {...options}
-              prefix={tipoTaxa.outWallet === 1 ? "R$ " : ""}
-              suffix={tipoTaxa.outWallet === 2 ? "%" : ""}
-              value={taxa.cash_out_wallet}
-              onValueChange={({ value }) =>
-                setTaxa({
-                  ...taxa,
-                  cash_out_wallet: value,
-                })
-              }
-              helperText={
-                errors.cash_out_wallet ? errors.cash_out_wallet[0] : null
-              }
-              error={errors.cash_out_wallet}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography
-              style={{
-                fontFamily: "Montserrat-SemiBold",
-                marginLeft: "15px",
-                marginBottom: "5px",
-                fontSize: 14,
-                fontWeight: "bold",
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-            >
-              Pagamento de Conta
-            </Typography>
-            <ButtonGroup
-              size="small"
-              style={{
-                marginBottom: "0px",
-                marginLeft: "15px",
-
-                fontSize: 5,
-              }}
-              color="primary"
-              aria-label="outlined primary button group"
-            >
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.outPagamentoConta === 1
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() =>
-                  setTipoTaxa({ ...tipoTaxa, outPagamentoConta: 1 })
-                }
-                disabled={tipoTaxa.outPagamentoConta === 1 ? true : false}
-              >
-                Fixo
-              </Button>
-              <Button
-                style={{
-                  backgroundColor: `${
-                    tipoTaxa.outPagamentoConta === 2
-                      ? APP_CONFIG.mainCollors.primary
-                      : "#cfcfcf"
-                  }`,
-                  color: "white",
-                }}
-                onClick={() =>
-                  setTipoTaxa({ ...tipoTaxa, outPagamentoConta: 2 })
-                }
-                disabled={tipoTaxa.outPagamentoConta === 2 ? true : false}
-              >
-                %
-              </Button>
-            </ButtonGroup>
-            <CurrencyFormat
-              variant="outlined"
-              {...options}
-              prefix={tipoTaxa.outPagamentoConta === 1 ? "R$ " : ""}
-              suffix={tipoTaxa.outPagamentoConta === 2 ? "%" : ""}
-              value={taxa.cash_out_pagamento_conta}
-              onValueChange={({ value }) =>
-                setTaxa({
-                  ...taxa,
-                  cash_out_pagamento_conta: value,
-                })
-              }
-              helperText={
-                errors.cash_out_pagamento_conta
-                  ? errors.cash_out_pagamento_conta[0]
-                  : null
-              }
-              error={errors.cash_out_pagamento_conta}
             />
           </Grid>
           <Grid item xs={12}>

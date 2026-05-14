@@ -54,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const ProposalAntecipacaoSalarialAccounts = () => {
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const classes = useStyles();
   const history = useHistory();
   const [page, setPage] = useState(1);
@@ -101,7 +101,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
     {
       refetchOnMountOrArgChange: true,
       skip: !proposal?.id,
-    }
+    },
   );
 
   const {
@@ -119,7 +119,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
     {
       refetchOnMountOrArgChange: true,
       skip: !proposal?.id,
-    }
+    },
   );
 
   const {
@@ -137,7 +137,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
     {
       refetchOnMountOrArgChange: true,
       skip: !contaPjId,
-    }
+    },
   );
 
   const handleChangePage = (e, value) => {
@@ -207,6 +207,10 @@ const ProposalAntecipacaoSalarialAccounts = () => {
     if (filters.tipo === "2" && !contaPjId) setShowAccounts(false);
   }, [accounts, filters.tipo, contaPjId]);
 
+  useEffect(() => {
+    console.log(accountIdListToRemove);
+  }, [accountIdListToRemove]);
+
   const columns = [
     { headerText: "ID", key: "id" },
     {
@@ -218,7 +222,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
       headerText: "Documento",
       key: "custom_documento",
       FullObject: (data) => (
-        <Typography>{documentMask(data.cnpj ?? data.documento)}</Typography>
+        <Typography>{documentMask(data?.cnpj ?? data?.documento)}</Typography>
       ),
     },
     { headerText: "Email", key: "email" },
@@ -333,7 +337,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
                                   "Copiado para area de transferência",
                                   {
                                     autoClose: 2000,
-                                  }
+                                  },
                                 )
                               }
                             >
@@ -639,7 +643,7 @@ const ProposalAntecipacaoSalarialAccounts = () => {
                   />
                 </Box>
               ) : (
-                <Box>
+                <Box width="60vw">
                   <LinearProgress color="secondary" />
                 </Box>
               )}

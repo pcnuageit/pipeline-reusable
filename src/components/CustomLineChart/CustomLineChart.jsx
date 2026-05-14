@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   ArgumentAxis,
   Chart,
@@ -19,18 +17,18 @@ const labelColor = "#fff";
 
 const makeLabel =
   (symbol, color) =>
-  ({ text, style, ...restProps }) =>
-    (
-      <ValueAxis.Label
-        text={`${text} ${symbol}`}
-        style={{
-          fontSize: "10px",
-          fill: color,
-          ...style,
-        }}
-        {...restProps}
-      />
-    );
+  ({ text, style, ...restProps }) => (
+    <ValueAxis.Label
+      text={`${text} ${symbol}`}
+      style={{
+        fontSize: "10px",
+        fill: color,
+
+        ...style,
+      }}
+      {...restProps}
+    />
+  );
 
 const labelColorFunction = makeLabel("", labelColor);
 
@@ -47,7 +45,9 @@ const CustomLineChart = () => {
     <Paper
       style={{
         borderRadius: 20,
-        background: APP_CONFIG.mainCollors.buttonGradientVariant,
+        /* background:
+					'linear-gradient(90deg, rgba(2,149,59,1) 30%, rgba(75,75,150,1) 100%)', */
+        backgroundColor: APP_CONFIG.mainCollors.primary,
         marginRight: "40px",
       }}
     >

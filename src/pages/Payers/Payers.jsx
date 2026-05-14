@@ -16,6 +16,7 @@ import Pagination from "@material-ui/lab/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory, useParams } from "react-router-dom";
 import { delPagador, loadPagadoresFilter } from "../../actions/actions";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
@@ -42,7 +43,7 @@ const Payers = () => {
   const history = useHistory();
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const userData = useSelector((state) => state.userData);
   const [filters, setFilters] = useState({
     like: "",
@@ -62,8 +63,8 @@ const Payers = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, filters.order, filters.mostrar, debouncedLike, id]);
 
@@ -120,23 +121,15 @@ const Payers = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Pagadores" />
+      </Box>
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
-        <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
-          variant="h4"
-        >
-          Pagadores
-        </Typography>
-
         {/* {token && userData === '' ? null : (
 					<Link to="novo-pagadores">
 						<GradientButton buttonText="+ Novo Pagador" />
@@ -155,7 +148,7 @@ const Payers = () => {
           <TextField
             variant="outlined"
             fullWidth
-            placeholder="Pesquisar por nome, documento..."
+            label="Pesquisar por nome, documento..."
             value={filters.like}
             onChange={(e) =>
               setFilters({

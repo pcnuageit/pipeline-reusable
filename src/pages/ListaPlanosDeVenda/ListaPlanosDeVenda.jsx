@@ -6,30 +6,38 @@ import {
   Dialog,
   DialogActions,
   DialogTitle,
+  FormControl,
   IconButton,
   LinearProgress,
   TextField,
   Typography,
   makeStyles,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { generatePath, useHistory, useParams } from "react-router";
-import { getPlanosDeVendasAction } from "../../actions/actions";
+import { generatePath, useHistory } from "react-router";
+import {
+  getPlanosDeVendasAction,
+  postPlanoDeVendasAction,
+} from "../../actions/actions";
 
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { Pagination } from "@material-ui/lab";
+import { toast } from "react-toastify";
 import CustomButton from "../../components/CustomButton/CustomButton";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
-import SetDefaultAppAccount from "../../components/SetDefaultAppAccount/SetDefaultAppAccount";
+import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
+/* import SetDefaultAppAccount from '../../components/SetDefaultAppAccount/SetDefaultAppAccount'; */
 
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
     flexDirection: "column",
+    padding: "0px",
   },
   headerContainer: {
     display: "flex",
@@ -72,13 +80,12 @@ const ListaPlanosDeVenda = () => {
   const debouncedPlanName = useDebounce(filters.plan_name, 800);
   const [loading, setLoading] = useState(false);
   const token = useAuth();
-  const id = useParams()?.id ?? "";
   const classes = useStyles();
   const [page, setPage] = useState(1);
   const history = useHistory();
   const [errors, setErrors] = useState({});
-  const [openDefaultAppAccountDialog, setOpenDefaultAppAccountDialog] =
-    useState(false);
+  const [modalNovoPlano, setModalNovoPlano] = useState(false);
+  const [nomeNovoPlano, setNomeNovoPlano] = useState("");
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(
@@ -88,8 +95,7 @@ const ListaPlanosDeVenda = () => {
         debouncedPlanName,
         filters.order,
         filters.mostrar,
-        id ? id : ""
-      )
+      ),
     );
   }, [page, debouncedPlanName, filters.order, filters.mostrar]);
 
@@ -104,6 +110,31 @@ const ListaPlanosDeVenda = () => {
       id: row.id,
     });
     history.push(path);
+  };
+
+  const handleCriarPlanoDeVendas = async () => {
+    setLoading(true);
+    const resCriarPlanoDeVendas = await dispatch(
+      postPlanoDeVendasAction(token, nomeNovoPlano),
+    );
+    if (resCriarPlanoDeVendas) {
+      setErrors(resCriarPlanoDeVendas);
+      setLoading(false);
+      toast.error("Falha ao criar novo plano de vendas");
+    } else {
+      setLoading(false);
+      setModalNovoPlano(false);
+      toast.success("Plano de vendas criado com sucesso!");
+      await dispatch(
+        getPlanosDeVendasAction(
+          token,
+          page,
+          debouncedPlanName,
+          filters.order,
+          filters.mostrar,
+        ),
+      );
+    }
   };
 
   const Editar = (row) => {
@@ -167,35 +198,92 @@ const ListaPlanosDeVenda = () => {
 
   return (
     <Box className={classes.root}>
-      <SetDefaultAppAccount
-        openDialog={openDefaultAppAccountDialog}
-        setOpenDialog={setOpenDefaultAppAccountDialog}
-        isLoading={loading}
-        setIsLoading={setLoading}
-      />
-      <Box className={classes.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography className={classes.pageTitle}>
-            {id ? "Plano de Vendas do Representante" : "Plano de Vendas"}
-          </Typography>
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
+      <Dialog
+        onClose={() => setModalNovoPlano(false)}
+        open={modalNovoPlano}
+        className={classes.SplitModal}
+      >
+        <Box display="flex" flexDirection="column" width="500px">
+          <LoadingScreen isLoading={loading} />
+          <DialogTitle className={classes.saqueHeader}>
+            <Typography align="center" variant="h6">
+              Criar novo plano de vendas
+            </Typography>
+          </DialogTitle>
+
+          <Box margin="20px">
+            <FormControl fullWidth>
+              <Box marginTop={2}>
+                <Typography variant="h6">Nome do novo plano:</Typography>
+                <TextField
+                  value={nomeNovoPlano}
+                  onChange={(event) => setNomeNovoPlano(event.target.value)}
+                  style={{
+                    marginBottom: "6px",
+                    width: "100%",
+                  }}
+                  error={errors.name}
+                  helperText={errors.name ? errors.name.join(" ") : null}
+                />
+                {/* {storePosError ? (
+									<FormHelperText
+										style={{
+											marginBottom: '6px',
+											width: '60%',
+											color: 'red',
+										}}
+									>
+										{storePosError.token
+											? storePosError.token[0]
+											: null}
+									</FormHelperText>
+								) : null} */}
+              </Box>
+            </FormControl>
           </Box>
+
+          <Box
+            width="50%"
+            alignSelf="end"
+            display="flex"
+            justifyContent="space-around"
+            padding="12px 24px"
+          >
+            <Box margin="6px 0">
+              <Button
+                variant="outlined"
+                style={{ borderRadius: "37px", marginRight: "10px" }}
+                onClick={handleCriarPlanoDeVendas}
+              >
+                Criar
+              </Button>
+            </Box>
+            <Box>
+              <Button
+                style={{ borderRadius: "37px", margin: "6px 0" }}
+                variant="outlined"
+                onClick={() => setModalNovoPlano(false)}
+              >
+                Cancelar
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Dialog>
+      <Box className={classes.headerContainer}>
+        <Box style={{ marginBottom: "10px" }}>
+          <CustomHeader pageTitle="Planos de venda" />
+        </Box>
+        <Box style={{ alignSelf: "flex-end", marginBottom: "10px" }}>
+          <IconButton
+            style={{
+              backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+              color: APP_CONFIG.mainCollors.primary,
+            }}
+            onClick={() => window.location.reload(false)}
+          >
+            <RefreshIcon />
+          </IconButton>
         </Box>
         <Box
           style={{
@@ -213,7 +301,7 @@ const ListaPlanosDeVenda = () => {
             style={{ margin: 30 }}
           >
             <TextField
-              placeholder="Pesquisar por nome do plano de vendas"
+              label="Pesquisar por nome do plano de vendas"
               size="small"
               variant="outlined"
               style={{
@@ -234,35 +322,22 @@ const ListaPlanosDeVenda = () => {
                   like: e.target.value,
                 });
               }}
-            ></TextField>
-            {id ? null : (
-              <Box style={{ display: "flex" }}>
-                <Box style={{ marginRight: "20px" }}>
-                  <CustomButton
-                    onClick={setOpenDefaultAppAccountDialog}
-                    color="purple"
-                  >
-                    <Box display="flex" alignItems="center">
-                      <Typography style={{ fontSize: "11px" }}>
-                        Definir Conta da Aplicação
-                      </Typography>
-                    </Box>
-                  </CustomButton>
+            />
+
+            <Box style={{ display: "flex" }}>
+              <CustomButton
+                onClick={() => {
+                  setModalNovoPlano(true);
+                }}
+                color="purple"
+              >
+                <Box display="flex" alignItems="center">
+                  <Typography style={{ fontSize: "11px" }}>
+                    Novo plano de vendas
+                  </Typography>
                 </Box>
-                <CustomButton
-                  onClick={() => {
-                    history.push("/dashboard/plano-vendas-zoop");
-                  }}
-                  color="purple"
-                >
-                  <Box display="flex" alignItems="center">
-                    <Typography style={{ fontSize: "11px" }}>
-                      Buscar novo plano de vendas
-                    </Typography>
-                  </Box>
-                </CustomButton>
-              </Box>
-            )}
+              </CustomButton>
+            </Box>
 
             <Dialog
               open={open}
@@ -403,10 +478,11 @@ const ListaPlanosDeVenda = () => {
             handleClickRow={handleClickRow}
           />
         ) : (
-          <Box>
+          <Box width="60vw">
             <LinearProgress color="secondary" />
           </Box>
         )}
+
         <Box
           display="flex"
           alignSelf="flex-end"

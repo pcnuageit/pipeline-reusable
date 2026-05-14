@@ -1,29 +1,20 @@
 import axios from "axios";
 import { Query } from "../helpers/cogent-js";
-import { parse } from "date-fns";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export const getContas = (
   token,
-  page,
-  like,
-  order,
-  mostrar,
-  id,
-  seller,
-  status,
-  numero_documento,
+  page = "",
+  like = "",
+  order = "",
+  mostrar = "",
+  id = "",
+  seller = "",
+  status = "",
+  numero_documento = "",
   tipo,
-  cnpj,
-  status_adquirencia,
-  solicitado_adquirencia,
-  agent_id,
-  is_estabelecimento,
-  is_gestao_concorrencia,
-  tipo_beneficio_id = "",
-  cpf = "",
-  created_at = "",
+  conta_id_filter = "",
 ) => {
   const url = `${API_URL}/contas?
 	page=${page}
@@ -34,7 +25,7 @@ export const getContas = (
 	&seller=${seller}
 	&status=${status}
 	&numero_documento=${numero_documento}
-	&tipo=${tipo}&cnpj=${cnpj}&status_adquirencia=${status_adquirencia}&solicitado_adquirencia=${solicitado_adquirencia}&agent_id=${agent_id}&is_estabelecimento=${is_estabelecimento}&is_gestao_concorrencia=${is_gestao_concorrencia}&tipo_beneficio_id=${tipo_beneficio_id}&cpf=${cpf}&created_at=${created_at}`;
+	&tipo=${tipo}&conta_id_filter=${conta_id_filter}`;
 
   return axios({
     method: "get",
@@ -61,7 +52,7 @@ export const getContaId = (
   empresa = false,
   socio = false,
 ) => {
-  const url = `${API_URL}/conta/${id}?representante=${representante}&empresa=${empresa}&socio=${socio}`;
+  const url = `${API_URL}/conta/${id}?representante=${representante}empresa=${empresa}socio=${socio}`;
 
   return axios({
     method: "get",
@@ -72,28 +63,8 @@ export const getContaId = (
   });
 };
 
-export const deleteConta = (token, id) => {
-  const url = `${API_URL}/conta/${id}`;
-
-  return axios({
-    method: "delete",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
 export const putConta = (token, conta, id) => {
   const url = `${API_URL}/conta/${id}`;
-
-  const cepMask = (cep) => {
-    const parsed = cep?.replace(/\D/g, "");
-    const masked = parsed.slice(0, 5) + "-" + parsed.slice(5);
-    return masked;
-  };
-
-  console.log(conta?.taxa_transacao);
 
   return axios({
     method: "put",
@@ -102,45 +73,19 @@ export const putConta = (token, conta, id) => {
       Authorization: `Bearer ${token}`,
     },
     data: {
-      nome: conta?.nome,
-      razao_social: conta?.razao_social,
-      data_nascimento: conta?.data_nascimento,
-      nome_mae: conta?.nome_mae,
-      nome_pai: conta?.nome_pai,
-      celular: conta?.celular,
-      email: conta?.email,
-      site: conta?.site,
+      nome: conta.nome,
+      razao_social: conta.razao_social,
+      celular: conta.celular,
+      site: conta.site,
       endereco: {
-        cep: cepMask(conta?.endereco?.cep),
-        rua: conta?.endereco?.rua,
-        numero: conta?.endereco?.numero,
-        complemento: conta?.endereco?.complemento,
-        bairro: conta?.endereco?.bairro,
-        cidade: conta?.endereco?.cidade,
-        estado: conta?.endereco?.estado,
+        cep: conta.endereco.cep,
+        rua: conta.endereco.rua,
+        numero: conta.endereco.numero,
+        complemento: conta.endereco.complemento,
+        bairro: conta.endereco.bairro,
+        cidade: conta.endereco.cidade,
+        estado: conta.endereco.estado,
       },
-      renda_mensal: conta?.renda_mensal,
-      tipo_transferencia: conta?.tipo_transferencia,
-      ...(conta?.tipo_transferencia === "Manual"
-        ? {
-          banco: conta?.banco,
-          agencia: conta?.agencia,
-          conta: conta?.conta,
-        }
-        : { chave_pix: conta?.chave_pix }),
-      is_terceiro_autorizado: conta?.is_terceiro_autorizado,
-      ...(conta?.documento_conta
-        ? {
-          documento_conta: conta?.documento_conta,
-        }
-        : null),
-      // documento_conta: conta?.documento_conta != null ? conta?.documento_conta : "",
-      ...(conta?.taxa_transacao
-        ? {
-          taxa_transacao: parseFloat(conta?.taxa_transacao).toFixed(2),
-        }
-        : null),
-      //taxa_transacao: parseFloat(conta?.taxa_transacao != "" ? conta?.taxa_transacao.toFixed(2) : 0.00),
     },
   });
 };
@@ -196,19 +141,8 @@ export const deleteContaBancaria = (token, id, conta_id) => {
   });
 };
 
-export const getAprovarConta = (token, id, sendToken = true) => {
-  const url = `${API_URL}/conta/${id}/aprovar?enviar_primero_acesso=${sendToken}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getReaprovarConta = (token, id) => {
-  const url = `${API_URL}/conta/${id}/reaprovar`;
+export const getAprovarConta = (token, id) => {
+  const url = `${API_URL}/conta/${id}/aprovar`;
   return axios({
     method: "get",
     url,
@@ -346,34 +280,8 @@ export const getContasExport = (
   tipo,
   order,
   mostrar,
-  cnpj,
-  export_type,
-  accountTypeFilters = "",
 ) => {
-  const url = `${API_URL}/export/conta?page=${page}&like=${like}&id=${id_conta}&seller=${seller}&status=${status}&numero_documento=${numero_documento}&tipo=${tipo}&order=${order}&mostrar=${mostrar}&cnpj=${cnpj}&export_type=${export_type}&${accountTypeFilters}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getCartaoExport = (
-  token,
-  id,
-  page,
-  like,
-  id_conta,
-  seller,
-  status,
-  numero_documento,
-  tipo,
-  order,
-  mostrar,
-) => {
-  const url = `${API_URL}/conta/export/cartao-pre-pago?page=${page}&like=${like}&id=${id_conta}&seller=${seller}&status=${status}&numero_documento=${numero_documento}&tipo=${tipo}&order=${order}&mostrar=${mostrar}`;
+  const url = `${API_URL}/export/conta?page=${page}&like=${like}&id=${id_conta}&seller=${seller}&status=${status}&numero_documento=${numero_documento}&tipo=${tipo}&order=${order}&mostrar=${mostrar}`;
   return axios({
     method: "get",
     url,
@@ -406,6 +314,121 @@ export const getCobrancasCartaoFilters = (
   conta_id,
 ) => {
   const url = `${API_URL}/cartao?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&conta_id=${conta_id}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postPagarComSaldo = (token, tokenQrcode, id, valor) => {
+  const url = `${API_URL}/financa/qr-code/${id}/pagar-com-saldo`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      valor,
+      token: tokenQrcode,
+    },
+  });
+};
+
+export const getMinhasCobrancas = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/cobranca/qr-code?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postCobrancaCompartilhada = (token, valor, descricao) => {
+  const url = `${API_URL}/conta/qr-code`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      valor,
+      descricao,
+      expiracao: "",
+      tipo: 1,
+      status: 1,
+    },
+  });
+};
+
+export const getCobrancasCompartilhadas = (
+  token,
+  page,
+  like,
+  order,
+  mostrar,
+) => {
+  const url = `${API_URL}/conta/qr-code?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postBuscarContaQrCode = (token, like) => {
+  const url = `${API_URL}/conta/qrcode/buscar`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      like,
+    },
+  });
+};
+
+export const postEfetuarPagamentoWallet = (
+  token,
+  conta_pagador_id,
+  valor,
+  descricao,
+) => {
+  const url = `${API_URL}/cobranca/qr-code`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      valor,
+      descricao,
+      vencimento: "",
+      status: 1,
+      conta_pagador_id,
+    },
+  });
+};
+
+export const getShowCobranca = (token, id) => {
+  const url = `${API_URL}/cobranca/qr-code/${id}`;
   return axios({
     method: "get",
     url,
@@ -464,6 +487,30 @@ export const getBoletosFilter = (
   });
 };
 
+export const getBoletos = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/boleto?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPagamentos = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/pagamento?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export const getCarneFilters = (
   token,
   page,
@@ -502,8 +549,13 @@ export const getLinkPagamentosFilter = (
   });
 };
 
-export const getLancamentosFuturos = (token, page, data_liberacao) => {
-  const url = `${API_URL}/lancamento-futuro?page=${page}&data_liberacao=${data_liberacao}`;
+export const getLancamentosFuturos = (
+  token,
+  page,
+  data_liberacao_inicial,
+  data_liberacao_final,
+) => {
+  const url = `${API_URL}/lancamento-futuro?page=${page}&data_liberacao_inicial=${data_liberacao_inicial}&data_liberacao_final=${data_liberacao_final}`;
 
   return axios({
     method: "get",
@@ -537,29 +589,6 @@ export const getExtratoFilters = (
   });
 };
 
-export const getExtratoAdquirenciaFilters = (
-  token,
-  page,
-  id,
-  day,
-  order,
-  mostrar,
-  tipo,
-  conta_id,
-  data_inicial,
-  data_final,
-) => {
-  const url = `${API_URL}/concorrencia/extrato?page=${page}&day=${day}&id=${id}&order=${order}&mostrar=${mostrar}&tipo=${tipo}&conta_id=${conta_id}&data_inicial=${data_inicial}&data_final=${data_final}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
 export const getExportExtrato = (
   token,
   page,
@@ -574,6 +603,23 @@ export const getExportExtrato = (
   export_type,
 ) => {
   const url = `${API_URL}/export/extrato?page=${page}&day=${day}&id=${id}&order=${order}&mostrar=${mostrar}&tipo=${tipo}&conta_id=${conta_id}&data_inicial=${data_inicial}&data_final=${data_final}&export_type=${export_type}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getExportExtratoTransacoesBeneficiarios = (
+  token,
+  page,
+  conta_id,
+  export_type,
+  filters,
+) => {
+  const url = `${API_URL}/export/extrato?page=${page}&conta_id=${conta_id}&export_type=${export_type}&${filters}`;
   return axios({
     method: "get",
     url,
@@ -631,12 +677,8 @@ export const getHistoricoTransacaoFilters = (
   pagamento_inicial,
   pagamento_final,
   conta_id,
-  terminal_id,
-  seller_like,
-  holder_name,
-  is_physical_sale,
 ) => {
-  const url = `${API_URL}/transacao?page=${page}&id=${id}&day=${day}&order=${order}&mostrar=${mostrar}&status=${status}&like=${like}&payment_type=${payment_type}&documento=${documento}&data_inicial=${data_inicial}&data_final=${data_final}&vencimento_inicial=${vencimento_inicial}&vencimento_final=${vencimento_final}&conta_id=${conta_id}&pagamento_inicial=${pagamento_inicial}&pagamento_final=${pagamento_final}&terminal_id=${terminal_id}&seller_like=${seller_like}&holder_name=${holder_name}&is_physical_sale=${is_physical_sale}`;
+  const url = `${API_URL}/transacao?page=${page}&id=${id}&day=${day}&order=${order}&mostrar=${mostrar}&status=${status}&like=${like}&payment_type=${payment_type}&documento=${documento}&data_inicial=${data_inicial}&data_final=${data_final}&vencimento_inicial=${vencimento_inicial}&vencimento_final=${vencimento_final}&conta_id=${conta_id}&pagamento_inicial=${pagamento_inicial}&pagamento_final=${pagamento_final}`;
 
   return axios({
     method: "get",
@@ -646,8 +688,6 @@ export const getHistoricoTransacaoFilters = (
     },
   });
 };
-
-//page=1&id=&terminal_id=&day=&order=&mostrar=&status=&like=&seller_like=&is_physical_sale=&payment_type=&documento=&data_inicial=&data_final=&vencimento_final=&vencimento_inicial=&conta_id=&pagamento_final=&pagamento_inicial=&holder_name=
 
 export const getExportHistoricoTransacao = (
   token,
@@ -667,12 +707,8 @@ export const getExportHistoricoTransacao = (
   pagamento_inicial,
   pagamento_final,
   conta_id,
-  terminal_id,
-  seller_like,
-  holder_name,
-  is_physical_sale,
 ) => {
-  const url = `${API_URL}/export/transacao?page=${page}&id=${id}&day=${day}&order=${order}&mostrar=${mostrar}&status=${status}&like=${like}&payment_type=${payment_type}&documento=${documento}&data_inicial=${data_inicial}&data_final=${data_final}&vencimento_inicial=${vencimento_inicial}&vencimento_final=${vencimento_final}&conta_id=${conta_id}&pagamento_inicial=${pagamento_inicial}&pagamento_final=${pagamento_final}&terminal_id=${terminal_id}&seller_like=${seller_like}&holder_name=${holder_name}&is_physical_sale=${is_physical_sale}`;
+  const url = `${API_URL}/export/transacao?page=${page}&id=${id}&day=${day}&order=${order}&mostrar=${mostrar}&status=${status}&like=${like}&payment_type=${payment_type}&documento=${documento}&data_inicial=${data_inicial}&data_final=${data_final}&vencimento_inicial=${vencimento_inicial}&vencimento_final=${vencimento_final}&conta_id=${conta_id}&pagamento_inicial=${pagamento_inicial}&pagamento_final=${pagamento_final}`;
   return axios({
     method: "get",
     url,
@@ -691,6 +727,18 @@ export const getPagadoresFilter = (
   conta_id,
 ) => {
   const url = `${API_URL}/pagador?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&conta_id=${conta_id}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPagadores = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/pagador?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
 
   return axios({
     method: "get",
@@ -732,12 +780,101 @@ export const getTransacaoTed = (
   });
 };
 
+export const getTransacaoTedCliente = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/ted?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export const getTransacaoTedId = (token, id) => {
   const url = `${API_URL}/ted/${id}`;
 
   return axios({
     method: "get",
     url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postTransacaoTed = async (
+  token,
+  tokenApp,
+  banco,
+  agencia,
+  conta,
+  digitoConta,
+  tipo_conta,
+  documento,
+  nome,
+  valor,
+  favorito,
+) => {
+  const url = `${API_URL}/ted`;
+
+  return axios({
+    method: "post",
+    url,
+    data: {
+      banco,
+      token: tokenApp,
+      agencia,
+      conta,
+      digito_conta: digitoConta,
+      tipo_conta,
+      documento,
+      nome,
+      valor,
+      favorito,
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const postNovoPagador = async (
+  token,
+  documento,
+  nome,
+  celular,
+  data_nascimento,
+  email,
+  cep,
+  rua,
+  numero,
+  complemento,
+  bairro,
+  cidade,
+  estado,
+) => {
+  const url = `${API_URL}/pagador`;
+
+  return axios({
+    method: "post",
+    url,
+    data: {
+      documento,
+      nome,
+      celular,
+      data_nascimento,
+      email,
+      endereco: {
+        cep,
+        rua,
+        numero,
+        complemento,
+        bairro,
+        cidade,
+        estado,
+      },
+    },
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -825,6 +962,17 @@ export const getTransacaoId = (token, id) => {
   });
 };
 
+export const getRecebiveisId = (token, id) => {
+  const url = `${API_URL}/transacao-recebiveis/${id}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export const getTransferenciaId = (token, id) => {
   const url = `${API_URL}/transferencia/${id}`;
   return axios({
@@ -854,8 +1002,14 @@ export const getHistoricoTransferenciaFilters = (
   });
 };
 
-export const getHistoricoTransferencia = (token, page) => {
-  const url = `${API_URL}/transferencia?page=${page}`;
+export const getHistoricoTransferencia = (
+  token,
+  page,
+  like,
+  order,
+  mostrar,
+) => {
+  const url = `${API_URL}/transferencia?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
   return axios({
     method: "get",
     url,
@@ -894,17 +1048,144 @@ export const getUserData = (token) => {
     },
   });
 };
+export const getListaCartoes = (token) => {
+  const url = `${API_URL}/conta/cartao-pre-pago`;
 
-export const getListaAdministrador = (
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postSolicitarCartao = (token, type) => {
+  const url = `${API_URL}/conta/cartao-pre-pago`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      type,
+    },
+  });
+};
+
+export const postConfirmarCartao = (token, id) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/confirm/card/request`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const postBloquearDesbloquearCartao = (token, id, pin, reazon_code) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/lock/unlock`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    // data: {
+    //   pin,
+    //   reazon_code,
+    // },
+  });
+};
+export const delCancelarCartao = (token, id, pin, reazon_code) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}`;
+
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      // pin,
+      reazon_code,
+    },
+  });
+};
+
+export const postCartaoStatus = (token, id) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/status`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postAtivarCartao = (token, id, barcode, tokenId) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/enable`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      barcode: barcode,
+      token2: tokenId,
+    },
+  });
+};
+
+export const postPrimeiraSenhaCartao = (token, id, pin, pinConfirmation) => {
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/change/pin`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      new_pin: pin,
+      new_pin_confirmation: pinConfirmation,
+    },
+  });
+};
+
+export const postAlterarSenhaCartao = (
   token,
-  page,
-  like,
-  order,
-  mostrar,
-  created_at,
-  filters,
+  id,
+  pinAtual,
+  pin,
+  pinConfirmation,
 ) => {
-  const url = `${API_URL}/administrador?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&created_at=${created_at}&${filters}`;
+  const url = `${API_URL}/conta/cartao-pre-pago/${id}/change/pin`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      current_pin: pinAtual,
+      new_pin: pin,
+      new_pin_confirmation: pinConfirmation,
+    },
+  });
+};
+
+export const getListaAdministrador = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/administrador?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
 
   return axios({
     method: "get",
@@ -979,7 +1260,7 @@ export const postSendReset = (user) => {
   });
 };
 
-export const postCriarAdmin = (token, data) => {
+export const postCriarAdmin = (token, email) => {
   const url = `${API_URL}/administrador`;
 
   return axios({
@@ -988,51 +1269,21 @@ export const postCriarAdmin = (token, data) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    data,
-  });
-};
-
-export const putEditarAdmin = (token, id, data) => {
-  const url = `${API_URL}/administrador/${id}`;
-
-  return axios({
-    method: "put",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data,
+    data: { email },
   });
 };
 
 export const getCep = (cep) => {
   const url = `https://viacep.com.br/ws/${cep}/json`;
-  const url2 = `https://brasilapi.com.br/api/cep/v1/${cep}`;
 
   return axios({
     method: "get",
     url,
-  }).catch((err) => {
-    return axios({
-      method: "get",
-      url: url2,
-    });
   });
 };
 
 export const getPerfilTaxa = (token, like) => {
   const url = `${API_URL}/conta/perfil-taxa?like=${like}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPerfilTaxaPadrao = (token, like) => {
-  const url = `${API_URL}/financa/taxa-padrao`;
   return axios({
     method: "get",
     url,
@@ -1053,58 +1304,24 @@ export const getPerfilTaxaId = (token, id) => {
   });
 };
 
-export const getPerfilTaxaPadraoId = (token, id) => {
-  const url = `${API_URL}/financa/taxa-padrao/${id}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getTransacaoTarifas = (
-  token,
-  page,
-  like,
-  transacao_id,
-  conta_perfil_taxa_id,
-  data_inicial,
-  data_final,
-  tipo,
-  order,
-  mostrar,
-) => {
-  const url = `${API_URL}/financa/taxa-transacao?page=${page}&like=${like}&transacao_id=${transacao_id}&conta_perfil_taxa_id=${conta_perfil_taxa_id}&data_inicial=${data_inicial}&data_final=${data_final}&tipo=${tipo}&order=${order}&mostrar=${mostrar}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
 export const postPerfilTaxa = (
   token,
   nome,
+  cash_in_payout_zoop,
   tipo_cash_in_boleto,
   cash_in_boleto,
+  tipo_cash_in_ted,
+  cash_in_ted,
   tipo_cash_in_pix,
   cash_in_pix,
   tipo_cash_in_p2p,
   cash_in_p2p,
   tipo_cash_out_p2p,
   cash_out_p2p,
+  tipo_cash_out_ted,
+  cash_out_ted,
   tipo_cash_out_pix,
   cash_out_pix,
-  tipo_cash_in_wallet,
-  cash_in_wallet,
-  tipo_cash_out_wallet,
-  cash_out_wallet,
-  tipo_cash_out_pagamento_conta,
-  cash_out_pagamento_conta,
 ) => {
   const url = `${API_URL}/conta/perfil-taxa`;
   return axios({
@@ -1115,70 +1332,21 @@ export const postPerfilTaxa = (
     },
     data: {
       nome,
+      cash_in_payout_zoop,
       tipo_cash_in_boleto,
       cash_in_boleto,
+      tipo_cash_in_ted,
+      cash_in_ted,
       tipo_cash_in_pix,
       cash_in_pix,
       tipo_cash_in_p2p,
       cash_in_p2p,
       tipo_cash_out_p2p,
       cash_out_p2p,
+      tipo_cash_out_ted,
+      cash_out_ted,
       tipo_cash_out_pix,
       cash_out_pix,
-      tipo_cash_in_wallet,
-      cash_in_wallet,
-      tipo_cash_out_wallet,
-      cash_out_wallet,
-      tipo_cash_out_pagamento_conta,
-      cash_out_pagamento_conta,
-    },
-  });
-};
-export const postPerfilTaxaPadrao = (
-  token,
-  tipo_cash_in_boleto,
-  cash_in_boleto,
-  tipo_cash_in_pix,
-  cash_in_pix,
-  tipo_cash_in_p2p,
-  cash_in_p2p,
-  tipo_cash_out_p2p,
-  cash_out_p2p,
-  tipo_cash_out_pix,
-  cash_out_pix,
-  tipo_cash_in_wallet,
-  cash_in_wallet,
-  tipo_cash_out_wallet,
-  cash_out_wallet,
-  tipo_cash_out_pagamento_conta,
-  cash_out_pagamento_conta,
-  conta_id,
-) => {
-  const url = `${API_URL}/financa/taxa-padrao`;
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      tipo_cash_in_boleto,
-      cash_in_boleto,
-      tipo_cash_in_pix,
-      cash_in_pix,
-      tipo_cash_in_p2p,
-      cash_in_p2p,
-      tipo_cash_out_p2p,
-      cash_out_p2p,
-      tipo_cash_out_pix,
-      cash_out_pix,
-      tipo_cash_in_wallet,
-      cash_in_wallet,
-      tipo_cash_out_wallet,
-      cash_out_wallet,
-      tipo_cash_out_pagamento_conta,
-      cash_out_pagamento_conta,
-      conta_id,
     },
   });
 };
@@ -1186,22 +1354,21 @@ export const postPerfilTaxaPadrao = (
 export const putPerfilTaxa = (
   token,
   nome,
+  cash_in_payout_zoop,
   tipo_cash_in_boleto,
   cash_in_boleto,
+  tipo_cash_in_ted,
+  cash_in_ted,
   tipo_cash_in_pix,
   cash_in_pix,
   tipo_cash_in_p2p,
   cash_in_p2p,
   tipo_cash_out_p2p,
   cash_out_p2p,
+  tipo_cash_out_ted,
+  cash_out_ted,
   tipo_cash_out_pix,
   cash_out_pix,
-  tipo_cash_in_wallet,
-  cash_in_wallet,
-  tipo_cash_out_wallet,
-  cash_out_wallet,
-  tipo_cash_out_pagamento_conta,
-  cash_out_pagamento_conta,
   id,
 ) => {
   const url = `${API_URL}/conta/perfil-taxa/${id}`;
@@ -1213,88 +1380,27 @@ export const putPerfilTaxa = (
     },
     data: {
       nome,
+      cash_in_payout_zoop,
       tipo_cash_in_boleto,
       cash_in_boleto,
+      tipo_cash_in_ted,
+      cash_in_ted,
       tipo_cash_in_pix,
       cash_in_pix,
       tipo_cash_in_p2p,
       cash_in_p2p,
       tipo_cash_out_p2p,
       cash_out_p2p,
+      tipo_cash_out_ted,
+      cash_out_ted,
       tipo_cash_out_pix,
       cash_out_pix,
-      tipo_cash_in_wallet,
-      cash_in_wallet,
-      tipo_cash_out_wallet,
-      cash_out_wallet,
-      tipo_cash_out_pagamento_conta,
-      cash_out_pagamento_conta,
-    },
-  });
-};
-export const putPerfilTaxaPadrao = (
-  token,
-  tipo_cash_in_boleto,
-  cash_in_boleto,
-  tipo_cash_in_pix,
-  cash_in_pix,
-  tipo_cash_in_p2p,
-  cash_in_p2p,
-  tipo_cash_out_p2p,
-  cash_out_p2p,
-  tipo_cash_out_pix,
-  cash_out_pix,
-  tipo_cash_in_wallet,
-  cash_in_wallet,
-  tipo_cash_out_wallet,
-  cash_out_wallet,
-  tipo_cash_out_pagamento_conta,
-  cash_out_pagamento_conta,
-  id,
-  conta_id,
-) => {
-  const url = `${API_URL}/financa/taxa-padrao/${id}`;
-  return axios({
-    method: "put",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      tipo_cash_in_boleto,
-      cash_in_boleto,
-      tipo_cash_in_pix,
-      cash_in_pix,
-      tipo_cash_in_p2p,
-      cash_in_p2p,
-      tipo_cash_out_p2p,
-      cash_out_p2p,
-      tipo_cash_out_pix,
-      cash_out_pix,
-      tipo_cash_in_wallet,
-      cash_in_wallet,
-      tipo_cash_out_wallet,
-      cash_out_wallet,
-      tipo_cash_out_pagamento_conta,
-      cash_out_pagamento_conta,
-      conta_id,
     },
   });
 };
 
 export const deletePerfilTaxa = (token, id) => {
   const url = `${API_URL}/conta/perfil-taxa/${id}`;
-  return axios({
-    method: "delete",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const deletePerfilTaxaPadrao = (token, id) => {
-  const url = `${API_URL}/financa/taxa-padrao/${id}`;
   return axios({
     method: "delete",
     url,
@@ -1326,18 +1432,6 @@ export const postUserBloquearDesbloquear = (token, id) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
-};
-
-export const putEditartUser = (token, id, data) => {
-  const url = `${API_URL}/user/${id}`;
-  return axios({
-    method: "put",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data,
   });
 };
 
@@ -1394,16 +1488,8 @@ export const postAuthMe = (token) => {
   });
 };
 
-export const getLogs = (
-  token,
-  user_id,
-  page,
-  like,
-  order,
-  mostrar,
-  created_at,
-) => {
-  const url = `${API_URL}/conta/log?user_id=${user_id}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&created_at=${created_at}`;
+export const getLogs = (token, user_id, page, like, order, mostrar) => {
+  const url = `${API_URL}/conta/log?user_id=${user_id}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
   return axios({
     method: "get",
     url,
@@ -1422,6 +1508,23 @@ export const getListarProdutosGiftCard = (
   mostrar,
 ) => {
   const url = `${API_URL}/cobranca/gift-card?conta_id=${conta_id}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getListaCobrancasRecebidasWallet = (
+  token,
+  page,
+  like,
+  order,
+  mostrar,
+) => {
+  const url = `${API_URL}/cobranca/qr-code-debit?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
   return axios({
     method: "get",
     url,
@@ -1580,7 +1683,7 @@ export const getDetalhesRecarga = (token, id) => {
 };
 
 export const getListaPreConta = (token, page, like, order, mostrar) => {
-  const url = `${API_URL}/pre-conta-fisica?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+  const url = `${API_URL}/pre-conta?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
 
   return axios({
     method: "get",
@@ -1592,7 +1695,7 @@ export const getListaPreConta = (token, page, like, order, mostrar) => {
 };
 
 export const getPreContaId = (token, id) => {
-  const url = `${API_URL}/pre-conta-fisica/${id}`;
+  const url = `${API_URL}/pre-conta/${id}`;
 
   return axios({
     method: "get",
@@ -1600,6 +1703,14 @@ export const getPreContaId = (token, id) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+};
+export const getPreContaJuridicaId = (id) => {
+  const url = `${API_URL}/pre-conta-juridica/${id}`;
+
+  return axios({
+    method: "get",
+    url,
   });
 };
 
@@ -1725,8 +1836,464 @@ export const postBlackListSelfie = (token, conta_id, blacklist_selfie) => {
   });
 };
 
-export const getBlacklistSelfie = (token, page, like, order, mostrar) => {
+export const getBlacklist = (token, page, like, order, mostrar) => {
   const url = `${API_URL}/conta/black-list-selfie?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postBuscarConta = (documento) => {
+  const url = `${API_URL}/conta/buscar`;
+  return axios({
+    method: "post",
+    url,
+    data: { documento: documento },
+  });
+};
+
+export const postEtapa1 = (etapa1) => {
+  const url = `${API_URL}/pre-conta-juridica/etapa1`;
+  return axios({
+    method: "post",
+    url,
+    data: etapa1,
+  });
+};
+
+export const postEtapa2 = (etapa2) => {
+  const url = `${API_URL}/pre-conta-juridica/etapa2`;
+  return axios({
+    method: "post",
+    url,
+    data: etapa2,
+  });
+};
+
+export const postEtapa3 = (documento) => {
+  const url = `${API_URL}/pre-conta-juridica/etapa3`;
+  return axios({
+    method: "post",
+    url,
+    data: {
+      documento: documento,
+    },
+  });
+};
+
+export const postVerificarContato = (documento, email, celular) => {
+  const url = `${API_URL}/verifica_contato/`;
+  return axios({
+    method: "post",
+    url,
+    data: { documento: documento, email: email, celular: celular },
+  });
+};
+
+export const postReenviarToken = (documento, tipo) => {
+  const url = `${API_URL}/reenviar_token/`;
+  return axios({
+    method: "post",
+    url,
+    data: {
+      documento: documento,
+      tipo: tipo,
+    },
+  });
+};
+
+export const postValidarToken = (validarToken) => {
+  const url = `${API_URL}/validar_token/`;
+  return axios({
+    method: "post",
+    url,
+    data: validarToken,
+  });
+};
+
+export const postEtapa4 = (etapa4) => {
+  const url = `${API_URL}/pre-conta-juridica/etapa4`;
+  return axios({
+    method: "post",
+    url,
+    data: etapa4,
+  });
+};
+
+export const postPreContaRepresentante = (representante) => {
+  const url = `${API_URL}/pre-conta-representante`;
+  return axios({
+    method: "post",
+    url,
+    data: representante,
+  });
+};
+
+export const putRepresentante = (representante, id) => {
+  const url = `${API_URL}/pre-conta-representante/${id}`;
+
+  return axios({
+    method: "put",
+    url,
+    data: representante,
+  });
+};
+
+export const deleteRepresentante = (id) => {
+  const url = `${API_URL}/pre-conta-representante/${id}`;
+  return axios({
+    method: "delete",
+    url,
+  });
+};
+
+export const getRepresentante = (id) => {
+  const url = `${API_URL}/pre-conta-representante?preconta_id=${id}`;
+
+  return axios({
+    method: "get",
+    url,
+  });
+};
+
+export const postEtapa5 = (etapa5) => {
+  const url = `${API_URL}/pre-conta-juridica/etapa5`;
+  return axios({
+    method: "post",
+    url,
+    data: etapa5,
+  });
+};
+
+export const getDocumentoPreConta = (id) => {
+  const url = `${API_URL}/pre-conta-documento?preconta_id=${id}&mostrar=100`;
+  return axios({
+    method: "get",
+    url,
+  });
+};
+
+export const deleteDocumentoPreConta = (id) => {
+  const url = `${API_URL}/pre-conta-documento/${id}`;
+  return axios({
+    method: "delete",
+    url,
+  });
+};
+
+export const postDocumentoPreConta = (
+  preconta_id,
+  documento,
+  categoria,
+  descricao,
+) => {
+  const url = `${API_URL}/pre-conta-documento`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("preconta_id", preconta_id);
+  bodyFormData.append("documento", documento);
+  bodyFormData.append("categoria", categoria);
+  bodyFormData.append("descricao", descricao);
+
+  return axios({
+    method: "post",
+    url,
+
+    data: bodyFormData,
+  });
+};
+
+export const postContaPJ = (contaPJ) => {
+  const url = `${API_URL}/conta-juridica`;
+  return axios({
+    method: "post",
+    url,
+    data: contaPJ,
+  });
+};
+
+export const postAcessoWeb = () => {
+  const url = `${API_URL}/acesso-web`;
+  return axios({
+    method: "post",
+    url,
+  });
+};
+
+export const getAcessoWeb = (id) => {
+  const url = `${API_URL}/acesso-web/${id}`;
+  return axios({
+    method: "get",
+    url,
+  });
+};
+
+export const getPagamentoPix = (token, page, filters) => {
+  const url = `${API_URL}/pagamento-pix?page=${page}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getConsultaChavePix = (token, chave) => {
+  chave = chave.replace("/", "").replace(".", "");
+
+  const url = `${API_URL}/pagamento-pix/${chave}/consultar`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getConsultarCodigoDeBarras = (token, codigo) => {
+  const url = `${API_URL}/pagamento/${codigo}/consultar`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postPagarBoleto = (
+  token,
+  juros,
+  desconto,
+  codigoDeBarras,
+  valor,
+  descricao,
+  vencimento,
+  tokenApp,
+) => {
+  const url = `${API_URL}/pagamento`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      juros,
+      desconto,
+      codigo_barras: codigoDeBarras,
+      valor,
+      descricao,
+      vencimento,
+      token: tokenApp,
+    },
+  });
+};
+
+export const postGerarBoleto = (
+  token,
+  pagadorId,
+  valor,
+  descricao,
+  instrucao1,
+  instrucao2,
+  instrucao3,
+  dataVencimento,
+  tipoMulta,
+  valorMulta,
+  tipoJuros,
+  valorJuros,
+  tipoDesconto,
+  valorDesconto,
+  dataLimiteDesconto,
+) => {
+  const url = `${API_URL}/boleto`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      pagador_id: pagadorId,
+      tipo: "Charge",
+      valor,
+      descricao,
+      instrucao1,
+      instrucao2,
+      instrucao3,
+      data_vencimento: dataVencimento,
+      tipo_multa: tipoMulta,
+      valor_multa: valorMulta,
+      multa: valorMulta <= 0 ? false : true,
+      tipo_juros: tipoJuros,
+      valor_juros: valorJuros,
+      juros: valorJuros <= 0 ? false : true,
+      tipo_desconto: tipoDesconto,
+      valor_desconto: valorDesconto,
+      data_limite_valor_desconto: dataLimiteDesconto,
+      data_desconto: dataLimiteDesconto,
+      desconto: valorDesconto <= 0 ? false : true,
+    },
+  });
+};
+export const postPagamentoPix = (
+  token,
+  tipo_cashout, //Emv, Dict, Manual
+  tipo,
+  chave_recebedor,
+  valor,
+  favorito,
+  descricao,
+  dataToken,
+  pagador,
+  ExternalIdentifier,
+  emv,
+) => {
+  const url = `${API_URL}/pagamento-pix`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      tipo_cashout,
+      ...(tipo_cashout === "Manual"
+        ? { pagador }
+        : {
+            tipo,
+            chave_recebedor,
+          }),
+      valor,
+      favorito,
+      descricao,
+      token: dataToken,
+      ExternalIdentifier,
+      emv,
+    },
+  });
+};
+
+export const postGerarQrCode = (
+  token,
+  mensagem,
+  valor,
+  tipo_cashin,
+  expiracao_data,
+  pagador,
+) => {
+  const url = `${API_URL}/dict-pix/qrcode`;
+  (() => {
+    if (pagador.documento.length > 14) {
+      pagador.cnpj = pagador.documento;
+    } else {
+      pagador.cpf = pagador.documento;
+    }
+  })();
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      mensagem: mensagem,
+      valor: valor,
+      tipo_cashin: tipo_cashin,
+      ...(expiracao_data ? { expiracao_data } : ""),
+      ...(pagador.nome && pagador.documento ? { pagador } : ""),
+    },
+  });
+};
+export const postLerQrCode = (token, codigo) => {
+  const url = `${API_URL}/dict-pix/ler-qrcode`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      codigo,
+    },
+  });
+};
+export const postTransferenciaP2P = async (
+  token,
+  contaDestino,
+  valor,
+  descricao = "",
+  favorito = false,
+  tokenQrcode,
+) => {
+  const url = `${API_URL}/transferencia`;
+
+  return axios({
+    method: "post",
+    url,
+    data: {
+      conta_destino_id: contaDestino,
+      valor: valor,
+      descricao: descricao,
+      favorito: favorito,
+      token: tokenQrcode,
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postCriarChave = (token, criarChave) => {
+  const url = `${API_URL}/dict-pix`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: criarChave,
+  });
+};
+
+export const delChave = (token, chave_id) => {
+  const url = `${API_URL}/dict-pix/${chave_id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postConfirmarPropriedade = (token, chave_id, codigo) => {
+  const url = `${API_URL}/dict-pix/${chave_id}/confirmar-propriedade`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: { codigo: codigo },
+  });
+};
+
+export const getReenviarCodigo = (token, chave_id) => {
+  const url = `${API_URL}/dict-pix/${chave_id}/reenviar-2fac`;
 
   return axios({
     method: "get",
@@ -1760,8 +2327,23 @@ export const postUserRepresentante = (token, representante) => {
   });
 };
 
-export const getFolhaDePagamento = (token, page, conta_id, like) => {
-  const url = `${API_URL}/conta/folha-pagamento?page=${page}&conta_id=${conta_id}&like=${like}`;
+export const putUserOperador = (token, id, nome, permissao) => {
+  const url = `${API_URL}/user/${id}`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      nome: nome,
+      permissao: permissao,
+    },
+  });
+};
+
+export const getPagamentoPixAprovar = (token, page) => {
+  const url = `${API_URL}/pagamento-pix/aprovar?page=${page}`;
 
   return axios({
     method: "get",
@@ -1772,16 +2354,190 @@ export const getFolhaDePagamento = (token, page, conta_id, like) => {
   });
 };
 
-export const getListaBanner = (
+export const getPagamentoAprovar = (token, page) => {
+  const url = `${API_URL}/pagamento/aprovar?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPagamentoTEDAprovar = (token, page) => {
+  const url = `${API_URL}/ted/aprovar?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPagamentoTransferenciaAprovar = (token, page) => {
+  const url = `${API_URL}/transferencia/aprovar?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPagamentoWalletAprovar = (token, page) => {
+  const url = `${API_URL}/financa/qr-code/aprovar?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postPagamentoPixAprovar = (
   token,
-  page,
-  like,
-  order,
-  mostrar,
-  tipo,
-  created_at,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
 ) => {
-  const url = `${API_URL}/conta/banner?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&tipo=${tipo}&created_at=${created_at}`;
+  const url = `${API_URL}/pagamento-pix/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const deletePagamentoPixAprovar = (token, id) => {
+  const url = `${API_URL}/pagamento-pix/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const postPagamentoAprovar = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/pagamento/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+export const postPagamentoTEDAprovar = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/ted/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+export const postPagamentoTransferenciaAprovar = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/transferencia/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const postPagamentoWalletAprovar = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/financa/qr-code/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const getFuncionario = (token, grupo_id, page, like, order, mostrar) => {
+  const url = `${API_URL}/conta/funcionario?grupo_id=${grupo_id}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const getFuncionarioGrupo = (token, page, like) => {
+  const url = `${API_URL}/conta/funcionario-grupo?page=${page}&like=${like}`;
 
   return axios({
     method: "get",
@@ -1792,12 +2548,420 @@ export const getListaBanner = (
   });
 };
 
-export const postBanner = (token, banner, tipo, urlBanner) => {
+export const postFuncionario = (token, conta_funcionario_id, grupo_id) => {
+  const url = `${API_URL}/conta/funcionario`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token,
+      conta_funcionario_id,
+      grupo_id,
+    },
+  });
+};
+
+export const postFuncionarioGrupo = (token, nome, descricao) => {
+  const url = `${API_URL}/conta/funcionario-grupo`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token,
+      nome,
+      descricao,
+    },
+  });
+};
+
+export const putUpdateFuncionario = (token, grupo_id, id) => {
+  const url = `${API_URL}/conta/funcionario/${id}`;
+
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      grupo_id: grupo_id,
+    },
+  });
+};
+
+export const putUpdateFuncionarioGrupo = (token, nome, descricao, id) => {
+  const url = `${API_URL}/conta/funcionario-grupo/${id}`;
+
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      nome: nome,
+      descricao: descricao,
+    },
+  });
+};
+
+export const deleteFuncionario = (token, id) => {
+  const url = `${API_URL}/conta/funcionario/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const deleteFuncionarioGrupo = (token, id) => {
+  const url = `${API_URL}/conta/funcionario-grupo/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamento = (token, page, like) => {
+  const url = `${API_URL}/conta/folha-pagamento?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoBene = (token, page, like) => {
+  const url = `${API_URL}/concorrencia/pagamento-estabelecimento?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoConc = (token, page = 1, filters = "") => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento?page=${page}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getShowFolhaDePagamentoConc = (token, id) => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento/${id}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const deleteFolhaDePagamentoConc = (token, id) => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento/${id}`;
+
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoVoucher = (token, page = 1, filters = "") => {
+  const url = `${API_URL}/concorrencia/pagamento-aluguel?page=${page}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getShowFolhaDePagamentoVoucher = (token, id) => {
+  const url = `${API_URL}/concorrencia/pagamento-aluguel/${id}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoShow = (token, id) => {
+  const url = `${API_URL}/conta/folha-pagamento/${id}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postFolhaPagamentoAprovar = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/conta/folha-pagamento/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const postFolhaPagamentoAprovarConc = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const postFolhaPagamentoAprovarBene = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/concorrencia/pagamento-estabelecimento/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const postFolhaPagamentoAprovarVoucher = (
+  token,
+  aprovar,
+  todos_registros,
+  registros,
+  dataToken,
+) => {
+  const url = `${API_URL}/concorrencia/pagamento-aluguel/aprovar`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      aprovar,
+      todos_registros,
+      registros,
+      token: dataToken,
+    },
+  });
+};
+
+export const getFolhaDePagamentoAprovar = (token, page, like) => {
+  const url = `${API_URL}/conta/folha-pagamento/aprovar?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoAprovarConc = (
+  token,
+  page = 1,
+  filters = "",
+) => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento/aprovar?page=${page}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoAprovarBene = (token, page, like) => {
+  const url = `${API_URL}/concorrencia/pagamento-estabelecimento/aprovar?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoAprovarVoucher = (token, page, like) => {
+  const url = `${API_URL}/concorrencia/pagamento-aluguel/aprovar?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postFolhaPagamento = (token, data_pagamento, descricao) => {
+  const url = `${API_URL}/conta/folha-pagamento`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token,
+      data_pagamento,
+      descricao,
+    },
+  });
+};
+export const postFolhaPagamentoFuncionarioMulti = (
+  token,
+  funcionarios,
+  folha_pagamento_id,
+) => {
+  const url = `${API_URL}/conta/folha-pagamento-funcionario/multi/${folha_pagamento_id}`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token,
+      funcionarios,
+    },
+  });
+};
+
+export const deleteFolhaDePagamentoFuncionario = (token, id) => {
+  const url = `${API_URL}/conta/folha-pagamento-funcionario/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFolhaDePagamentoFuncionario = (token, page, like) => {
+  const url = `${API_URL}/conta/folha-pagamento-funcionario?page=${page}&like=${like}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postFuncionarioLote = (token, arquivo) => {
+  const url = `${API_URL}/conta/funcionario-lote`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("funcionarios", arquivo);
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const getListaBanner = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/conta/banner?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&tipo=home_web_pj`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postBanner = (token, banner, tipo) => {
   const url = `${API_URL}/conta/banner`;
   var bodyFormData = new FormData();
   bodyFormData.append("imagem", banner);
   bodyFormData.append("tipo", tipo);
-  bodyFormData.append("url", urlBanner);
 
   return axios({
     method: "post",
@@ -1820,16 +2984,19 @@ export const deleteBanner = (token, id) => {
   });
 };
 
-export const getFuncionario = (
-  token,
-  grupo_id,
-  page,
-  like,
-  order,
-  mostrar,
-  conta_id,
-) => {
-  const url = `${API_URL}/conta/funcionario?grupo_id=${grupo_id}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&conta_id=${conta_id}`;
+export const getArquivoLote = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/folha-pagamento?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const getArquivoLoteConc = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/cartao-privado-pagamento?page=${page}`;
 
   return axios({
     method: "get",
@@ -1840,30 +3007,8 @@ export const getFuncionario = (
   });
 };
 
-export const getCartoes = (
-  token,
-  page,
-  like,
-  order,
-  mostrar,
-  id,
-  identificador,
-  seller,
-  status,
-  numero_documento,
-  tipo,
-) => {
-  const url = `${API_URL}/conta/cartao-pre-pago?
-	page=${page}
-	&like=${like}
-	&order=${order}
-	&mostrar=${mostrar}
-	&id=${id}
-	&seller=${seller}
-	&identificador=${identificador}
-	&status=${status}
-	&numero_documento=${numero_documento}
-	&tipo=${tipo}`;
+export const getArquivoLoteBene = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/pagamento-estabelecimento?page=${page}`;
 
   return axios({
     method: "get",
@@ -1874,10 +3019,11 @@ export const getCartoes = (
   });
 };
 
-export const postConfirmRequestCard = (token, id) => {
-  const url = `${API_URL}/conta/cartao-pre-pago/${id}/confirm/card/request`;
+export const getArquivoLoteVoucher = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/pagamento-aluguel?page=${page}`;
+
   return axios({
-    method: "post",
+    method: "get",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -1885,13 +3031,128 @@ export const postConfirmRequestCard = (token, id) => {
   });
 };
 
-export const postCancelCard = (token, id) => {
-  const url = `${API_URL}/conta/cartao-pre-pago/${id}/cancel/card/request`;
+export const getArquivoLoteFuncionario = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/funcionario?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getArquivoLoteComprovante = (token, page) => {
+  const url = `${API_URL}/arquivo/by/type/comprovante-folhapagamento?page=${page}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postFolhaDePagamentoLote = (
+  token,
+  arquivo,
+  descricao,
+  data_pagamento,
+) => {
+  const url = `${API_URL}/conta/folha-pagamento-lote`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("pagamentos", arquivo);
+  bodyFormData.append("descricao", descricao);
+  bodyFormData.append("data_pagamento", data_pagamento);
+
   return axios({
     method: "post",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const postFolhaDePagamentoLoteConc = (
+  token,
+  arquivo,
+  descricao,
+  data_pagamento,
+) => {
+  const url = `${API_URL}/concorrencia/cartao-privado-pagamento-lote`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("pagamentos", arquivo);
+  bodyFormData.append("descricao", descricao);
+  bodyFormData.append("data_pagamento", data_pagamento);
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const postFolhaDePagamentoLoteBene = (
+  token,
+  arquivo,
+  descricao,
+  data_pagamento,
+) => {
+  const url = `${API_URL}/concorrencia/pagamento-estabelecimento-lote`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("pagamentos", arquivo);
+  bodyFormData.append("descricao", descricao);
+  bodyFormData.append("data_pagamento", data_pagamento);
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const postFolhaDePagamentoLoteVoucher = (
+  token,
+  arquivo,
+  descricao,
+  data_pagamento,
+) => {
+  const url = `${API_URL}/concorrencia/pagamento-aluguel-lote`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("pagamentos", arquivo);
+  bodyFormData.append("descricao", descricao);
+  bodyFormData.append("data_pagamento", data_pagamento);
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const postReenviarFolhaDePagamentoLote = (token, arquivo_id) => {
+  const url = `${API_URL}/conta/folha-pagamento-lote/${arquivo_id}`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token,
     },
   });
 };
@@ -1929,8 +3190,8 @@ export const getPagamentoContaExtrato = (token, document_number) => {
     },
   });
 };
-export const getPagamentoPixExtrato = (token, transactionId) => {
-  const url = `${API_URL}/pagamento-pix/${transactionId}`;
+export const getPagamentoPixExtrato = (token, document_number) => {
+  const url = `${API_URL}/pagamento-pix/${document_number}`;
 
   return axios({
     method: "get",
@@ -1941,121 +3202,8 @@ export const getPagamentoPixExtrato = (token, transactionId) => {
   });
 };
 
-export const getFolhaPagamentoFuncionario = (
-  token,
-  conta_id,
-  conta_funcionario_id,
-) => {
-  const url = `${API_URL}/conta/folha-pagamento-funcionario?conta_id=${conta_id}&funcionario_id=${conta_funcionario_id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPagamentoPix = (token, page = 1, filters = "") => {
-  const url = `${API_URL}/pagamento-pix?page=${page}&${filters}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getTransferenciaP2p = (
-  token,
-  nome,
-  documento,
-  cnpj,
-  email,
-  id,
-  status,
-  data_inicial,
-  data_final,
-  page,
-) => {
-  const url = `${API_URL}/transferencia?nome=${nome}&documento=${documento}&cnpj=${cnpj}&email=${email}&id=${id}&status=${status}&data_inicial=${data_inicial}&data_final=${data_final}&page=${page}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getTransferenciaTED = (
-  token,
-  nome,
-  documento,
-  cnpj,
-  email,
-  id,
-  status,
-  data_inicial,
-  data_final,
-  page,
-) => {
-  const url = `${API_URL}/ted?nome=${nome}&documento=${documento}&cnpj=${cnpj}&email=${email}&id=${id}&status=${status}&data_inicial=${data_inicial}&data_final=${data_final}&page=${page}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPagamentoConta = (
-  token,
-  nome,
-  documento,
-  cnpj,
-  email,
-  id,
-  status,
-  data_inicial,
-  data_final,
-  page,
-  like,
-  order,
-  mostrar,
-  conta_id,
-) => {
-  const url = `${API_URL}/pagamento?nome=${nome}&documento=${documento}&cnpj=${cnpj}&email=${email}&id=${id}&status=${status}&data_inicial=${data_inicial}&data_final=${data_final}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}&conta_id=${conta_id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getSincronizarConta = (token, conta_id) => {
-  const url = `${API_URL}/conta/${conta_id}/sincronizar`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postRefreshAuth = (token) => {
-  const url = `${API_URL}/auth/refresh`;
+export const postReivindicarPropriedade = (token, chave_id) => {
+  const url = `${API_URL}/dict-pix/${chave_id}/confirmar-reinvindicacao`;
   return axios({
     method: "post",
     url,
@@ -2065,49 +3213,28 @@ export const postRefreshAuth = (token) => {
   });
 };
 
-export const getReenviarDocumento = (token, conta_id) => {
-  const url = `${API_URL}/conta/${conta_id}/reenviar_documento`;
-
+export const postReivindicaçãoPortabilidade = (token, confirmar, chave_id) => {
+  const url = `${API_URL}/dict-pix/${chave_id}/confirmar-portabilidade`;
   return axios({
-    method: "get",
+    method: "post",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
-};
-
-export const getReenviarDocumentoSocio = (token, socio_id) => {
-  const url = `${API_URL}/socio/${socio_id}/reenviar_documento`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
+    data: {
+      confirmar: confirmar,
     },
   });
 };
 
-export const getPagamentoBoleto = (
+export const getCartaoHistoricoTransacao = (
   token,
-  nome,
-  documento,
-  cnpj,
-  email,
-  id,
-  status,
-  data_inicial,
-  data_final,
-  vencimento_inicial,
-  vencimento_final,
   page,
   like,
   order,
   mostrar,
-  conta_id,
 ) => {
-  const url = `${API_URL}/boleto?nome=${nome}&documento=${documento}&cnpj=${cnpj}&email=${email}&id=${id}&status=${status}&data_inicial=${data_inicial}&data_final=${data_final}&vencimento_inicial=${vencimento_inicial}&vencimento_final=${vencimento_final}&page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+  const url = `${API_URL}/financa/cartao-pre-pago`;
 
   return axios({
     method: "get",
@@ -2118,8 +3245,19 @@ export const getPagamentoBoleto = (
   });
 };
 
-export const getEnviarFitbank = (token, conta_id) => {
-  const url = `${API_URL}/conta/${conta_id}/enviar_cadastro_fitbank`;
+export const postEnviarComprovanteFolha = (token, id) => {
+  const url = `${API_URL}/conta/folha-pagamento/enviar-comprovante/${id}`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getFavoritosPix = (token, page = 1, like = "") => {
+  const url = `${API_URL}/favorito/pix?page=${page}&ike=${like}`;
 
   return axios({
     method: "get",
@@ -2130,13 +3268,18 @@ export const getEnviarFitbank = (token, conta_id) => {
   });
 };
 
-export const getSincronizarExtratoConta = (
-  token,
-  conta_id,
-  data_inicial,
-  data_final,
-) => {
-  const url = `${API_URL}/conta/${conta_id}/sincronizar_extrato?data_inicial=${data_inicial}&data_final=${data_final}`;
+export const deleteFavoritoPix = (token, id) => {
+  const url = `${API_URL}/favorito/pix/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const getFavoritosTED = (token) => {
+  const url = `${API_URL}/favorito/ted`;
 
   return axios({
     method: "get",
@@ -2147,8 +3290,18 @@ export const getSincronizarExtratoConta = (
   });
 };
 
-export const getNotificacaoConta = (token, arquivo_id, page, filters = "") => {
-  const url = `${API_URL}/conta/notificacao?arquivo_id=${arquivo_id}&page=${page}&${filters}`;
+export const deleteFavoritoTED = (token, id) => {
+  const url = `${API_URL}/favorito/ted/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const getFavoritosP2P = (token) => {
+  const url = `${API_URL}/favorito/transferencia`;
 
   return axios({
     method: "get",
@@ -2159,8 +3312,294 @@ export const getNotificacaoConta = (token, arquivo_id, page, filters = "") => {
   });
 };
 
-export const postCriarSellerZoop = (token, conta_id) => {
-  const url = `${API_URL}/conta-pagamento/seller`;
+export const deleteFavoritoP2P = (token, id) => {
+  const url = `${API_URL}/favorito/transferencia/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+export const getFavoritosWallet = (token) => {
+  const url = `${API_URL}/favorito/transferencia-qr-code`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const deleteFavoritoWallet = (token, id) => {
+  const url = `${API_URL}/favorito/transferencia-qr-code/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postLinkPagamento = (token, linkPagamento) => {
+  const url = `${API_URL}/link-pagamento`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      valor: linkPagamento.valor,
+      limite_parcelas: linkPagamento.limite_parcelas,
+      vencimento: linkPagamento.vencimento,
+      quantidade_utilizacoes: linkPagamento.quantidade_utilizacoes,
+      senha: linkPagamento.senha,
+      numero_pedido: linkPagamento.numero_pedido,
+      descricao: linkPagamento.descricao,
+      status: linkPagamento.status,
+      pagador_id: linkPagamento.pagador_id,
+      pagamento: linkPagamento.pagamento,
+    },
+  });
+};
+
+export const getPagadorId = (token, id) => {
+  const url = `${API_URL}/pagador/${id}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getLinkPagamentoId = (token, id) => {
+  const url = `${API_URL}/link-pagamento/${id}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const putPagador = (token, pagador, id) => {
+  const url = `${API_URL}/pagador/${id}`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      conta_id: pagador.conta_id,
+      documento: pagador.documento,
+      nome: pagador.nome,
+      celular: pagador.celular,
+      data_nascimento: pagador.data_nascimento,
+      email: pagador.email,
+      endereco: {
+        cep: pagador.endereco.cep,
+        rua: pagador.endereco.rua,
+        numero: pagador.endereco.numero,
+        complemento: pagador.endereco.complemento,
+        bairro: pagador.endereco.bairro,
+        cidade: pagador.endereco.cidade,
+        estado: pagador.endereco.estado,
+      },
+    },
+  });
+};
+
+export const postPagador = (token, pagador) => {
+  const url = `${API_URL}/pagador`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      conta_id: pagador.conta_id,
+      documento: pagador.documento,
+      tipo: pagador.tipo,
+      nome: pagador.nome,
+      celular: pagador.celular,
+      data_nascimento: pagador.data_nascimento,
+      email: pagador.email,
+      endereco: {
+        cep: pagador.endereco.cep,
+        rua: pagador.endereco.rua,
+        numero: pagador.endereco.numero,
+        complemento: pagador.endereco.complemento,
+        bairro: pagador.endereco.bairro,
+        cidade: pagador.endereco.cidade,
+        estado: pagador.endereco.estado,
+      },
+    },
+  });
+};
+
+export const postCobrancaCartao = (token, cobrancaCartao) => {
+  const url = `${API_URL}/cartao`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      pagador_id: cobrancaCartao.pagador_id,
+      parcelas: cobrancaCartao.parcelas,
+      valor: cobrancaCartao.valor,
+      captura: cobrancaCartao.captura,
+      cartao: {
+        nome: cobrancaCartao.cartao.nome,
+        numero: cobrancaCartao.cartao.numero,
+        cvv: cobrancaCartao.cartao.cvv,
+        mes: cobrancaCartao.cartao.mes,
+        ano: cobrancaCartao.cartao.ano,
+      },
+    },
+  });
+};
+
+export const putAssinaturas = (token, id, planoId) => {
+  const url = `${API_URL}/assinatura/${id}`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      plano_id: planoId,
+    },
+  });
+};
+
+export const deleteAssinatura = (token, id) => {
+  const url = `${API_URL}/assinatura/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPlanosFilters = (token, page, like, order, mostrar) => {
+  const url = `${API_URL}/plano-assinatura?page=${page}&like=${like}&order=${order}&mostrar=${mostrar}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const deletePlano = (token, id) => {
+  const url = `${API_URL}/plano-assinatura/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPlanoId = (token, id) => {
+  const url = `${API_URL}/plano-assinatura/${id}`;
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postPlano = (token, plano) => {
+  const url = `${API_URL}/plano-assinatura`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      nome: plano.nome,
+      valor: plano.valor,
+      frequencia: plano.frequencia,
+      descricao: plano.descricao,
+      duracao: plano.duracao,
+    },
+  });
+};
+
+export const putPlano = (token, id, plano) => {
+  const url = `${API_URL}/plano-assinatura/${id}`;
+  return axios({
+    method: "put",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      nome: plano.nome,
+      valor: plano.valor,
+      frequencia: plano.frequencia,
+      descricao: plano.descricao,
+      duracao: plano.duracao,
+    },
+  });
+};
+
+export const postAssinaturas = (token, assinatura) => {
+  const url = `${API_URL}/assinatura`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      plano_id: assinatura.plano_id,
+      pagador_id: assinatura.pagador_id,
+    },
+  });
+};
+
+export const postCartaoAssinatura = (token, id, cartao) => {
+  const url = `${API_URL}/pagador/${id}/cartao`;
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      nome: cartao.nome,
+      numero: cartao.numero,
+      cvv: cartao.cvv,
+      mes: cartao.mes,
+      ano: cartao.ano,
+    },
+  });
+};
+
+export const postAssinaturaPlan = (token, conta_id, plano_venda_id) => {
+  const url = `${API_URL}/assinatura-plano-vendas`;
   return axios({
     method: "post",
     url,
@@ -2169,75 +3608,13 @@ export const postCriarSellerZoop = (token, conta_id) => {
     },
     data: {
       conta_id: conta_id,
+      plano_venda_id: plano_venda_id,
     },
   });
 };
 
-export const postRecusarSellerZoop = (token, seller_id) => {
-  const url = `${API_URL}/solicita-adquirencia/recusa/${seller_id}`;
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {},
-  });
-};
-
-export const postNotificacao = (
-  token,
-  titulo,
-  mensagem,
-  contas,
-  selectedTab,
-  sendToALL = false,
-  filters = "",
-) => {
-  const url = `${API_URL}/enviar/notificacao?${filters}`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      titulo: titulo,
-      mensagem: mensagem,
-      ...(selectedTab === 0
-        ? { beneficiarios: contas }
-        : { estabelecimentos: contas }),
-      ...(sendToALL && selectedTab === 0
-        ? { send_all_beneficiarios: true }
-        : {}),
-      ...(sendToALL && selectedTab === 1
-        ? { send_all_estabelecimentos: true }
-        : {}),
-    },
-  });
-};
-
-export const postAddLoteNotificacao = (token, arquivo) => {
-  const url = `${API_URL}/enviar/notificacao/lote`;
-
-  const bodyFormData = new FormData();
-  bodyFormData.append("file", arquivo);
-  // bodyFormData.append("id", id);
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: bodyFormData,
-  });
-};
-
-export const getTerminaisPOSFilter = (token, page, like, conta_id) => {
-  const url = `${API_URL}/point-of-sales?page=${page}&like=${like}&conta_id=${conta_id}`;
-
+export const getMinhasAssinaturas = (token, conta_id) => {
+  const url = `${API_URL}/minhas-assinaturas-plano-vendas?conta_id=${conta_id}`;
   return axios({
     method: "get",
     url,
@@ -2247,18 +3624,35 @@ export const getTerminaisPOSFilter = (token, page, like, conta_id) => {
   });
 };
 
-export const postTerminalPos = (token, conta_id, tokenPOS) => {
-  const url = `${API_URL}/point-of-sales`;
-
+export const getMinhasTaxas = (token, conta_id) => {
+  const url = `${API_URL}/minhas-taxas-plano-vendas?conta_id=${conta_id}`;
   return axios({
-    method: "post",
+    method: "get",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    data: {
-      conta_id: conta_id,
-      token: tokenPOS,
+  });
+};
+
+export const deletePlanoAssinatura = (token, plan_id) => {
+  const url = `${API_URL}/plano-vendas/${plan_id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const deletePlanoAssinaturaEC = (token, subscription_id) => {
+  const url = `${API_URL}/assinatura-plano-vendas/${subscription_id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
   });
 };
@@ -2293,204 +3687,17 @@ export const getExportDownload = (token, conta_id, export_id) => {
   });
 };
 
-export const getMinhasAssinaturas = (token, conta_id) => {
-  const url = `${API_URL}/minhas-assinaturas-plano-vendas?conta_id=${conta_id}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getMinhasTaxas = (token, conta_id) => {
-  const url = `${API_URL}/minhas-taxas-plano-vendas?conta_id=${conta_id}`;
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPlanosDeVendas = (
+export const getTerminaisPOS = (
   token,
   page,
-  plan_name,
-  order,
-  mostrar,
-  agent_id,
-) => {
-  const url = `${API_URL}/plano-vendas?page=${page}&plan_name=${plan_name}&order=${order}&mostrar=${mostrar}&agent_id=${agent_id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPlanosDeVendasZoop = (
-  token,
-  page,
-  plan_name,
-  order,
-  mostrar,
-) => {
-  const url = `${API_URL}/plano-vendas-zoop?page=${page}&zoop_plan_name=${plan_name}&order=${order}&mostrar=${mostrar}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPlanosDeVendasID = (token, id) => {
-  const url = `${API_URL}/plano-vendas/${id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPlanosDeVendasZoopID = (token, id) => {
-  const url = `${API_URL}/plano-vendas-zoop/${id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postPlanosDeVendasZoop = (token, zoop_plan_id) => {
-  const url = `${API_URL}/plano-vendas-zoop/store`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      zoop_plan_id: zoop_plan_id,
-    },
-  });
-};
-
-export const getAssinaturaPlanoVendas = (
-  token,
+  conta_id,
   like,
-  page,
-  plano_venda_id,
   order,
   mostrar,
 ) => {
-  const url = `${API_URL}/assinatura-plano-vendas?like=${like}&page=${page}&plano_venda_id=${plano_venda_id}&order=${order}&mostrar=${mostrar}`;
-
+  const url = `${API_URL}/point-of-sales?page=${page}&conta_id=${conta_id}`;
   return axios({
     method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-export const postAssinaturaPlanoVendas = (token, conta_id, plano_venda_id) => {
-  const url = `${API_URL}/assinatura-plano-vendas`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      conta_id: conta_id,
-      plano_venda_id: plano_venda_id,
-    },
-  });
-};
-
-export const postCriarTaxasPadrao = (token, sales_plan_id) => {
-  const url = `${API_URL}/plano-vendas/${sales_plan_id}/create-default-fees`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {},
-  });
-};
-
-export const postSetPlanoPadrao = (token, sales_plan_id) => {
-  const url = `${API_URL}/plano-vendas/${sales_plan_id}/set-default`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {},
-  });
-};
-
-export const getContaPadrao = (token) => {
-  const url = `${API_URL}/plano-vendas-conta-app-padrao`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postSetContaPadrao = (token, conta_id) => {
-  const url = `${API_URL}/plano-vendas-conta-app-padrao`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: { conta_id: conta_id },
-  });
-};
-
-export const delPlanoVendas = (token, plan_id) => {
-  const url = `${API_URL}/plano-vendas/${plan_id}`;
-  return axios({
-    method: "delete",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const delAssinaturaPlanoVendas = (token, subscription_id) => {
-  const url = `${API_URL}/assinatura-plano-vendas/${subscription_id}`;
-  return axios({
-    method: "delete",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -2545,13 +3752,21 @@ export const putTerminalPOS = (token, posId, name) => {
   });
 };
 
-export const postCancelarTransacao = (
-  token,
-  transactionId,
-  is_full_amount,
-  amount,
-) => {
-  const url = `${API_URL}/transacao/cancelar`;
+export const postAceitarTermoAbertura = (nome, cpf) => {
+  const url = `${API_URL}/aceite/termo-abertura`;
+  return axios({
+    method: "post",
+    url,
+
+    data: {
+      nome: nome,
+      cpf: cpf,
+    },
+  });
+};
+
+export const postTerminalPos = (token, conta_id, tokenPOS) => {
+  const url = `${API_URL}/point-of-sales`;
 
   return axios({
     method: "post",
@@ -2560,15 +3775,50 @@ export const postCancelarTransacao = (
       Authorization: `Bearer ${token}`,
     },
     data: {
-      transaction_id: transactionId,
-      is_full_amount: is_full_amount,
-      amount: amount,
+      conta_id: conta_id,
+      token: tokenPOS,
     },
   });
 };
 
-export const getRepresentantes = (token, page, like, trashed_agents) => {
-  const url = `${API_URL}/agents?page=${page}&like=${like}&trashed_agents=${trashed_agents}`;
+export const postSocio = (dadosSocio) => {
+  const url = `${API_URL}/pre-conta-socio`;
+  return axios({
+    method: "post",
+    url,
+    data: dadosSocio,
+  });
+};
+
+export const putSocio = (dadosSocio, id) => {
+  const url = `${API_URL}/pre-conta-socio/${id}`;
+
+  return axios({
+    method: "put",
+    url,
+    data: dadosSocio,
+  });
+};
+
+export const deleteSocio = (id) => {
+  const url = `${API_URL}/pre-conta-socio/${id}`;
+  return axios({
+    method: "delete",
+    url,
+  });
+};
+
+export const getSocio = (id) => {
+  const url = `${API_URL}/pre-conta-socio?preconta_id=${id}`;
+
+  return axios({
+    method: "get",
+    url,
+  });
+};
+
+export const getPlanosDeVendas = (token, page, plan_name, order, mostrar) => {
+  const url = `${API_URL}/plano-vendas?page=${page}&plan_name=${plan_name}&order=${order}&mostrar=${mostrar}`;
 
   return axios({
     method: "get",
@@ -2579,8 +3829,8 @@ export const getRepresentantes = (token, page, like, trashed_agents) => {
   });
 };
 
-export const postImportarRepresentante = (token, account_id) => {
-  const url = `${API_URL}/agents/import-agent-from-account`;
+export const postPlanoDeVendas = (token, nome) => {
+  const url = `${API_URL}/plano-vendas`;
 
   return axios({
     method: "post",
@@ -2589,13 +3839,48 @@ export const postImportarRepresentante = (token, account_id) => {
       Authorization: `Bearer ${token}`,
     },
     data: {
-      account_id: account_id,
+      name: nome,
     },
   });
 };
 
-export const postCriarRepresentante = (token, agent) => {
-  const url = `${API_URL}/agents/import-agent-from-account`;
+export const delPlanoVendas = (token, plan_id) => {
+  const url = `${API_URL}/plano-vendas/${plan_id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getPlanosDeVendasID = (token, id) => {
+  const url = `${API_URL}/plano-vendas/${id}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postCriarTaxasPadrao = (token, sales_plan_id) => {
+  const url = `${API_URL}/plano-vendas/${sales_plan_id}/create-default-fees`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {},
+  });
+};
+export const postAssinaturaPlanoVendas = (token, conta_id, plano_venda_id) => {
+  const url = `${API_URL}/assinatura-plano-vendas`;
 
   return axios({
     method: "post",
@@ -2604,27 +3889,78 @@ export const postCriarRepresentante = (token, agent) => {
       Authorization: `Bearer ${token}`,
     },
     data: {
-      agent: {
-        owner_cpf: agent.owner_cpf,
-        owner_first_name: agent.owner_first_name,
-        owner_last_name: agent.owner_last_name,
-        owner_birth_date: agent.owner_birth_date,
-        cnpj: agent.cnpj,
-        business_name: agent.business_name,
-        contact_email: agent.contact_email,
-        contact_number: agent.contact_number,
-        business_description: agent.business_description,
-      },
-      site: agent.site,
-      address: {
-        cep: agent.endereco?.cep,
-        rua: agent.endereco?.rua,
-        bairro: agent.endereco?.bairro,
-        numero: agent.endereco?.numero,
-        complemento: agent.endereco?.complemento,
-        cidade: agent.endereco?.cidade,
-        estado: agent.endereco?.estado,
-      },
+      conta_id: conta_id,
+      plano_venda_id: plano_venda_id,
+    },
+  });
+};
+
+export const getSincronizarExtratoConta = (
+  token,
+  conta_id,
+  data_inicial,
+  data_final,
+) => {
+  const url = `${API_URL}/conta/${conta_id}/sincronizar_extrato?data_inicial=${data_inicial}&data_final=${data_final}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getExtratoAdquirenciaFilters = (
+  token,
+  page,
+  id,
+  day,
+  order,
+  mostrar,
+  tipo,
+  conta_id,
+  data_inicial,
+  data_final,
+) => {
+  const url = `${API_URL}/extrato_zoop?page=${page}&day=${day}&id=${id}&order=${order}&mostrar=${mostrar}&tipo=${tipo}&conta_id=${conta_id}&data_inicial=${data_inicial}&data_final=${data_final}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getAssinaturaPlanoVendas = (
+  token,
+  like,
+  page,
+  plano_venda_id,
+  order,
+  mostrar,
+) => {
+  const url = `${API_URL}/assinatura-plano-vendas?like=${like}&page=${page}&plano_venda_id=${plano_venda_id}&order=${order}&mostrar=${mostrar}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const delAssinaturaPlanoVendas = (token, subscription_id) => {
+  const url = `${API_URL}/assinatura-plano-vendas/${subscription_id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
   });
 };
@@ -2656,174 +3992,8 @@ export const putFees = (token, fee_id, percent_amount, dollar_amount) => {
   });
 };
 
-export const postContaFisicaZoop = (
-  token,
-  documento,
-  nome,
-  nome_mae,
-  nome_pai,
-  sexo,
-  estado_civil,
-  uf_naturalidade,
-  cidade_naturalidade,
-  numero_documento,
-  uf_documento,
-  data_emissao,
-  renda_mensal,
-  celular,
-  data_nascimento,
-  email,
-  site,
-  cep,
-  rua,
-  numero,
-  complemento,
-  bairro,
-  cidade,
-  estado,
-  banco,
-  agencia,
-  conta,
-  tipo_transferencia,
-  chave_pix,
-  is_terceiro_autorizado,
-  documento_conta,
-  taxa_transacao,
-) => {
-  const url = `${API_URL}/conta-zoop`;
-  console.log(taxa_transacao);
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      documento,
-      nome,
-      nome_mae,
-      nome_pai,
-      sexo,
-      estado_civil,
-      uf_naturalidade,
-      cidade_naturalidade,
-      numero_documento,
-      uf_documento,
-      data_emissao,
-      renda_mensal,
-      celular,
-      data_nascimento,
-      email,
-      site,
-      endereco: {
-        cep,
-        rua,
-        numero,
-        complemento,
-        bairro,
-        cidade,
-        estado,
-      },
-      banco,
-      agencia,
-      conta,
-      tipo_transferencia,
-      chave_pix,
-      is_terceiro_autorizado,
-      ...(documento_conta
-        ? {
-          documento_conta: documento_conta,
-        }
-        : null),
-      ...(taxa_transacao
-        ? {
-          taxa_transacao: parseFloat(taxa_transacao).toFixed(2),
-        }
-        : null),
-
-    },
-  });
-};
-
-export const postContaJuridicaZoop = (
-  token,
-  documento,
-  cnpj,
-  razao_social,
-  nome,
-  renda_mensal,
-  celular,
-  data_nascimento,
-  email,
-  cep,
-  rua,
-  numero,
-  complemento,
-  bairro,
-  cidade,
-  estado,
-  banco,
-  agencia,
-  conta,
-  tipo_transferencia,
-  chave_pix,
-  is_terceiro_autorizado,
-  documento_conta,
-  taxa_transacao,
-) => {
-  const url = `${API_URL}/conta-juridica-zoop`;
-  console.log(taxa_transacao);
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      documento: documento,
-      cnpj: cnpj,
-      razao_social: razao_social,
-      nome: nome,
-      renda_mensal: renda_mensal,
-      celular: celular,
-      data_nascimento: data_nascimento,
-      email: email,
-      endereco: {
-        cep: cep,
-        rua: rua,
-        numero: numero,
-        complemento: complemento,
-        bairro: bairro,
-        cidade: cidade,
-        estado: estado,
-      },
-      banco: banco,
-      agencia: agencia,
-      conta: conta,
-      tipo_transferencia,
-      chave_pix,
-      is_terceiro_autorizado,
-      ...(documento_conta
-        ? {
-          documento_conta: documento_conta,
-        }
-        : null),
-      ...(taxa_transacao
-        ? {
-          taxa_transacao: parseFloat(taxa_transacao).toFixed(2),
-        }
-        : null),
-    },
-  });
-};
-
-export const getArquivosExportados = async (
-  token,
-  page = 1,
-  like = "",
-  filters = "",
-) => {
-  const url = `${API_URL}/exports?page=${page}&like=${like}&${filters}`;
+export const getResumoRecebiveisFuturos = (token, date) => {
+  const url = `${API_URL}/transacao-recebimentos-futuros?date=${date}`;
 
   return axios({
     method: "get",
@@ -2834,7 +4004,90 @@ export const getArquivosExportados = async (
   });
 };
 
-export const getDownloadArquivoExportadoVoucher = async (
+export const getResumoCompletoRecebiveis = (token, date) => {
+  const url = `${API_URL}/transacao-todos-recebimentos?date=${date}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getGerarToken = (token, page) => {
+  const url = `${API_URL}/tokens`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postGerarToken = (token, nome) => {
+  const url = `${API_URL}/tokens/create`;
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      token_name: nome,
+    },
+  });
+};
+
+export const delGerarToken = (token, id) => {
+  const url = `${API_URL}/tokens/${id}`;
+  return axios({
+    method: "delete",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const postArquivoRemessa = (token, file) => {
+  const url = `${API_URL}/arquivo-remessa/upload`;
+  var bodyFormData = new FormData();
+  bodyFormData.append("file", file);
+
+  return axios({
+    method: "post",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: bodyFormData,
+  });
+};
+
+export const getArquivosExportados = async (
+  token,
+  conta_id,
+  page = 1,
+  like = "",
+  filters = "",
+) => {
+  const url = `${API_URL}/exports-by-account?conta_id=${conta_id}&page=${page}&like=${like}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getDownloadArquivoExportado = async (
   token,
   export_id,
   conta_id = "",
@@ -2850,49 +4103,11 @@ export const getDownloadArquivoExportadoVoucher = async (
   });
 };
 
-export const getDownloadArquivoExportado = async (token, arquivo_id) => {
+export const getArquivoDownload = async (token, arquivo_id) => {
   const url = `${API_URL}/arquivo-download?arquivo_id=${arquivo_id}`;
 
   return axios({
     method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getTokensPublicos = (token) => {
-  const url = `${API_URL}/tokens`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postCriarTokenPublico = (token, token_name) => {
-  const url = `${API_URL}/tokens/create`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      token_name,
-    },
-  });
-};
-
-export const deleteTokenPublico = (token, id) => {
-  const url = `${API_URL}/tokens/${id}`;
-  return axios({
-    method: "delete",
     url,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -2915,240 +4130,5 @@ export const getCidadeSearch = (estado, like = "") => {
   return axios({
     method: "get",
     url,
-  });
-};
-
-export const postCancelPix = (token, id) => {
-  const url = `${API_URL}/pagamento-pix/${id}/cancel-schedule`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getPermissionsList = (token) => {
-  const url = `${API_URL}/auth/permissoes`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getProfiles = (token) => {
-  const url = `${API_URL}/auth/perfil`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postProfile = (token, data) => {
-  const url = `${API_URL}/auth/perfil`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data,
-  });
-};
-
-export const patchProfile = (token, perfil_id, data) => {
-  const url = `${API_URL}/auth/perfil/${perfil_id}`;
-
-  return axios({
-    method: "patch",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      ...data,
-      overwrite: true,
-    },
-  });
-};
-
-export const deleteProfile = (token, perfil_id) => {
-  const url = `${API_URL}/auth/perfil/${perfil_id}`;
-
-  return axios({
-    method: "delete",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getProfilePermissionsList = (token, perfil_id) => {
-  const url = `${API_URL}/auth/perfil/${perfil_id}/permissoes`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const getUSerProfile = (token, user_id) => {
-  const url = `${API_URL}/auth/perfil/user/${user_id}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postUSerSetProfile = (token, user_id, perfil_id) => {
-  const url = `${API_URL}/auth/perfil/attach/${user_id}/${perfil_id}`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postUSerResetProfile = (token, user_id, perfil_id) => {
-  const url = `${API_URL}/auth/perfil/detach/${user_id}/`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postSendPushNotification = (
-  token,
-  titulo,
-  mensagem,
-  send_all_estabelecimentos = false,
-  send_all_beneficiarios = false,
-  beneficiarios = [],
-) => {
-  const url = `${API_URL}/enviar/notificacao`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      titulo,
-      mensagem,
-      send_all_estabelecimentos,
-      send_all_beneficiarios,
-      beneficiarios,
-    },
-  });
-};
-
-export const getBlacklist = (token, page, filters = "") => {
-  const url = `${API_URL}/contas/blacklist?page=${page}&${filters}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postAddRemoveFromBlacklist = (token, conta_id, titulo, motivo) => {
-  const url = `${API_URL}/contas/blacklist`;
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      conta_id,
-      titulo,
-      motivo,
-    },
-  });
-};
-
-export const getFavoritosPix = (token, conta_id, page = 1, like = "") => {
-  const url = `${API_URL}/favorito/pix?conta_id=${conta_id}&page=${page}&ike=${like}`;
-
-  return axios({
-    method: "get",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
-
-export const postAddFavoritePix = (token, conta_id, data) => {
-  const url = `${API_URL}/favorito/pix`;
-  console.log(data);
-
-  return axios({
-    method: "post",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      conta_id,
-      nome: data?.nome,
-      tipo_transferencia: data?.tipo_transferencia, //"Dict" "Manual"
-      ...(data?.tipo_transferencia === "Manual"
-        ? {
-          nome_conta: data?.nome_conta,
-          documento_conta: data?.documento_conta,
-          numero_conta: data?.numero_conta + data?.digito_conta,
-          banco: data?.banco,
-          agencia: data?.agencia,
-          tipo_conta: data?.tipo_conta, //"conta_corrente" "conta_salario" "conta_poupanca" "conta_pagamento"
-        }
-        : {
-          tipo: data?.tipo, //CPF = 0 CNPJ = 1 EMAIL = 2 PHONE = 3 EVP = 4
-          chave_recebedor: data?.chave_recebedor,
-          documento: data?.documento,
-        }),
-    },
-  });
-};
-
-export const deleteFavoritoPix = (token, id) => {
-  const url = `${API_URL}/favorito/pix/${id}`;
-  return axios({
-    method: "delete",
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 };

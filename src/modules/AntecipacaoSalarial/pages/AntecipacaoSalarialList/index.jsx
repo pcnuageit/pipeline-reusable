@@ -1,7 +1,6 @@
 import {
   Box,
   Grid,
-  IconButton,
   LinearProgress,
   MenuItem,
   Select,
@@ -17,7 +16,6 @@ import { useHistory, useParams } from "react-router";
 import useDebounce from "../../../../hooks/useDebounce";
 
 import DeleteIcon from "@material-ui/icons/Delete";
-import RefreshIcon from "@material-ui/icons/Refresh";
 import ViewListIcon from "@material-ui/icons/ViewList";
 import { Pagination } from "@material-ui/lab";
 import { toast } from "react-toastify";
@@ -35,6 +33,7 @@ import { faCalendar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import moment from "moment";
 import { useEffect } from "react";
+import CustomHeader from "../../../../components/CustomHeader/CustomHeader";
 import { APP_CONFIG } from "../../../../constants/config";
 import { useGetAntecipacaoSalarialProposalQuery } from "../../../AntecipacaoSalarialProposal/services/AntecipacaoSalarialProposal";
 
@@ -44,6 +43,7 @@ const useStyles = makeStyles(() => ({
     flexDirection: "column",
   },
   headerContainer: {
+    padding: "20px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -66,7 +66,7 @@ const AntecipacaoSalarialListPage = () => {
     {
       skip: !proposalId,
       refetchOnMountOrArgChange: true,
-    }
+    },
   );
   const initialFilters = {
     id: "",
@@ -128,7 +128,7 @@ const AntecipacaoSalarialListPage = () => {
       {
         skip: !proposalId,
         refetchOnMountOrArgChange: true,
-      }
+      },
     );
 
   const columns = [
@@ -180,8 +180,9 @@ const AntecipacaoSalarialListPage = () => {
   };
 
   const handleExportar = async () => {
+    toast.warning("A exportação pode demorar um pouco, por favor aguarde...");
     try {
-      const res = await exportFinancialSupports({
+      const response = await exportFinancialSupports({
         proposalId,
         id: supportId,
         status: filters.status,
@@ -189,12 +190,8 @@ const AntecipacaoSalarialListPage = () => {
         created_at: filters.data,
         valor_disponivel: `${from_valor_liberado},${to_valor_liberado}`,
       }).unwrap();
-      toast.warning(
-        res?.message ??
-          "A exportação pode demorar um pouco, por favor aguarde..."
-      );
-      if (res?.url) {
-        window.open(`${res.url}`, "", "");
+      if (response && response.url !== undefined) {
+        window.open(`${response.url}`, "", "");
         toast.success("Exportação gerada com sucesso!");
       }
     } catch (e) {
@@ -206,30 +203,13 @@ const AntecipacaoSalarialListPage = () => {
     <div />
   ) : (
     <Box className={classes.root}>
+      <CustomHeader pageTitle="Antecipações Salariais" />
       <Box className={classes.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography className={classes.pageTitle}>
-            Antecipações Salariais
-          </Typography>
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
-          </Box>
-        </Box>
+        {/* <Box style={{ marginBottom: '20px' }}>
+					<Typography variant="h5" className={classes.pageTitle}>
+						Antecipações Salariais
+					</Typography>
+				</Box> */}
         <Box
           style={{
             width: "100%",
@@ -243,7 +223,8 @@ const AntecipacaoSalarialListPage = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  placeholder="Pesquisar por nome, documento, email..."
+                  /* placeholder="Pesquisar por nome, documento, email..." */
+                  label="Pesquisar por nome, documento, email..."
                   size="small"
                   variant="outlined"
                   style={{
@@ -263,7 +244,8 @@ const AntecipacaoSalarialListPage = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  placeholder="Pesquisar por ID da antecipação"
+                  /* placeholder="Pesquisar por ID da antecipação" */
+                  label="Pesquisar por ID da antecipação"
                   size="small"
                   variant="outlined"
                   style={{
@@ -377,6 +359,7 @@ const AntecipacaoSalarialListPage = () => {
               </Grid>
               <Grid item xs={12} sm={4}>
                 <TextField
+                  style={{ marginTop: "10px" }}
                   fullWidth
                   variant="outlined"
                   InputLabelProps={{
@@ -426,18 +409,11 @@ const AntecipacaoSalarialListPage = () => {
                   style={{
                     display: "flex",
                     justifyContent: "flex-end",
-                    alignItems: "center",
-                    height: "100%",
-                    width: "100%",
+                    /* alignItems: 'center',
+										height: '100%',
+										width: '100%', */
                   }}
-                >
-                  <CustomButton color="purple" onClick={handleExportar}>
-                    <Box display="flex" alignItems="center">
-                      <ViewListIcon />
-                      Exportar
-                    </Box>
-                  </CustomButton>
-                </Box>
+                ></Box>
               </Grid>
               <Grid item xs={12} sm={2}>
                 <Box
@@ -449,6 +425,14 @@ const AntecipacaoSalarialListPage = () => {
                     width: "100%",
                   }}
                 >
+                  <Box marginRight={"10px"}>
+                    <CustomButton color="purple" onClick={handleExportar}>
+                      <Box display="flex" alignItems="center">
+                        <ViewListIcon />
+                        Exportar
+                      </Box>
+                    </CustomButton>
+                  </Box>
                   <CustomButton
                     color="red"
                     onClick={() => {
@@ -479,7 +463,7 @@ const AntecipacaoSalarialListPage = () => {
               />
             </Box>
           ) : (
-            <Box>
+            <Box width="60vw">
               <LinearProgress color="secondary" />
             </Box>
           )}

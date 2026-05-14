@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@material-ui/core";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory, useParams } from "react-router";
@@ -34,15 +34,18 @@ import {
   putTerminalPOSAction,
 } from "../../actions/actions";
 import CustomButton from "../../components/CustomButton/CustomButton";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 
 const useStyles = makeStyles((theme) => ({
-  SplitModal: {},
+  SplitModal: {
+    padding: "20px",
+  },
   updatePosHeader: {
-    background: APP_CONFIG.mainCollors.primary,
+    background: APP_CONFIG.mainCollors.background,
     color: "white",
   },
 }));
@@ -50,19 +53,19 @@ const useStyles = makeStyles((theme) => ({
 const DetalhesTerminalPOS = () => {
   const classes = useStyles();
   const [page, setPage] = useState(1);
-  const { id, subsectionId } = useParams();
+  const { subsectionId } = useParams();
   const token = useAuth();
   const dispatch = useDispatch();
   const history = useHistory();
   const userData = useSelector((state) => state.userData);
   const data = useSelector((state) => state.terminalPOS);
   const terminalPOSTransaction = useSelector(
-    (state) => state.terminalPOSTransaction
+    (state) => state.terminalPOSTransaction,
   );
   const [loading, setLoading] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
-  const [errors, setErrors] = useState({});
+
   const [namePos, setNamePos] = useState("");
 
   useEffect(() => {
@@ -70,23 +73,17 @@ const DetalhesTerminalPOS = () => {
   }, [token]);
 
   useEffect(() => {
-    dispatch(getTerminalPOSAction(token, subsectionId ? subsectionId : id));
-  }, [subsectionId, id]);
+    dispatch(getTerminalPOSAction(token, subsectionId));
+  }, [subsectionId]);
 
   useEffect(() => {
-    dispatch(
-      getTerminalPOSTransactionsAction(
-        token,
-        subsectionId ? subsectionId : id,
-        page
-      )
-    );
-  }, [subsectionId, id, page]);
+    dispatch(getTerminalPOSTransactionsAction(token, subsectionId, page));
+  }, [subsectionId]);
 
   /* const handleDeletePos = async () => {
 		try {
 			await deletePos({ posId: id }).unwrap();
-			toast.success('POS excluido!');
+			toast.success('POS excluído!');
 			history.goBack();
 		} catch (e) {
 			toast.error('Erro ao excluir POS!');
@@ -109,7 +106,9 @@ const DetalhesTerminalPOS = () => {
 
   const handleDeletePos = async () => {
     setLoading(true);
-    const resDeletePos = await dispatch(deleteTerminalPOSAction(token, id));
+    const resDeletePos = await dispatch(
+      deleteTerminalPOSAction(token, subsectionId),
+    );
     if (resDeletePos) {
       toast.error("Falha ao deleter terminal - POS");
       setOpenDeleteDialog(false);
@@ -124,12 +123,11 @@ const DetalhesTerminalPOS = () => {
   const handleUpdatePos = async () => {
     setLoading(true);
     const resPutTerminalPOS = await dispatch(
-      putTerminalPOSAction(token, id, namePos)
+      putTerminalPOSAction(token, subsectionId, namePos),
     );
     if (resPutTerminalPOS) {
       toast.error("Erro ao atualizar POS!");
       setLoading(false);
-      setErrors(resPutTerminalPOS);
     } else {
       toast.success("POS atualizado!");
       setOpenUpdateDialog(false);
@@ -139,15 +137,10 @@ const DetalhesTerminalPOS = () => {
   };
 
   const handleClickRow = (row) => {
-    if (row.transaction && row.transaction.id) {
-      const path = generatePath(
-        "/dashboard/gerenciar-contas/:id/detalhes-transacao",
-        {
-          id: row.transaction.id,
-        }
-      );
-      history.push(path);
-    }
+    const path = generatePath("/dashboard/detalhes-transacao/:subsectionId", {
+      subsectionId: row.transaction.id,
+    });
+    history.push(path);
   };
 
   const handleChangePage = useCallback((e, value) => {
@@ -369,21 +362,6 @@ const DetalhesTerminalPOS = () => {
       },
     },
     {
-      headerText: "Validação",
-      key: "",
-      FullObject: (data) => (
-        <Box display="flex" flexDirection="column">
-          {data.transaction &&
-          data.transaction.error &&
-          data.transaction.error.message_display ? (
-            data.transaction.error.message_display
-          ) : (
-            <Typography style={{ color: "green" }}>APROVADO</Typography>
-          )}
-        </Box>
-      ),
-    },
-    {
       headerText: "Tipo",
       key: "transaction",
       CustomValue: (transaction) => {
@@ -434,23 +412,25 @@ const DetalhesTerminalPOS = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      <CustomHeader pageTitle="Terminal POS" />
       <Dialog
         onClose={() => setOpenUpdateDialog(false)}
         open={openUpdateDialog}
         className={classes.SplitModal}
       >
-        <LoadingScreen isLoading={loading} />
-        <DialogTitle className={classes.updatePosHeader}>
-          <Typography
-            style={{ color: APP_CONFIG.mainCollors.primary }}
-            align="center"
-            variant="h6"
-          >
-            Atualizar nome do POS
-          </Typography>
-        </DialogTitle>
-        <Box style={{ padding: "20px" }}>
-          <Box>
+        <Box display="flex" flexDirection="column" width="500px">
+          <LoadingScreen isLoading={loading} />
+          <DialogTitle className={classes.updatePosHeader}>
+            <Typography
+              style={{ color: APP_CONFIG.mainCollors.primary }}
+              align="center"
+              variant="h6"
+            >
+              Atualizar nome do POS
+            </Typography>
+          </DialogTitle>
+
+          <Box margin="20px">
             <FormControl fullWidth>
               <Typography
                 style={{ color: APP_CONFIG.mainCollors.primary }}
@@ -465,9 +445,8 @@ const DetalhesTerminalPOS = () => {
                 onChange={(event) => setNamePos(event.target.value)}
                 style={{
                   marginBottom: "6px",
+                  width: "100%",
                 }}
-                error={errors.name ? errors.name : null}
-                helperText={errors.name ? errors.name.join(" ") : null}
               />
               {/* {updatePosError ? (
 								<FormHelperText
@@ -484,23 +463,22 @@ const DetalhesTerminalPOS = () => {
           </Box>
 
           <Box
+            width="50%"
             alignSelf="end"
             display="flex"
             justifyContent="space-around"
-            marginTop={"20px"}
+            padding="12px 24px"
           >
-            <Box>
+            <Box margin="6px 0">
               <CustomButton
                 color="purple"
                 buttonText={"Atualizar"}
                 onClick={handleUpdatePos}
-              >
-                Atualizar
-              </CustomButton>
+              />
             </Box>
             <Box>
               <Button
-                style={{ borderRadius: "37px" }}
+                style={{ borderRadius: "37px", margin: "6px 0" }}
                 variant="outlined"
                 onClick={() => setOpenUpdateDialog(false)}
               >
@@ -704,9 +682,7 @@ const DetalhesTerminalPOS = () => {
                 buttonText="Atualizar POS"
                 onClick={() => setOpenUpdateDialog(true)}
                 disabled={false}
-              >
-                Atualizar POS
-              </CustomButton>
+              />
             </Box>
             <Box marginTop="8px" display="flex" justifyContent="center">
               <CustomButton
@@ -714,16 +690,14 @@ const DetalhesTerminalPOS = () => {
                 buttonText="Excluir POS"
                 onClick={() => setOpenDeleteDialog(true)}
                 disabled={false}
-              >
-                Excluir POS
-              </CustomButton>
+              />
             </Box>
           </Box>
         </Box>
 
         <Divider style={{ marginTop: 16, marginBottom: 8 }} />
 
-        {terminalPOSTransaction && terminalPOSTransaction.per_page ? (
+        {terminalPOSTransaction.data && terminalPOSTransaction.per_page ? (
           <>
             <Typography
               style={{ color: APP_CONFIG.mainCollors.primary }}

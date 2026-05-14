@@ -15,9 +15,8 @@ import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
 import { isEqual } from "lodash";
-import moment from "moment";
-import "moment/locale/pt-br";
 import { getTransacaoTedAction } from "../../actions/actions";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import { filters_historico_ted } from "../../constants/localStorageStrings";
@@ -26,27 +25,6 @@ import useDebounce from "../../hooks/useDebounce";
 import { documentMask } from "../../utils/documentMask";
 
 const columns = [
-  {
-    headerText: "Criado em",
-    key: "created_at",
-    CustomValue: (data) => {
-      const date = new Date(data);
-      const option = {
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
-      };
-      const formatted = date.toLocaleDateString("pt-br", option);
-      return (
-        <>
-          <Typography align="center"> {formatted}</Typography>
-          <Typography align="center">
-            {moment.utc(data).format("HH:mm:ss")}
-          </Typography>
-        </>
-      );
-    },
-  },
   {
     headerText: "Banco",
     key: "banco",
@@ -60,84 +38,25 @@ const columns = [
     headerText: "Conta",
     key: "conta",
   },
+
   {
     headerText: "Documento Destino",
     key: "documento",
     CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
   },
-  {
-    headerText: "Status",
-    key: "status",
-    CustomValue: (value) => {
-      if (value === "Registered") {
-        return (
-          <Typography
-            style={{
-              color: "orange",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Pendente
-          </Typography>
-        );
-      }
-      if (value === "Paid") {
-        return (
-          <Typography
-            style={{
-              color: "green",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Pago
-          </Typography>
-        );
-      }
-      if (value === "Cancel") {
-        return (
-          <Typography
-            style={{
-              color: "blue",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Estornado
-          </Typography>
-        );
-      }
-      if (value === "Error") {
-        return (
-          <Typography
-            style={{
-              color: "red",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Erro
-          </Typography>
-        );
-      }
-    },
-  },
 
   {
     headerText: "Valor",
     key: "valor",
-    CustomValue: (valor) => {
-      return (
-        <>
-          R${" "}
-          {parseFloat(valor).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </>
-      );
-    },
+    CustomValue: (valor) => (
+      <p>
+        R${" "}
+        {parseFloat(valor).toLocaleString("pt-br", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+      </p>
+    ),
   },
   {
     headerText: "Descrição",
@@ -174,7 +93,7 @@ const TedTransactions = () => {
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const userData = useSelector((state) => state.userData);
 
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   useEffect(() => {
     return () => {
       setFilters({ ...filters });
@@ -189,8 +108,8 @@ const TedTransactions = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar, id]);
 
@@ -206,7 +125,7 @@ const TedTransactions = () => {
       {
         id: id,
         tedId: row.id,
-      }
+      },
     );
 
     history.push(path);
@@ -216,14 +135,14 @@ const TedTransactions = () => {
     if (!isEqual(filters, filtersComparation)) {
       localStorage.setItem(
         filters_historico_ted,
-        JSON.stringify({ ...filters })
+        JSON.stringify({ ...filters }),
       );
     }
   }, [filters]);
 
   useEffect(() => {
     const getLocalFilters = JSON.parse(
-      localStorage.getItem(filters_historico_ted)
+      localStorage.getItem(filters_historico_ted),
     );
     if (getLocalFilters) {
       setFilters(getLocalFilters);
@@ -232,17 +151,22 @@ const TedTransactions = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="Transferência TED"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="Transferência TED" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Transferência TED

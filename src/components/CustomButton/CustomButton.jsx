@@ -26,6 +26,12 @@ const CustomButton = (props) => {
         color: APP_CONFIG.mainCollors.primary,
       };
 
+    if (props?.disabled)
+      return {
+        backgroundColor: APP_CONFIG.mainCollors.disabledTextfields,
+        color: APP_CONFIG.mainCollors.primary,
+      };
+
     if (color === "black")
       return {
         backgroundColor: "#443D38",
@@ -47,6 +53,12 @@ const CustomButton = (props) => {
     if (color === "red")
       return {
         backgroundColor: "#ED757D",
+        color: "white",
+      };
+
+    if (color === "horizontalGradient")
+      return {
+        background: APP_CONFIG.mainCollors.buttonGradient,
         color: "white",
       };
   };

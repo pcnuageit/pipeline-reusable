@@ -1,6 +1,5 @@
 import { Box, Tooltip, Typography } from "@material-ui/core";
 import InfoIcon from "@mui/icons-material/Info";
-import React from "react";
 
 const valueColors = {
   validacao_negada: "red",

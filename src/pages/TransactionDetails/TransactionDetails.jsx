@@ -1,7 +1,11 @@
 import { Box, CircularProgress } from "@material-ui/core";
-import React, { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { clearTransacao, loadTransacaoId } from "../../actions/actions";
+import {
+  clearTransacao,
+  loadRecebiveisId,
+  loadTransacaoId,
+} from "../../actions/actions";
 
 import { useParams } from "react-router";
 import useAuth from "../../hooks/useAuth";
@@ -12,12 +16,18 @@ import TransactionDetailsSlip from "./TransactionDetailsSlip/TransactionDetailsS
 const TransactionDetails = () => {
   const token = useAuth();
   const dispatch = useDispatch();
-  const { id, subsectionId } = useParams();
+  const { subsectionId } = useParams();
   const transacaoId = useSelector((state) => state.transacao);
+  const recebiveis = useSelector((state) => state.recebiveis);
+
+  const loadTransaction = useCallback(() => {
+    dispatch(loadTransacaoId(token, subsectionId));
+    dispatch(loadRecebiveisId(token, subsectionId));
+  }, [subsectionId, dispatch]);
 
   useEffect(() => {
-    dispatch(loadTransacaoId(token, subsectionId ? subsectionId : id));
-  }, [subsectionId, id]);
+    loadTransaction();
+  }, [loadTransaction]);
 
   useEffect(() => {
     return () => {
@@ -40,41 +50,41 @@ const TransactionDetails = () => {
     const tipo = transacaoId.transaction.payment_type;
     if (tipo === "boleto") {
       return (
-        <Box style={{ position: "absolute" }}>
-          <TransactionDetailsSlip transacaoId={transacaoId} />
+        <Box>
+          <TransactionDetailsSlip
+            transacaoId={transacaoId}
+            reloadTransaction={loadTransaction}
+          />
         </Box>
       );
     }
     if (tipo === "credit" || tipo === "debit") {
       return (
-        <Box style={{ position: "absolute" }}>
-          <TransactionDetailsCard transacaoId={transacaoId} />;
+        <Box>
+          <TransactionDetailsCard
+            reloadTransaction={loadTransaction}
+            transacaoId={transacaoId}
+            recebiveis={recebiveis}
+          />
+          ;
         </Box>
       );
     }
     if (tipo === "commission") {
       return (
-        <Box style={{ position: "absolute" }}>
+        <Box>
           <TransactionDetailsCommission transacaoId={transacaoId} />;
         </Box>
       );
     }
     if (tipo === "pix") {
       return (
-        <Box style={{ position: "absolute" }}>
+        <Box>
           <TransactionDetailsCommission transacaoId={transacaoId} />;
         </Box>
       );
     } else {
-      return (
-        <Box
-          style={{
-            width: "300px",
-            height: "200px",
-            backgroundColor: "red",
-          }}
-        />
-      );
+      return <div />;
     }
   }
 };

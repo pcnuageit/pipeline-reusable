@@ -1,12 +1,13 @@
-import { InputAdornment, TextField } from "@material-ui/core";
+import { InputAdornment, TextField, Typography } from "@material-ui/core";
 
-import PersonIcon from "@material-ui/icons/Person";
 import { makeStyles } from "@material-ui/styles";
-import React from "react";
 
 const useStyles = makeStyles((theme) => ({
   textField: {
-    borderRadius: "27px",
+    borderBottom: "3px",
+    borderBottomColor: "white",
+    borderRadius: "0px",
+
     /* boxShadow: '0px 0px 5px 0.5px grey', */
     height: "45px !important",
     borderColor: "white",
@@ -26,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
 
   cssOutlinedInput: {
     borderColor: "white",
-    borderRadius: "27px",
+    borderRadius: "0px",
     "&$cssFocused $notchedOutline": {
       borderWidth: "1px",
     },
@@ -48,17 +49,21 @@ const useStyles = makeStyles((theme) => ({
       fontSize: "14px",
     },
 
-    borderRadius: "27px",
+    textAlign: "left",
+    fontSize: "20px",
+    borderRadius: "0px",
     height: "10px",
     color: "white",
   },
 
   cssFocused: {
     borderWidth: "1px",
+    borderColor: "white",
   },
 
   notchedOutline: {
     borderWidth: "1px",
+    borderColor: "white",
   },
 }));
 const CustomTextField = (rest) => {
@@ -77,7 +82,15 @@ const CustomTextField = (rest) => {
         },
         startAdornment: (
           <InputAdornment position="start">
-            <PersonIcon style={{ color: "white" }} />
+            <Typography
+              style={{
+                fontFamily: "Montserrat-Regular",
+                fontSize: "20px",
+                color: "white",
+              }}
+            >
+              R$
+            </Typography>
           </InputAdornment>
         ),
       }}

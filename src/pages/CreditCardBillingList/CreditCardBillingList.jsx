@@ -10,7 +10,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router";
 import {
@@ -23,6 +23,7 @@ import { faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
 import { toast } from "react-toastify";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import SplitModal from "../../components/SplitModal/SplitModal";
@@ -179,7 +180,7 @@ const CreditCardBillingList = () => {
   const userData = useSelector((state) => state.userData);
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
 
   const [page, setPage] = useState(1);
   const contasUser = useSelector((state) => state.contas);
@@ -208,8 +209,8 @@ const CreditCardBillingList = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, filters.order, filters.mostrar, debouncedLike, id]);
 
@@ -309,19 +310,10 @@ const CreditCardBillingList = () => {
   return (
     <Box className={classes.root}>
       <LoadingScreen isLoading={loading} />
-
-      <Box display="flex" justifyContent="space-between" flexDirection="column">
-        <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
-          variant="h4"
-        >
-          Lista de Máquinas Virtuais
-        </Typography>
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Lista de Máquinas Virtuais" />
       </Box>
+
       <Box
         style={{
           width: "100%",
@@ -334,7 +326,7 @@ const CreditCardBillingList = () => {
           <TextField
             variant="outlined"
             fullWidth
-            placeholder="Pesquisar por nome, documento..."
+            label="Pesquisar por nome, documento..."
             value={filters.like}
             onChange={(e) =>
               setFilters({

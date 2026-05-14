@@ -1,4 +1,3 @@
-import React from "react";
 import { Route, useHistory } from "react-router";
 import useAuth from "../../hooks/useAuth";
 

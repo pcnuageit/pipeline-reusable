@@ -1,141 +1,137 @@
 import { Box, makeStyles } from "@material-ui/core";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
 
-import { postAuthMeAction } from "../actions/actions";
+import { loadPermissao, postAuthMeAction } from "../actions/actions";
 import CustomSideBar from "../components/CustomSideBar/CustomSideBar";
 import { APP_CONFIG } from "../constants/config";
+import { PERMISSIONS } from "../constants/permissions";
 import useAuth from "../hooks/useAuth";
-import usePermission from "../hooks/usePermission";
 import px2vw from "../utils/px2vw";
 
 import AntecipacaoSalarialItemPage from "../modules/AntecipacaoSalarial/pages/AntecipacaoSalarialItem";
 import AntecipacaoSalarialListPage from "../modules/AntecipacaoSalarial/pages/AntecipacaoSalarialList";
 import ProposalAntecipacaoSalarialAccounts from "../modules/AntecipacaoSalarialProposal/pages/ProposalAntecipacaoSalarialAccounts";
-import FinancialSupportItemPage from "../modules/FinancialSupport/pages/FinancialSupportItem";
-import FinancialSupportListPage from "../modules/FinancialSupport/pages/FinancialSupportList";
-import ProposalFinancialSupportAccounts from "../modules/FinancialSupportProposal/pages/ProposalFinancialSupportAccounts";
 
 import AccountStatement from "../pages/AccountStatement/AccountStatement";
 import AccountSubscriptions from "../pages/AccountSubscriptions/AccountSubscriptions";
+import Adquirencia from "../pages/Adquirencia/Adquirencia";
 import AntecipacaoSalarial from "../pages/AntecipacaoSalarial";
+import ShowAproveckAssociado from "../pages/Aproveck/Associados/ShowAproveckAssociado";
+import CriarBoletoAproveck from "../pages/Aproveck/Boletos/CriarBoletoAproveck/CriarBoletoAproveck";
+import IndexAproveckBoletos from "../pages/Aproveck/Boletos/IndexAproveckBoletos";
+import ShowAproveckBoleto from "../pages/Aproveck/Boletos/ShowAproveckBoleto";
+import IndexAproveckVeiculos from "../pages/Aproveck/Veiculos/IndexAproveckVeiculos";
+import ShowAproveckVeiculo from "../pages/Aproveck/Veiculos/ShowAproveckVeiculo";
+import ArquivoRemessaForm from "../pages/ArquivoRemessa/ArquivoRemessaForm/ArquivoRemessaForm";
+import ArquivoRemessaIndex from "../pages/ArquivoRemessa/ArquivoRemessaIndex/ArquivoRemessaIndex";
+import ItensRemessa from "../pages/ArquivoRemessa/ItensRemessa/ItensRemessa";
+import PagadorRemessaIndex from "../pages/ArquivoRemessa/Pagador/PagadorRemessaIndex";
+import ArquivoRetornoIndex from "../pages/ArquivoRetorno/ArquivoRetornoIndex";
 import ArquivosExportados from "../pages/ArquivosExportados";
-import Blacklist from "../pages/Blacklist";
-import BlacklistSelfie from "../pages/BlacklistSelfie/";
-import BloqueioDeDevice from "../pages/BloqueioDeDevice";
+import {
+  Beneficiarios,
+  ListaBeneficiarios,
+  ListaBeneficiariosCartoes,
+  ListaBeneficiariosCartoesPre,
+  ListaBeneficiariosVouchers,
+  ListaBeneficios,
+  ListaTransacaoPix,
+  TransacoesBeneficiarios,
+  TransacoesBeneficiariosPre,
+} from "../pages/Beneficiarios";
+import ListaBeneficiariosCartoesSegundaVia from "../pages/Beneficiarios/Acao/ListaBeneficiariosCartoesSegundaVia";
+import ListaContratoAluguel from "../pages/Beneficiarios/Acao/ListaContratoAluguel";
+import PagamentoContratoAluguel from "../pages/Beneficiarios/Acao/PagamentoContratoAluguel";
+import Blacklist from "../pages/Blacklist/Blacklist";
+import CadastrarFolhaDePagamento from "../pages/CadastrarFolhaDePagamento/CadastrarFolhaDePagamento";
+import CadastrarFuncionariosGrupos from "../pages/CadastrarFuncionariosGrupos/CadastrarFuncionariosGrupos";
+import Cartoes from "../pages/Cartoes/Cartoes";
 import ChavesPix from "../pages/ChavesPix/ChavesPix";
-import CondicoesComerciais from "../pages/CondicoesComerciais";
-import ContasAutorizadas from "../pages/ContasAutorizadas";
+import CobrarUsuario from "../pages/CobrarUsuario/CobrarUsuario";
+import ContaDigital from "../pages/ContaDigital/ContaDigital";
 import CreditCardBillingList from "../pages/CreditCardBillingList/CreditCardBillingList";
-import CriarConta from "../pages/CriarConta/CriarConta";
 import Dashboard from "../pages/Dashboard/Dashboard";
+import DashboardRepresentante from "../pages/DashboardRepresentante/DashboardRepresentante";
+import DetalhesLinkPagamento from "../pages/DetalhesLinkPagamento/DetalhesLinkPagamento";
 import DetalhesPreConta from "../pages/DetalhesPreConta/DetalhesPreConta";
 import DetalhesTerminalPOS from "../pages/DetalhesTerminalPOS/DetalhesTerminalPOS";
 import EditFees from "../pages/EditFees/EditFees";
-import EditFeesPadrao from "../pages/EditFeesPadrao/EditFeesPadrao";
 import EditarDadosDaConta from "../pages/EditarDadosDaConta/EditarDadosDaConta";
-import EditarDadosDaContaAdquirencia from "../pages/EditarDadosDaContaAdquirencia/EditarDadosDaContaAdquirencia";
-import EditarDadosDaContaPj from "../pages/EditarDadosDaContaPj/EditarDadosDaContaPj";
-import EditarDadosDaContaPjAdquirencia from "../pages/EditarDadosDaContaPjAdquirencia/EditarDadosDaContaPjAdquirencia";
-import FinancialSupport from "../pages/FinancialSupport";
 import {
-  AuditoriaPagamentoEstabelecimento,
-  AutorizarPagamentoBeneficiariosEstabelecimento,
-  AutorizarPagamentoBeneficiariosVoucher,
-  AutorizarPagamentoContratoAluguel,
-  GerenciarPagamentoEstabelecimento,
-  ListaArquivosDeLote,
-  ListaBeneficiarios,
-  ListaBeneficiariosCartao,
-  ListaBeneficiariosVoucher,
-  ListaBeneficios,
-  ListaContratoAluguel,
-  ListaTransacoesCartao,
-  ListaTransacoesVoucher,
-  PagamentoBeneficiariosCartao,
-  PagamentoBeneficiariosEstabelecimento,
-  PagamentoBeneficiariosVoucher,
-  PagamentoContratoAluguel,
-} from "../pages/GerenciarContasSecretarias";
-import AutorizarPagamentoBeneficiariosCartao from "../pages/GerenciarContasSecretarias/AutorizarPagamentoBeneficiariosCartao";
-import DetalhamentoCancelarCartao from "../pages/GerenciarContasSecretarias/DetalhamentoCancelarCartao";
-import ListaBeneficiariosEstabelecimentoDetalhamento from "../pages/GerenciarContasSecretarias/GerenciarPagamentoEstabelecimento/ListaBeneficiariosEstabelecimentoDetalhamento";
-import PagamentoBeneficiariosEstabelecimentoTransacoes from "../pages/GerenciarContasSecretarias/GerenciarPagamentoEstabelecimento/PagamentoBeneficiariosEstabelecimentoTransacoes";
-import LiberarBeneficiariosCartao from "../pages/GerenciarContasSecretarias/LiberarBeneficiariosCartao";
-import ListaCartaoSegundaVia from "../pages/GerenciarContasSecretarias/ListaCartaoSegundaVia";
-import ListaPagamentoBeneficiariosVoucherDetalhes from "../pages/GerenciarContasSecretarias/PagamentoBeneficiariosVoucherDetalhes";
-import PagamentoContratoAluguelDescricao from "../pages/GerenciarContasSecretarias/PagamentoContratoAluguelDescricao";
+  PagamentosFuturos,
+  PagamentosRecebidos,
+} from "../pages/Estabelecimentos";
+import ExtratoP2P from "../pages/ExtratoP2P/ExtratoP2P";
+import ExtratoPix from "../pages/ExtratoPix/ExtratoPix";
+import ExtratoTED from "../pages/ExtratoTED/ExtratoTED";
+import FolhaDePagamento from "../pages/FolhaDePagamento/FolhaDePagamento";
 import GerenciarListaDeContas from "../pages/GerenciarListaDeContas/GerenciarListaDeContas";
-import GerenciarListaPreContas from "../pages/GerenciarListaPreContas/GerenciarListaPreContas";
 import GiftCardDetails from "../pages/GiftCardDetails/GiftCardDetails";
 import GiftCardsList from "../pages/GiftCardsList/GiftCardsList";
 import GiftCardsListAdmin from "../pages/GiftCardsListAdmin/GiftCardsListAdmin";
-import HistoricoNotificacoes from "../pages/HistoricoNotificacoes";
-import HistoricoTransacoes from "../pages/HistoricoTransacoes";
 import JeittoAdm from "../pages/JeittoAdm/index";
+import LiberarCartoes from "../pages/LiberarCartoes";
 import ListPartner from "../pages/ListPartners/ListPartners";
+import ListaArquivosDeLoteConcorrencia from "../pages/ListaArquivosDeLoteConcorrencia/";
+import ListaArquivosLote from "../pages/ListaArquivosLote/ListaArquivosLote";
+import ListaCobrar from "../pages/ListaCobrar/ListaCobrar";
+import ListaConsultaPagamento from "../pages/ListaConsultaPagamento/ListaConsultaPagamento";
 import ListaDeAdministradores from "../pages/ListaDeAdministradores/ListaDeAdministradores";
-import ListaDeBanners from "../pages/ListaDeBanners/ListaDeBanners";
-import ListaDeCartoes from "../pages/ListaDeCartoes/ListaDeCartoes";
 import ListaDeContas from "../pages/ListaDeContas/ListaDeContas";
-import ListaDeContasAdquirencia from "../pages/ListaDeContasAdquirencia/ListaDeContasAdquirencia";
-import ListaDeContasEstabelecimentos from "../pages/ListaDeContasEstabelecimentos/ListaDeContasEstabelecimentos";
-import ListaDeContasSecretarias from "../pages/ListaDeContasSecretarias/ListaDeContasSecretarias";
-import ListaDeCursos from "../pages/ListaDeCursos";
+import ListaContasSecretaria from "../pages/ListaDeContasSecretaria";
 import ListaDispositivosBloqueados from "../pages/ListaDispositivosBloqueados/ListaDispositivosBloqueados";
 import ListaExportacoesSolicitadas from "../pages/ListaExportacoesSolicitadas/ListaExportacoesSolicitadas";
 import ListaExtratoAdquirencia from "../pages/ListaExtratoAdquirencia/ListaExtratoAdquirencia";
 import ListaFolhaDePagamento from "../pages/ListaFolhaDePagamento/ListaFolhaDePagamento";
+import ListaFolhaDePagamentoAutorizar from "../pages/ListaFolhaDePagamentoAutorizar/ListaFolhaDePagamentoAutorizar";
+import ListaFolhaDePagamentoAutorizarBene from "../pages/ListaFolhaDePagamentoAutorizarBene/ListaFolhaDePagamentoAutorizarBene";
+import ListaFolhaDePagamentoAutorizarConc from "../pages/ListaFolhaDePagamentoAutorizarConc/ListaFolhaDePagamentoAutorizarConc";
+import ListaFolhaDePagamentoBene from "../pages/ListaFolhaDePagamentoBene/ListaFolhaDePagamentoBene";
+import ListaFolhaDePagamentoConc from "../pages/ListaFolhaDePagamentoConc/ListaFolhaDePagamentoConc";
+import ListaFolhaDePagamentoVoucher from "../pages/ListaFolhaDePagamentoVoucher/ListaFolhaDePagamentoVoucher";
+import ListaFolhaDePagamentoVoucherDetalhes from "../pages/ListaFolhaDePagamentoVoucherDetalhes";
+import ListaFuncionariosGrupos from "../pages/ListaFuncionariosGrupos/ListaFuncionariosGrupos";
+import ListaHistoricoDeTransacoes from "../pages/ListaHistoricoDeTransacoes/ListaHistoricoDeTransacoes";
+import ListaHistoricoDeTransacoesRepresentante from "../pages/ListaHistoricoDeTransacoesRepresentante/ListaHistoricoDeTransacoesRepresentante";
+import ListaLancamentosFuturos from "../pages/ListaLancamentosFuturos/ListaLancamentosFuturos";
+import ListaLinkPagamento from "../pages/ListaLinkPagamento/ListaLinkPagamento";
+import ListaMaquinaVirtualCartao from "../pages/ListaMaquinaVituralCartao/ListaMaquinaVirtualCartao";
+import ListaPagadores from "../pages/ListaPagadores/ListaPagadores";
 import ListaPlanosDeVenda from "../pages/ListaPlanosDeVenda/ListaPlanosDeVenda";
-import ListaPlanosDeVendaZoop from "../pages/ListaPlanosDeVendaZoop/ListaPlanosDeVendaZoop";
-import ListaRepresentantes from "../pages/ListaRepresentantes/ListaRepresentantes";
 import ListaTarifas from "../pages/ListaTarifas/ListaTarifas";
 import ListaTerminaisPOS from "../pages/ListaTerminaisPOS/ListaTerminaisPOS";
-import ListaTransacoesGerais from "../pages/ListaTransacoesGerais/ListaTransacoesGerais";
 import Logs from "../pages/Logs/Logs";
-import LogsAuditoria from "../pages/LogsAuditoria";
 import ManageFees from "../pages/ManageFees/ManageFees";
-import ManageFeesPadrao from "../pages/ManageFeesPadrao/ManageFeesPadrao";
 import NewAccountFees from "../pages/NewAccountFees/NewAccountFees";
-import NewAccountFeesPadrao from "../pages/NewAccountFeesPadrao/NewAccountFeesPadrao";
-import Notificacoes from "../pages/Notificacoes/Notificacoes";
-import NotificacoesGestao from "../pages/NotificacoesGestao";
-import PagamentoConta from "../pages/PagamentoConta/PagamentoConta";
-import PainelCentralizador from "../pages/PainelCentralizador";
+import NewAccountSubscriptions from "../pages/NewAccountSubscriptions/NewAccountSubscriptions";
+import NewSubscriptionPlans from "../pages/NewSubscriptionPlans/NewSubscriptionPlans";
+import NovoLinkPagamento from "../pages/NovoLinkPagamento/NovoLinkPagamento";
+import PaginaBoletos from "../pages/PaginaBoletos/PaginaBoletos";
+import PaginaPagamentos from "../pages/PaginaPagamentos/PaginaPagamentos";
 import Payers from "../pages/Payers/Payers";
 import PaymentBooklet from "../pages/PaymentBooklet/PaymentBooklet";
 import PaymentLink from "../pages/PaymentLink/PaymentLink";
+import PaymentLinkDetails from "../pages/PaymentLinkDetails/PaymentLinkDetails";
 import PaymentSlipList from "../pages/PaymentSlipList/PaymentSlipList";
+import PermissaoBeneficiario from "../pages/PermissaoBeneficiario/PermissaoBeneficiario";
 import PixDetails from "../pages/PixDetails/PixDetails";
 import PixTransactions from "../pages/PixTransactions/PixTransactions";
-import PlanoDeVendaDetalhesZoop from "../pages/PlanoDeVendasDetalhesZoop/PlanoDeVendasDetalhesZoop";
-import PlanoDeVendaDetalhes from "../pages/PlanodeVendaDetalhes/PlanoDeVendaDetalhes";
+import PlanoDeVendaDetalhes from "../pages/PlanoDeVendaDetalhes/PlanoDeVendaDetalhes";
 import Print from "../pages/Print";
 import ProposalAntecipacaoSalarial from "../pages/ProposalAntecipacaoSalarial";
-import ProposalFinancialSupport from "../pages/ProposalFinancialSupport";
 import RechargeCellphoneDetails from "../pages/RechargeCellphoneDetails/RechargeCellphoneDetails";
 import RechargeCellphoneList from "../pages/RechargeCellphoneList/RechargeCellphoneList";
 import RechargeCellphoneListAdmin from "../pages/RechargeCellphoneListAdmin/RechargeCellphoneListAdmin";
-import { RelatorioBI, Relatorios } from "../pages/Relatorios";
+import SubscriptionPlans from "../pages/SubscriptionPlans/SubscriptionPlans";
 import TedDetails from "../pages/TedDetails/TedDetails";
 import TedTransactions from "../pages/TedTransactions/TedTransactions";
-import TokensPublicos from "../pages/TokensPublicos";
-import TransacaoP2p from "../pages/TransacaoP2p/TransacaoP2p";
-import TransacaoPagamentoBoleto from "../pages/TransacaoPagamentoBoleto/TransacaoPagamentoBoleto";
-import TransacaoPagamentoConta from "../pages/TransacaoPagamentoConta/TransacaoPagamentoConta";
-import TransacaoPix from "../pages/TransacaoPix/TransacaoPix";
-import TransacaoTed from "../pages/TransacaoTed/TransacaoTed";
-import TransacoesNotasFiscais from "../pages/TransacoesNotasFiscais";
-import TransacoesTarifas from "../pages/TransacoesTarifas/TransacoesTarifas";
 import TransactionDetails from "../pages/TransactionDetails/TransactionDetails";
 import TransactionHistory from "../pages/TransactionHistory/TransactionHistory";
 import TransferDetails from "../pages/TransferDetails/TransferDetails";
 import TransferHistory from "../pages/TransferHistory/TransferHistory";
 import UserPermissions from "../pages/UserPermissions/UserPermissions";
-import UserProfiles from "../pages/UserProfiles";
-import UsuariosBloqueados from "../pages/UsuariosBloqueados";
-import WhitelistDeDevice from "../pages/WhitelistDeDevice";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -152,28 +148,26 @@ const useStyles = makeStyles((theme) => ({
   },
   contentAreaContainer: {
     backgroundColor: "#fff",
-    width: "83%",
-    padding: "16px",
+    width: "100%",
+    padding: "0px 18px",
   },
   pageHeaderContainer: {
     backgroundColor: "white",
-    width: "75%",
+    width: "100%",
     height: "35%",
   },
 }));
 
 const SwitchContents = () => {
+  const token = useAuth();
   const classes = useStyles();
   const { section, id, subsection, subsectionId } = useParams();
-  const token = useAuth();
   const dispatch = useDispatch();
-  const { hasPermission, PERMISSIONS } = usePermission();
-
-  useEffect(() => {
-    dispatch(postAuthMeAction(token));
-  }, [dispatch, token]);
-
-  // console.log("Debug params:", { section, id, subsection, subsectionId });
+  const me = useSelector((state) => state.me);
+  const userPermissao = useSelector((state) => state.userPermissao);
+  const userData = useSelector((state) => state.userData);
+  const gerenciarPermissao = useSelector((state) => state.gerenciarPermissao);
+  const [permissoes, setPermissoes] = useState([]);
 
   // CHAT CONFIG
   if (token) {
@@ -206,45 +200,20 @@ const SwitchContents = () => {
     }
   }
 
-  /* setInterval(async () => {
-		await dispatch(postRefreshAuthAction(token));
-	}, 5000); */
+  useEffect(() => {
+    dispatch(postAuthMeAction(token));
+  }, [dispatch, token]);
 
-  /* useEffect(() => {
-		setInterval(() => {
-			dispatch(postRefreshAuthAction(token));
-		}, 9000);
-	}, [token]); */
+  useEffect(() => {
+    const { permissao } = userPermissao;
+    setPermissoes(permissao.map((item) => item.tipo));
+  }, [userPermissao]);
 
-  /* const refreshLogin = async () => {
-		const resRefreshAuth = await dispatch(postRefreshAuthAction(token));
-		if (resRefreshAuth) {
-			const login_time = new Date().getTime();
-			await dispatch(
-				setSessionAuth({ ...resRefreshAuth.data, login_time: login_time })
-			);
-		}
-	}; */
-
-  /* const refreshAuth = async () => {
-		const resRefreshAuth = await dispatch(postRefreshAuthAction(auth));
-		if (resRefreshAuth) {
-			await localStorage.setItem(
-				'@auth',
-				JSON.stringify({
-					...resRefreshAuth.data,
-					login_time: new Date().getTime(),
-				})
-			);
-		}
-	}; */
-
-  /* useEffect(() => {
-		setInterval(() => {
-			refreshAuth();
-		}, 12000);
-	}, []);
- */
+  useEffect(() => {
+    if (me.id !== undefined) {
+      dispatch(loadPermissao(token, me.id));
+    }
+  }, [dispatch, me.id, token]);
 
   let content = null;
 
@@ -253,24 +222,90 @@ const SwitchContents = () => {
       content = <Dashboard />;
       break;
 
-    case "lista-de-contas":
-      content = <ListaDeContas />;
+    case "conta-digital":
+      content = <ContaDigital />;
       break;
 
-    case "criar-conta-adquirencia":
-      content = <CriarConta />;
+    case "extrato":
+      content = <AccountStatement />;
       break;
 
-    case "lista-de-contas-adquirencia":
-      content = <ListaDeContasAdquirencia />;
+    case "arquivos-exportados":
+      content = <ArquivosExportados />;
       break;
 
-    case "lista-de-contas-estabelecimentos":
-      content = <ListaDeContasEstabelecimentos />;
+    case "print":
+      content = <Print />;
       break;
 
-    case "lista-de-contas-secretarias":
-      content = <ListaDeContasSecretarias />;
+    case "folha-de-pagamento":
+      content = <FolhaDePagamento />;
+      switch (subsection) {
+        case "autorizar-pagamentos-de-salarios":
+          content = <ListaFolhaDePagamentoAutorizar />;
+          break;
+
+        case "autorizar-pagamentos-de-salarios-conc":
+          content = <ListaFolhaDePagamentoAutorizarConc />;
+          break;
+
+        case "autorizar-pagamentos-de-salarios-bene":
+          content = <ListaFolhaDePagamentoAutorizarBene />;
+          break;
+
+        case "lista-folhas-de-pagamento":
+          content = <ListaFolhaDePagamento />;
+          break;
+
+        case "lista-folhas-de-pagamento-conc":
+          content = <ListaFolhaDePagamentoConc />;
+          break;
+
+        case "lista-folhas-de-pagamento-voucher":
+          content = <ListaFolhaDePagamentoVoucher />;
+          if (subsectionId) {
+            content = <ListaFolhaDePagamentoVoucherDetalhes />;
+          }
+          break;
+
+        case "lista-folhas-de-pagamento-bene":
+          content = <ListaFolhaDePagamentoBene />;
+          break;
+
+        case "cadastrar-funcionarios-e-grupos":
+          content = <CadastrarFuncionariosGrupos />;
+          break;
+
+        case "cadastrar-folha-de-pagamento":
+          content = <CadastrarFolhaDePagamento />;
+          break;
+
+        case "lista-funcionarios-e-grupos":
+          content = <ListaFuncionariosGrupos />;
+          break;
+
+        case "consultar-pagamentos":
+          content = <ListaConsultaPagamento />;
+          break;
+
+        case "arquivos-lote":
+          content = <ListaArquivosLote />;
+          break;
+
+        case "lista-arquivos-de-lote":
+          content = <ListaArquivosDeLoteConcorrencia />;
+          break;
+
+        case "print":
+          content = <Print />;
+          break;
+        default:
+      }
+
+      break;
+
+    case "liberar-cartao":
+      content = <LiberarCartoes />;
       break;
 
     case "lista-de-contas-beneficiarios":
@@ -281,155 +316,384 @@ const SwitchContents = () => {
       content = <ListaBeneficios />;
       break;
 
-    case "lista-de-cursos":
-      content = <ListaDeCursos />;
-      break;
-
-    case "tokens-publicos":
-      content = <TokensPublicos />;
-      break;
-
-    case "print":
-      content = <Print />;
-      break;
-
-    case "gerenciar-pagamento-estabelecimento":
+    case "beneficiarios":
+      content = <Beneficiarios />;
       switch (subsection) {
-        case "pagamento-beneficiarios-estabelecimento":
-          content = <PagamentoBeneficiariosEstabelecimento />;
+        case "lista-beneficiarios":
+          content = <ListaBeneficiarios />;
           break;
 
-        //subsection of "pagamento-beneficiarios-estabelecimento"
-        case "detalhamento":
-          content = <ListaBeneficiariosEstabelecimentoDetalhamento />;
+        case "lista-cartoes":
+          content = <ListaBeneficiariosCartoes />;
           break;
 
-        //subsection of "pagamento-beneficiarios-estabelecimento"
+        case "lista-cartoes-segunda-via":
+          content = <ListaBeneficiariosCartoesSegundaVia />;
+          break;
+
+        case "lista-cartoes-pre":
+          content = <ListaBeneficiariosCartoesPre />;
+          break;
+
+        case "lista-vouchers":
+          content = <ListaBeneficiariosVouchers />;
+          break;
+
+        case "lista-contrato-aluguel":
+          content = <ListaContratoAluguel />;
+          break;
+
+        case "pagamento-contrato-aluguel":
+          content = <PagamentoContratoAluguel />;
+          break;
+
+        case "lista-transacao-pix":
+          content = <ListaTransacaoPix />;
+          break;
+
         case "transacoes":
-          content = <PagamentoBeneficiariosEstabelecimentoTransacoes />;
+          content = <TransacoesBeneficiarios />;
           break;
 
-        case "auditoria-pagamento-estabelecimento":
-          content = <AuditoriaPagamentoEstabelecimento />;
+        case "transacoes-pre":
+          content = <TransacoesBeneficiariosPre />;
           break;
 
-        case "autorizar-pagamento-beneficiarios-estabelecimento":
-          content = <AutorizarPagamentoBeneficiariosEstabelecimento />;
-          break;
-
-        case "extrato-reembolso":
-          content = <PagamentoBeneficiariosEstabelecimentoTransacoes />;
+        case "lista-arquivos-de-lote":
+          content = <ListaArquivosDeLoteConcorrencia />;
           break;
 
         default:
-          content = <GerenciarPagamentoEstabelecimento />;
+      }
+
+      break;
+
+    case "permissao-beneficiario":
+      content = <PermissaoBeneficiario />;
+      break;
+
+    case "antecipacao-salarial":
+      content =
+        permissoes.includes("Administrador - Acesso total") ||
+        permissoes.includes("Crédito - Proposta Apoio Financeiro") ? (
+          <ProposalAntecipacaoSalarial />
+        ) : null;
+
+      if (subsection === "gerenciar-contas") {
+        content =
+          permissoes.includes("Administrador - Acesso total") ||
+          permissoes.includes("Crédito - Proposta Apoio Financeiro") ? (
+            <ProposalAntecipacaoSalarialAccounts />
+          ) : null;
+      }
+
+      if (subsection === "info") {
+        content =
+          permissoes.includes("Administrador - Acesso total") ||
+          permissoes.includes("Crédito - Proposta Apoio Financeiro") ? (
+            <AntecipacaoSalarial />
+          ) : null;
+      }
+
+      if (subsection === "listagem") {
+        content =
+          permissoes.includes("Administrador - Acesso total") ||
+          permissoes.includes("Crédito - Apoio Financeiro") ? (
+            <AntecipacaoSalarialListPage />
+          ) : null;
+      }
+
+      if (subsection === "proposta") {
+        content =
+          permissoes.includes("Administrador - Acesso total") ||
+          permissoes.includes("Crédito - Apoio Financeiro") ? (
+            <AntecipacaoSalarialItemPage />
+          ) : null;
       }
       break;
 
-    case "painel-centralizador":
+    case "arquivo-remessa":
+      content = <ArquivoRemessaIndex />;
+
       switch (subsection) {
+        case "itens":
+          content = <ItensRemessa />;
+
+          break;
+        case "pagadores":
+          content = <PagadorRemessaIndex />;
+
+          break;
+        /* case 'editar':
+					content = <EditarPagador />;
+
+					break; */
+
         default:
-          content = <PainelCentralizador />;
       }
       break;
 
-    case "notificacoes":
-      content = <Notificacoes />;
+    case "criar-arquivo-remessa":
+      content = <ArquivoRemessaForm />;
+
       break;
 
-    case "notificacoes-gestao":
-      content = <NotificacoesGestao />;
+    case "detalhes-arquivo-remessa":
+      switch (id) {
+        default:
+          content = <ArquivoRemessaForm />;
+
+          break;
+      }
       break;
 
-    case "arquivos-exportados":
-      content = <ArquivosExportados />;
+    case "arquivo-retorno":
+      content = <ArquivoRetornoIndex />;
       break;
 
-    case "relatorios":
-      content = <Relatorios />;
+    case "aproveck-boletos":
+      content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+        <IndexAproveckBoletos />
+      ) : null;
+      switch (subsection) {
+        case "detalhes":
+          content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+            <ShowAproveckBoleto />
+          ) : null;
+
+          break;
+
+        default:
+      }
       break;
 
-    case "relatorio-bi":
-      content = <RelatorioBI />;
+    case "aproveck-boletos-criar":
+      content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+        <CriarBoletoAproveck />
+      ) : null;
       break;
+
+    case "aproveck-veiculos":
+      content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+        <IndexAproveckVeiculos />
+      ) : null;
+      switch (subsection) {
+        case "detalhes":
+          content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+            <ShowAproveckVeiculo />
+          ) : null;
+
+          break;
+
+        default:
+      }
+      break;
+
+    case "aproveck-associado":
+      switch (subsection) {
+        case "detalhes":
+          content = permissoes.includes(PERMISSIONS.APROVEC) ? (
+            <ShowAproveckAssociado />
+          ) : null;
+
+          break;
+
+        default:
+      }
+      break;
+
+    case "adquirencia":
+      content = userData.status_adquirencia === "approved" && <Adquirencia />;
+      switch (subsection) {
+        case "maquina-virtual-cartao":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaMaquinaVirtualCartao />
+          );
+          if (subsectionId) {
+            content = userData.status_adquirencia === "approved" && (
+              <TransactionDetails />
+            );
+          }
+          /* switch (subsectionId) {
+						case !null:
+							content = null;
+							break;
+					} */
+          break;
+
+        case "cobrar":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaCobrar />
+          );
+          if (subsectionId) {
+            content = userData.status_adquirencia === "approved" && (
+              <CobrarUsuario />
+            );
+          }
+          break;
+
+        case "lancamentos-futuros":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaLancamentosFuturos />
+          );
+
+          break;
+
+        case "pagadores":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaPagadores />
+          );
+
+          break;
+
+        case "historico-de-transacoes":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaHistoricoDeTransacoes />
+          );
+
+          break;
+
+        case "link-de-pagamento":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaLinkPagamento />
+          );
+          if (subsectionId) {
+            content = userData.status_adquirencia === "approved" && (
+              <DetalhesLinkPagamento />
+            );
+          }
+          break;
+
+        case "novo-link-pagamento":
+          content = userData.status_adquirencia === "approved" && (
+            <NovoLinkPagamento />
+          );
+
+          break;
+
+        case "cobranca-recorrente":
+          content = userData.status_adquirencia === "approved" && (
+            <AccountSubscriptions />
+          );
+
+          break;
+
+        case "nova-assinatura":
+          content = userData.status_adquirencia === "approved" && (
+            <NewAccountSubscriptions />
+          );
+
+          break;
+
+        case "planos-de-assinaturas":
+          content = userData.status_adquirencia === "approved" && (
+            <SubscriptionPlans />
+          );
+          if (subsectionId) {
+            content = userData.status_adquirencia === "approved" && (
+              <NewSubscriptionPlans />
+            );
+          }
+          break;
+
+        case "criar-plano-de-assinatura":
+          content = userData.status_adquirencia === "approved" && (
+            <NewSubscriptionPlans />
+          );
+
+          break;
+
+        case "tarifas":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaTarifas />
+          );
+
+          break;
+
+        case "exportacoes-solicitadas":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaExportacoesSolicitadas />
+          );
+
+          break;
+
+        case "terminais-pos":
+          content = userData.status_adquirencia === "approved" && (
+            <ListaTerminaisPOS />
+          );
+          if (subsectionId) {
+            content = userData.status_adquirencia === "approved" && (
+              <DetalhesTerminalPOS />
+            );
+          }
+          break;
+        /* case 'lista-folhas-de-pagamento':
+					content = <ListaFolhaDePagamento />;
+					break;
+
+				case 'cadastrar-funcionarios-e-grupos':
+					content = <CadastrarFuncionariosGrupos />;
+					break;
+
+				case 'cadastrar-folha-de-pagamento':
+					content = <CadastrarFolhaDePagamento />;
+					break;
+
+				case 'lista-funcionarios-e-grupos':
+					content = <ListaFuncionariosGrupos />;
+					break;
+
+				case 'consultar-pagamentos':
+					content = <ListaConsultaPagamento />;
+					break;
+
+				case 'arquivos-lote':
+					content = <ListaArquivosLote />;
+					break;
+
+				case 'print':
+					content = <PrintFolhaDePagamento />;
+					break; */
+        default:
+      }
+
+      break;
+
+    /* case 'taxa':
+				switch (subsection) {
+					case 'editar': {
+						switch (id) {
+							default:
+								content = <EditFees />;
+								break;
+						}
+						break;
+					}
+					default:
+						content = null;
+				}
+				break; */
 
     case "editar-conta":
       switch (id) {
         default:
           content =
-            hasPermission(
+            permissoes.includes(
               "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)",
-            ) || hasPermission(PERMISSIONS.contas.actions.edit) ? (
+            ) || permissoes.includes("Administrador - Acesso total") ? (
               <EditarDadosDaConta />
             ) : null;
       }
 
       break;
 
-    case "editar-conta-pj":
-      switch (id) {
-        default:
-          content =
-            hasPermission(
-              "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)",
-            ) || hasPermission(PERMISSIONS.contas.actions.edit) ? (
-              <EditarDadosDaContaPj />
-            ) : null;
-      }
-
-      break;
-
-    case "editar-conta-adquirencia":
-      switch (id) {
-        default:
-          content =
-            hasPermission(
-              "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)",
-            ) || hasPermission(PERMISSIONS.estabelecimentos.list.create) ? (
-              <EditarDadosDaContaAdquirencia />
-            ) : null;
-      }
-
-      break;
-
-    case "editar-conta-pj-adquirencia":
-      switch (id) {
-        default:
-          content =
-            hasPermission(
-              "Atendimento - Consulta de dados cadastrais(E-mail, Telefone, Endereço e CPF)",
-            ) || hasPermission(PERMISSIONS.contas.actions.edit) ? (
-              <EditarDadosDaContaPjAdquirencia />
-            ) : null;
-      }
-
-      break;
-
-    case "representantes":
-      switch (id) {
-        default:
-          content = <ListaRepresentantes />;
-          switch (subsection) {
-            case "plano-vendas-representante":
-              content = <ListaPlanosDeVenda />;
-              break;
-
-            default:
-          }
-      }
-      break;
-
-    case "lista-arquivos-de-lote":
-      content = <ListaArquivosDeLote />;
-      break;
-
     case "gerenciar-contas":
       switch (id) {
         default:
           content =
-            hasPermission(
+            permissoes.includes(
               "Operações - Histórico de transações, extrato, pix, cobrança recorrente, carnê, boleto, chave pix cadastrada, exceto permissão para aprovação de cadastro, reenvio de token de aprovação",
-            ) || hasPermission(PERMISSIONS.contas.list.view) ? (
+            ) || permissoes.includes("Administrador - Acesso total") ? (
               <GerenciarListaDeContas />
             ) : null;
           switch (subsection) {
@@ -449,34 +713,47 @@ const SwitchContents = () => {
               content = <PaymentLink />;
               break;
 
+            case "detalhes-link":
+              content = <PaymentLinkDetails />;
+
+              break;
+
             /* case 'lancamentos-futuros':
 							content = <FutureTransactions />;
 							break; */
 
-            case "extrato":
-              content = hasPermission("Atendimento - Consulta de extrato") ? (
-                <AccountStatement />
-              ) : null;
-              break;
+            /* case 'extrato':
+							content =
+								permissoes.includes(
+									'Atendimento - Consulta de extrato'
+								) ||
+								permissoes.includes('Administrador - Acesso total') ? (
+									<AccountStatement />
+								) : null;
+							break; */
 
             case "assinaturas":
               content = <AccountSubscriptions />;
               break;
 
             case "historico-de-transacoes":
-              content = hasPermission(
-                "Operações - Transações e histórico de transações não concluídas",
-              ) ? (
-                <TransactionHistory />
-              ) : null;
+              content =
+                permissoes.includes(
+                  "Operações - Transações e histórico de transações não concluídas",
+                ) || permissoes.includes("Administrador - Acesso total") ? (
+                  <TransactionHistory />
+                ) : null;
+
               break;
 
             case "historico-transferencia":
               content = <TransferHistory />;
+
               break;
 
             case "detalhes-transacao":
               content = <TransactionDetails />;
+
               break;
 
             case "pagadores":
@@ -485,10 +762,6 @@ const SwitchContents = () => {
 
             case "transferencia-ted":
               content = <TedTransactions />;
-              break;
-
-            case "pagamento-conta":
-              content = <PagamentoConta />;
               break;
 
             case "transacoes-pix":
@@ -511,10 +784,6 @@ const SwitchContents = () => {
               content = <RechargeCellphoneList />;
               break;
 
-            case "folha-de-pagamento":
-              content = <ListaFolhaDePagamento />;
-              break;
-
             case "detalhes-recarga":
               content = <RechargeCellphoneDetails />;
               break;
@@ -531,13 +800,12 @@ const SwitchContents = () => {
               content = <PixDetails />;
               break;
 
-            case "terminais-pos":
-              content = <ListaTerminaisPOS />;
+            case "extrato-adquirencia":
+              content = <ListaExtratoAdquirencia />;
               break;
 
-            case "detalhes-terminal-pos":
-              content = <DetalhesTerminalPOS />;
-
+            case "terminais-pos":
+              content = <ListaTerminaisPOS />;
               break;
 
             case "exportacoes-solicitadas":
@@ -548,87 +816,13 @@ const SwitchContents = () => {
               content = <ListaTarifas />;
               break;
 
-            case "extrato-adquirencia":
-              content = <ListaExtratoAdquirencia />;
-              break;
+            case "arquivo-remessa":
+              switch (id) {
+                default:
+                  content = <ArquivoRemessaIndex />;
 
-            case "lista-beneficiarios":
-              content = <ListaBeneficiarios />;
-              break;
-
-            case "lista-beneficiarios-voucher":
-              content = <ListaBeneficiariosVoucher />;
-              break;
-
-            case "lista-beneficiarios-cartao":
-              content = <ListaBeneficiariosCartao />;
-              break;
-
-            case "segunda-via-cartao":
-              content = <ListaCartaoSegundaVia />;
-              break;
-
-            case "lista-beneficios":
-              content = <ListaBeneficios />;
-              break;
-
-            case "lista-contrato-aluguel":
-              content = <ListaContratoAluguel />;
-              break;
-
-            case "pagamento-beneficiarios-cartao":
-              content = <PagamentoBeneficiariosCartao />;
-              break;
-
-            case "liberar-beneficiarios-cartao":
-              content = <LiberarBeneficiariosCartao />;
-              break;
-
-            case "pagamento-beneficiarios-estabelecimento":
-              content = <PagamentoBeneficiariosEstabelecimento />;
-              break;
-
-            case "pagamento-beneficiarios-voucher":
-              content = <PagamentoBeneficiariosVoucher />;
-              if (subsectionId) {
-                content = <ListaPagamentoBeneficiariosVoucherDetalhes />;
+                  break;
               }
-              break;
-
-            case "pagamento-contrato-aluguel":
-              content = <PagamentoContratoAluguel />;
-              break;
-
-            case "pagamento-contrato-aluguel-descricao":
-              content = <PagamentoContratoAluguelDescricao />;
-              break;
-
-            case "autorizar-pagamento-beneficiarios-estabelecimento":
-              content = <AutorizarPagamentoBeneficiariosEstabelecimento />;
-              break;
-
-            case "autorizar-pagamento-beneficiarios-voucher":
-              content = <AutorizarPagamentoBeneficiariosVoucher />;
-              break;
-
-            case "autorizar-pagamento-contrato-aluguel":
-              content = <AutorizarPagamentoContratoAluguel />;
-              break;
-
-            case "autorizar-pagamento-cartao":
-              content = <AutorizarPagamentoBeneficiariosCartao />;
-              break;
-
-            case "lista-arquivos-de-lote":
-              content = <ListaArquivosDeLote />;
-              break;
-
-            case "contas-autorizadas":
-              content = <ContasAutorizadas />;
-              break;
-
-            case "detalhamento-acao-cartao":
-              content = <DetalhamentoCancelarCartao />;
               break;
 
             default:
@@ -636,66 +830,23 @@ const SwitchContents = () => {
       }
       break;
 
-    case "transacoes":
-      content = <ListaTransacoesGerais />;
-      break;
-
-    case "historico-transacoes":
-      content = <HistoricoTransacoes />;
-      break;
-
-    case "transacoes-notas-fiscais":
-      content = <TransacoesNotasFiscais />;
-      break;
-
-    case "transacoes-pix":
-      content = <TransacaoPix />;
-      break;
-
-    case "transacoes-p2p":
-      content = <TransacaoP2p />;
-      break;
-
-    case "transacoes-ted":
-      content = <TransacaoTed />;
-      break;
-
-    case "transacoes-pagamento-conta":
-      content = <TransacaoPagamentoConta />;
-      break;
-
-    case "transacoes-pagamento-boleto":
-      content = <TransacaoPagamentoBoleto />;
-      break;
-
-    case "transacoes-cartoes":
-      content = <ListaTransacoesCartao />;
-      break;
-
-    case "transacoes-voucher":
-      content = <ListaTransacoesVoucher />;
-      break;
-
     case "lista-de-administradores":
       switch (id) {
         default:
           content =
-            hasPermission("Operações - Gerencimento de administradores") ||
-            hasPermission(PERMISSIONS.administradores.list.view) ? (
+            permissoes.includes(
+              "Operações - Gerencimento de administradores",
+            ) || permissoes.includes("Administrador - Acesso total") ? (
               <ListaDeAdministradores />
             ) : null;
           switch (subsection) {
             case "permissoes":
               content =
-                hasPermission("Operações - Gerencimento de administradores") ||
-                hasPermission(
-                  PERMISSIONS.administradores.actions.manage_permissions,
-                ) ? (
+                permissoes.includes(
+                  "Operações - Gerencimento de administradores",
+                ) || permissoes.includes("Administrador - Acesso total") ? (
                   <UserPermissions />
                 ) : null;
-              break;
-            case "perfis":
-              content = <UserProfiles />;
               break;
 
             default:
@@ -707,94 +858,41 @@ const SwitchContents = () => {
       content = <ManageFees />;
       break;
 
-    case "taxa-padrao":
-      content = <ManageFeesPadrao />;
-      break;
-
-    case "parceiros":
+    case "partners":
       content = <ListPartner />;
       break;
 
-    /* case 'representantes':
-			content = <ListaRepresentantes />;
-			break; */
-
-    case "banners":
-      content = <ListaDeBanners />;
-      break;
-
-    case "plano-vendas-zoop":
-      content = <ListaPlanosDeVendaZoop />;
-      break;
-
-    /* case 'plano-vendas':
-			content = <ListaPlanosDeVenda />;
-			break; */
-
-    case "plano-de-venda":
-      switch (id) {
-        default:
-          content = <PlanoDeVendaDetalhes />;
-          break;
-      }
-      break;
-
-    case "plano-de-venda-zoop":
-      switch (id) {
-        default:
-          content = <PlanoDeVendaDetalhesZoop />;
-          break;
-      }
-      break;
-
-    case "plano-vendas":
-      switch (id) {
-        default:
-          content = <ListaPlanosDeVenda />;
-
-          switch (subsection) {
-            case "detalhes":
-              <PlanoDeVendaDetalhes />;
-              break;
-
-            default:
-          }
-      }
-      break;
-
     case "jeitto":
-      content = hasPermission("Parceiros - Visualizar Jeitto") ? (
-        <JeittoAdm />
-      ) : null;
-      break;
-
-    case "recarga-celular-admin":
-      content = hasPermission("Parceiros - Visualizar Recargar") ? (
-        <RechargeCellphoneListAdmin />
-      ) : null;
-      break;
-
-    case "gift-cards-admin":
-      content = hasPermission("Parceiros - Visualizar GiftCard") ? (
-        <GiftCardsListAdmin />
-      ) : null;
-      break;
-
-    case "logs":
       content =
-        hasPermission("Operações - Visualizar Logs") ||
-        hasPermission(PERMISSIONS.logs.list.view) ? (
-          <Logs />
+        permissoes.includes("Parceiros - Visualizar Jeitto") ||
+        permissoes.includes("Administrador - Acesso total") ? (
+          <JeittoAdm />
         ) : null;
       break;
 
-    case "logs-auditoria":
-      content = <LogsAuditoria />;
+    case "recarga-celular-admin":
+      content =
+        permissoes.includes("Parceiros - Visualizar Recargar") ||
+        permissoes.includes("Administrador - Acesso total") ? (
+          <RechargeCellphoneListAdmin />
+        ) : null;
       break;
 
-    case "condicoes-comerciais":
-      content = <CondicoesComerciais />;
+    case "gift-cards-admin":
+      content =
+        permissoes.includes("Parceiros - Visualizar GiftCard") ||
+        permissoes.includes("Administrador - Acesso total") ? (
+          <GiftCardsListAdmin />
+        ) : null;
       break;
+
+    /* case 'logs':
+			content =
+				permissoes.includes('Operações - Visualizar Logs') ||
+				permissoes.includes('Administrador - Acesso total') ? (
+					<Logs />
+				) : null;
+			break; */
 
     case "taxa":
       switch (subsection) {
@@ -802,14 +900,6 @@ const SwitchContents = () => {
           switch (id) {
             default:
               content = <EditFees />;
-              break;
-          }
-          break;
-        }
-        case "editar-padrao": {
-          switch (id) {
-            default:
-              content = <EditFeesPadrao />;
               break;
           }
           break;
@@ -823,44 +913,48 @@ const SwitchContents = () => {
       content = <NewAccountFees />;
       break;
 
-    case "nova-taxa-padrao":
-      content = <NewAccountFeesPadrao />;
+    /* case 'lista-pre-contas':
+			content = <GerenciarListaPreContas />;
+			break; */
+
+    case "extratoTED":
+      content = <ExtratoTED />;
       break;
 
-    case "transacoes-tarifas":
-      content = <TransacoesTarifas />;
+    /* case 'walletVBank':
+			content = <WalletVBank />;
+			break;
+
+		case 'walletCompartilhado':
+			content = <WalletCompartilhada />;
+			break; */
+
+    case "extratoP2P":
+      content = <ExtratoP2P />;
       break;
 
-    case "lista-pre-contas":
-      content = <GerenciarListaPreContas />;
+    case "cartoes":
+      content = APP_CONFIG.AbaCartoes && <Cartoes />;
+      break;
+
+    case "pix":
+      content = <ExtratoPix />;
+      break;
+
+    case "lista-pagamentos":
+      content = <PaginaPagamentos />;
+      break;
+
+    case "lista-boletos":
+      content = <PaginaBoletos />;
       break;
 
     case "lista-dispositivos-bloqueados":
       content = <ListaDispositivosBloqueados />;
       break;
 
-    case "bloqueio-device":
-      content = <BloqueioDeDevice />;
-      break;
-
-    case "whitelist-device":
-      content = <WhitelistDeDevice />;
-      break;
-
-    case "blacklist-selfie":
-      content = <BlacklistSelfie />;
-      break;
-
     case "blacklist":
       content = <Blacklist />;
-      break;
-
-    case "usuarios-bloqueados":
-      content = <UsuariosBloqueados />;
-      break;
-
-    case "cartoes":
-      content = <ListaDeCartoes />;
       break;
 
     case "detalhes-pre-conta":
@@ -871,68 +965,51 @@ const SwitchContents = () => {
       }
       break;
 
-    case "apoio-financeiro":
-      content = hasPermission("Administrador - Acesso total") ? (
-        <ProposalFinancialSupport />
-      ) : null;
+    case "adm":
+      content = userData && userData.agent && <DashboardRepresentante />;
+      break;
 
-      if (subsection === "gerenciar-contas") {
-        content = hasPermission("Crédito - Proposta Apoio Financeiro") ? (
-          <ProposalFinancialSupportAccounts />
-        ) : null;
-      }
+    case "lista-contas":
+      content = userData && userData.agent && <ListaDeContas />;
+      break;
 
-      if (subsection === "info") {
-        content = hasPermission("Crédito - Proposta Apoio Financeiro") ? (
-          <FinancialSupport />
-        ) : null;
-      }
+    case "lista-contas-secretaria":
+      content = <ListaContasSecretaria />;
+      break;
 
-      if (subsection === "listagem") {
-        content = hasPermission("Crédito - Apoio Financeiro") ? (
-          <FinancialSupportListPage />
-        ) : null;
-      }
+    case "detalhes-transacao":
+      content = userData && userData.agent && <TransactionDetails />;
+      break;
 
-      if (subsection === "proposta") {
-        content = hasPermission("Crédito - Apoio Financeiro") ? (
-          <FinancialSupportItemPage />
-        ) : null;
+    case "historico-de-transacoes":
+      content = userData && userData.agent && (
+        <ListaHistoricoDeTransacoesRepresentante />
+      );
+      break;
+
+    case "planos-de-venda":
+      content = userData && userData.agent && <ListaPlanosDeVenda />;
+
+      break;
+
+    case "plano-de-venda":
+      switch (id) {
+        default:
+          content = userData && userData.agent && <PlanoDeVendaDetalhes />;
+          break;
       }
       break;
 
-    case "antecipacao-salarial":
-      content = hasPermission("Crédito - Proposta Apoio Financeiro") ? (
-        <ProposalAntecipacaoSalarial />
-      ) : null;
-
-      if (subsection === "gerenciar-contas") {
-        content = hasPermission("Crédito - Proposta Apoio Financeiro") ? (
-          <ProposalAntecipacaoSalarialAccounts />
-        ) : null;
-      }
-
-      if (subsection === "info") {
-        content = hasPermission("Crédito - Proposta Apoio Financeiro") ? (
-          <AntecipacaoSalarial />
-        ) : null;
-      }
-
-      if (subsection === "listagem") {
-        content = hasPermission("Crédito - Apoio Financeiro") ? (
-          <AntecipacaoSalarialListPage />
-        ) : null;
-      }
-
-      if (subsection === "proposta") {
-        content = hasPermission("Crédito - Apoio Financeiro") ? (
-          <AntecipacaoSalarialItemPage />
-        ) : null;
-      }
+    case "logs":
+      content = userData && userData.agent && <Logs />;
       break;
 
-    case "historico-notificacoes":
-      content = <HistoricoNotificacoes />;
+    case "pagamentos-futuros":
+      content = <PagamentosFuturos />;
+      break;
+
+    case "pagamentos-recebidos":
+      content = <PagamentosRecebidos />;
       break;
 
     default:
@@ -940,13 +1017,12 @@ const SwitchContents = () => {
       break;
   }
 
-  if (section === "print")
-    return <Box className={classes.contentAreaContainer}>{content}</Box>;
-
   return (
     <Box className={classes.root}>
       <Box className={classes.sidebarContainer}>
-        <CustomSideBar />
+        {section === "print" || subsection === "print" ? null : (
+          <CustomSideBar cadastro={false} />
+        )}
 
         <Box className={classes.pageHeaderContainer}></Box>
       </Box>

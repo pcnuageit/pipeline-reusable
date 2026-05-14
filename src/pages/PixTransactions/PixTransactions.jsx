@@ -15,9 +15,8 @@ import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
 import { isEqual } from "lodash";
-import moment from "moment";
-import "moment/locale/pt-br";
 import { getTransacaoPixAction } from "../../actions/actions";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import { filters_historico_pix } from "../../constants/localStorageStrings";
@@ -36,120 +35,77 @@ const columns = [
         day: "numeric",
       };
       const formatted = date.toLocaleDateString("pt-br", option);
-      return (
-        <>
-          <Typography align="center"> {formatted}</Typography>
-          <Typography align="center">
-            {moment.utc(data).format("HH:mm:ss")}
-          </Typography>
-        </>
-      );
+      return <Typography align="center"> {formatted}</Typography>;
     },
   },
   {
     headerText: "Tipo",
     key: "tipo",
     CustomValue: (tipo) => {
-      if (tipo === "0") {
+      if (tipo === "national_registration") {
         return <Typography>CPF ou CNPJ</Typography>;
       }
-      if (tipo === "3") {
+      if (tipo === "email") {
         return <Typography>Email</Typography>;
       }
-      if (tipo === "4") {
+      if (tipo === "evp") {
         return <Typography>Chave Aleatória</Typography>;
       }
-      if (tipo === "0") {
+      if (tipo === "document") {
         return <Typography>CPF ou CNPJ</Typography>;
       }
-      if (tipo === "2") {
+      if (tipo === "phone") {
         return <Typography>Telefone</Typography>;
       }
-      if (tipo === "4") {
+      if (tipo === "random") {
         return <Typography>Chave Aleatória</Typography>;
-      }
-    },
-  },
-  {
-    headerText: "Status",
-    key: "status",
-    CustomValue: (value) => {
-      if (value === "Registered") {
-        return (
-          <Typography
-            style={{
-              color: "orange",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Pendente
-          </Typography>
-        );
-      }
-      if (value === "Paid") {
-        return (
-          <Typography
-            style={{
-              color: "green",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Pago
-          </Typography>
-        );
-      }
-      if (value === "Cancel") {
-        return (
-          <Typography
-            style={{
-              color: "blue",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Rejeitado
-          </Typography>
-        );
-      }
-      if (value === "Error") {
-        return (
-          <Typography
-            style={{
-              color: "red",
-              fontWeight: "bold",
-              borderRadius: "27px",
-            }}
-          >
-            Erro
-          </Typography>
-        );
       }
     },
   },
 
   {
     headerText: "Situação",
-    key: "response.pix_out.Success",
+    key: "response.status",
     CustomValue: (status) => {
-      return status === "true" ? (
+      return status === "SUCCEEDED" ? (
         <Typography
           style={{
+            color: "green",
             fontWeight: "bold",
             borderRadius: "27px",
           }}
         >
-          Registrado
+          Sucesso
         </Typography>
-      ) : status === "false" ? (
+      ) : status === "pending" ? (
         <Typography
           style={{
+            color: "red",
             fontWeight: "bold",
             borderRadius: "27px",
           }}
         >
-          Falha
+          Pendente
+        </Typography>
+      ) : status === "executed" ? (
+        <Typography
+          style={{
+            color: "green",
+            fontWeight: "bold",
+            borderRadius: "27px",
+          }}
+        >
+          Confirmado
+        </Typography>
+      ) : status === "REFUNDED" ? (
+        <Typography
+          style={{
+            color: "blue",
+            fontWeight: "bold",
+            borderRadius: "27px",
+          }}
+        >
+          Reembolsado
         </Typography>
       ) : null;
     },
@@ -158,27 +114,20 @@ const columns = [
   {
     headerText: "Valor",
     key: "valor",
-    CustomValue: (valor) => {
-      return (
-        <>
-          R${" "}
-          {parseFloat(valor).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </>
-      );
-    },
+    CustomValue: (valor) => (
+      <p>
+        R${" "}
+        {parseFloat(valor).toLocaleString("pt-br", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+      </p>
+    ),
   },
 
   {
     headerText: "Chave Pix",
     key: "chave_recebedor",
-    CustomValue: (value) => <p>{value}</p>,
-  },
-  {
-    headerText: "Tipo Pix",
-    key: "tipo_pix",
     CustomValue: (value) => <p>{value}</p>,
   },
   {
@@ -215,7 +164,7 @@ const PixTransactions = () => {
   const history = useHistory();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
 
   useEffect(() => {
     return () => {
@@ -231,8 +180,8 @@ const PixTransactions = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar, id]);
 
@@ -248,7 +197,7 @@ const PixTransactions = () => {
       {
         id: id,
         pixId: row.zoop_transaction_id,
-      }
+      },
     );
     history.push(path);
   };
@@ -257,14 +206,14 @@ const PixTransactions = () => {
     if (!isEqual(filters, filtersComparation)) {
       localStorage.setItem(
         filters_historico_pix,
-        JSON.stringify({ ...filters })
+        JSON.stringify({ ...filters }),
       );
     }
   }, [filters]);
 
   useEffect(() => {
     const getLocalFilters = JSON.parse(
-      localStorage.getItem(filters_historico_pix)
+      localStorage.getItem(filters_historico_pix),
     );
     if (getLocalFilters) {
       setFilters(getLocalFilters);
@@ -273,17 +222,22 @@ const PixTransactions = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="Transação PIX"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="Transação PIX" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Transação PIX

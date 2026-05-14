@@ -26,21 +26,38 @@ import CurrencyFormat from "react-currency-format";
 import { toast } from "react-toastify";
 import CustomButton from "../../components/CustomButton/CustomButton";
 import CustomCollapseTable from "../../components/CustomCollapseTable/CustomCollapseTable";
-import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
 import { documentMask } from "../../utils/documentMask";
 import { phoneMask } from "../../utils/phoneMask";
-import px2vw from "../../utils/px2vw";
+
+const useStyles = makeStyles(() => ({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    paddingRight: 50,
+  },
+  headerContainer: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    marginBottom: "0px",
+  },
+  tableContainer: { marginTop: "1px" },
+  pageTitle: {
+    color: "#9D9CC6",
+    fontFamily: "Montserrat-SemiBold",
+  },
+}));
 
 const options = {
   displayType: "text",
-  /* thousandSeparator: '.', */
-  /* decimalSeparator: ',,', */
-  /* prefix: 'R$ ',
-	decimalScale: 2,
-	fixedDecimalScale: true, */
+  thousandSeparator: ".",
+  decimalSeparator: ",",
+  prefix: "R$ ",
+  decimalScale: 2,
+  fixedDecimalScale: true,
 };
 
 const columns = [
@@ -80,8 +97,20 @@ const columns = [
       <CurrencyFormat
         {...options}
         value={row.cash_in_boleto}
-        prefix={row.tipo_cash_in_boleto === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_in_boleto === 2 ? "%" : ""}
+        prefix={row.tipo_cash_in_boleto === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_in_boleto === "Percentual" ? "%" : ""}
+      />
+    ),
+  },
+  {
+    headerText: "Recebimento TED",
+    key: "",
+    FullObject: (row) => (
+      <CurrencyFormat
+        {...options}
+        value={row.cash_in_ted}
+        prefix={row.tipo_cash_in_ted === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_in_ted === "Percentual" ? "%" : ""}
       />
     ),
   },
@@ -92,8 +121,8 @@ const columns = [
       <CurrencyFormat
         {...options}
         value={row.cash_in_pix}
-        prefix={row.tipo_cash_in_pix === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_in_pix === 2 ? "%" : ""}
+        prefix={row.tipo_cash_in_pix === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_in_pix === "Percentual" ? "%" : ""}
       />
     ),
   },
@@ -104,8 +133,8 @@ const columns = [
       <CurrencyFormat
         {...options}
         value={row.cash_in_p2p}
-        prefix={row.tipo_cash_in_p2p === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_in_p2p === 2 ? "%" : ""}
+        prefix={row.tipo_cash_in_p2p === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_in_p2p === "Percentual" ? "%" : ""}
       />
     ),
   },
@@ -116,8 +145,20 @@ const columns = [
       <CurrencyFormat
         {...options}
         value={row.cash_out_p2p}
-        prefix={row.tipo_cash_out_p2p === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_out_p2p === 2 ? "%" : ""}
+        prefix={row.tipo_cash_out_p2p === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_out_p2p === "Percentual" ? "%" : ""}
+      />
+    ),
+  },
+  {
+    headerText: "Trânsferencia TED",
+    key: "",
+    FullObject: (row) => (
+      <CurrencyFormat
+        {...options}
+        value={row.cash_out_ted}
+        prefix={row.tipo_cash_out_ted === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_out_ted === "Percentual" ? "%" : ""}
       />
     ),
   },
@@ -128,44 +169,8 @@ const columns = [
       <CurrencyFormat
         {...options}
         value={row.cash_out_pix}
-        prefix={row.tipo_cash_out_pix === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_out_pix === 2 ? "%" : ""}
-      />
-    ),
-  },
-  {
-    headerText: "Transferência Wallet Recebida",
-    key: "",
-    FullObject: (row) => (
-      <CurrencyFormat
-        {...options}
-        value={row.cash_in_wallet}
-        prefix={row.tipo_cash_in_wallet === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_in_wallet === 2 ? "%" : ""}
-      />
-    ),
-  },
-  {
-    headerText: "Transferência Wallet Efetuada",
-    key: "",
-    FullObject: (row) => (
-      <CurrencyFormat
-        {...options}
-        value={row.cash_out_wallet}
-        prefix={row.tipo_cash_out_wallet === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_out_wallet === 2 ? "%" : ""}
-      />
-    ),
-  },
-  {
-    headerText: "Pagamento de Conta",
-    key: "",
-    FullObject: (row) => (
-      <CurrencyFormat
-        {...options}
-        value={row.cash_out_pagamento_conta}
-        prefix={row.tipo_cash_out_pagamento_conta === 1 ? "R$ " : ""}
-        suffix={row.tipo_cash_out_pagamento_conta === 2 ? "%" : ""}
+        prefix={row.tipo_cash_out_pix === "Fixo" ? "R$ " : ""}
+        suffix={row.tipo_cash_out_pix === "Percentual" ? "%" : ""}
       />
     ),
   },
@@ -184,14 +189,12 @@ const itemColumns = [
   {
     headerText: "Documento",
     key: "documento",
-    CustomValue: (documento) => (
-      <Typography>{documentMask(documento)}</Typography>
-    ),
+    CustomValue: (documento) => <Typography>{documento}</Typography>,
   },
   {
     headerText: "Celular",
     key: "celular",
-    CustomValue: (celular) => <Typography>{phoneMask(celular)}</Typography>,
+    CustomValue: (data) => <Typography>{phoneMask(data)}</Typography>,
   },
   {
     headerText: "Email",
@@ -214,7 +217,7 @@ const itemColumns = [
 
 const ManageFees = () => {
   const token = useAuth();
-
+  const classes = useStyles();
   const history = useHistory();
   const dispatch = useDispatch();
   const [page, setPage] = useState(1);
@@ -227,32 +230,7 @@ const ManageFees = () => {
   const debouncedLike = useDebounce(filters.like, 800);
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("md"));
-  const useStyles = makeStyles(() => ({
-    root: {
-      display: "flex",
-      flexDirection: "column",
-      paddingRight: 50,
-    },
-    headerContainer: {
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      marginBottom: "0px",
-      width: px2vw("100%"),
-      "@media (max-width: 1440px)": {
-        width: "950px",
-      },
-      "@media (max-width: 1280px)": {
-        width: "850px",
-      },
-    },
-    tableContainer: { marginTop: "1px" },
-    pageTitle: {
-      color: APP_CONFIG.mainCollors.primary,
-      fontFamily: "Montserrat-SemiBold",
-    },
-  }));
-  const classes = useStyles();
+
   useEffect(() => {
     dispatch(loadPerfilTaxaAction(token, filters.like));
   }, [page, debouncedLike]);
@@ -260,10 +238,6 @@ const ManageFees = () => {
   const handleChangePage = (e, value) => {
     setPage(value);
   };
-
-  useEffect(() => {
-    console.log(perfilTaxas);
-  }, [perfilTaxas]);
 
   const Editar = ({ row }) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -282,15 +256,11 @@ const ManageFees = () => {
     };
 
     const handleExcluir = async () => {
-      setLoading(true);
       const { success, status } = await dispatch(delPerfilTaxa(token, row.id));
       if (success) {
         toast.success("Taxa excluida com sucesso!");
-        setLoading(false);
-        dispatch(loadPerfilTaxaAction(token, filters.like));
       } else {
         toast.error(`Erro ao excluir taxa: ${status}`);
-        setLoading(false);
       }
     };
 
@@ -340,28 +310,9 @@ const ManageFees = () => {
 
   return (
     <Box className={classes.root}>
-      <LoadingScreen isLoading={loading} />
       <Box className={classes.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <Box style={{ marginBottom: "20px" }}>
           <Typography className={classes.pageTitle}>Taxas</Typography>
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
-          </Box>
         </Box>
         <Box
           style={{
@@ -398,36 +349,45 @@ const ManageFees = () => {
             </CustomButton>
           </Box>
         </Box>
+      </Box>
 
-        <Box className={classes.tableContainer}>
-          {perfilTaxas && perfilTaxas.per_page ? (
-            <Box minWidth={!matches ? "800px" : null}>
-              <CustomCollapseTable
-                data={perfilTaxas.data}
-                columns={columns}
-                itemColumns={itemColumns}
-                conta={true}
-                Editar={Editar}
-              />
-            </Box>
-          ) : (
-            <LinearProgress />
-          )}
-          <Box
-            display="flex"
-            alignSelf="flex-end"
-            marginTop="8px"
-            justifyContent="space-between"
-          >
-            <Pagination
-              variant="outlined"
-              color="secondary"
-              size="large"
-              count={perfilTaxas.last_page}
-              onChange={handleChangePage}
-              page={page}
+      <Box className={classes.tableContainer}>
+        {perfilTaxas && perfilTaxas.per_page ? (
+          <Box minWidth={!matches ? "800px" : null}>
+            <CustomCollapseTable
+              data={perfilTaxas.data}
+              columns={columns}
+              itemColumns={itemColumns}
+              conta={true}
+              Editar={Editar}
             />
           </Box>
+        ) : (
+          <LinearProgress />
+        )}
+        <Box
+          display="flex"
+          alignSelf="flex-end"
+          marginTop="8px"
+          justifyContent="space-between"
+        >
+          <Pagination
+            variant="outlined"
+            color="secondary"
+            size="large"
+            count={perfilTaxas.last_page}
+            onChange={handleChangePage}
+            page={page}
+          />
+          <IconButton
+            style={{
+              backgroundColor: "white",
+              boxShadow: "0px 0px 5px 0.7px grey",
+            }}
+            onClick={() => window.location.reload(false)}
+          >
+            <RefreshIcon></RefreshIcon>
+          </IconButton>
         </Box>
       </Box>
     </Box>

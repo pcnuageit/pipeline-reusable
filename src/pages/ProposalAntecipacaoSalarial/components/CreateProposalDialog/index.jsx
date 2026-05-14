@@ -7,11 +7,14 @@ import {
   Grid,
   TextField,
 } from "@material-ui/core";
-import { Autocomplete } from "@material-ui/lab";
 import { useFormik } from "formik";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import * as yup from "yup";
+import { postAuthMeAction } from "../../../../actions/actions";
+import { APP_CONFIG } from "../../../../constants/config";
+import useAuth from "../../../../hooks/useAuth";
 import CurrencyFieldText from "../../../../modules/AntecipacaoSalarial/components/CurrencyField";
 import { useCreateAntecipacaoSalarialProposalMutation } from "../../../../modules/AntecipacaoSalarialProposal/services/AntecipacaoSalarialProposal";
 
@@ -23,7 +26,7 @@ const validationSchema = yup.object({
     .required("Valor inicial é obrigatório"),
   valor_final: yup
     .number()
-    .moreThan(1, "Valor final deve ser maior que 1")
+    .moreThan(0.1, "Valor final deve ser maior que 0.1")
     .required("Valor final é obrigatório"),
   valor_liberado: yup
     .number()
@@ -41,7 +44,13 @@ function CreateProposalDialog({
   accounts = [],
 }) {
   const [createProposal] = useCreateAntecipacaoSalarialProposalMutation();
+  const me = useSelector((state) => state.me);
+  const token = useAuth();
+  const dispatch = useDispatch();
   const [errors, setErrors] = useState({});
+  useEffect(() => {
+    dispatch(postAuthMeAction(token));
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -49,8 +58,8 @@ function CreateProposalDialog({
       valor_inicial: "",
       valor_final: "",
       valor_liberado: "",
-      conta_debit_id: "",
-      conta_credit_id: "",
+      conta_debit_id: me.conta_id,
+      conta_credit_id: me.conta_id,
     },
     /* validationSchema: validationSchema, */
     onSubmit: async (values) => {
@@ -69,7 +78,7 @@ function CreateProposalDialog({
       } catch (e) {
         toast.error("Erro ao criar proposta");
         toast.error(e?.data?.message);
-        setErrors(e.data.errors);
+        setErrors(e?.data?.errors);
       }
     },
   });
@@ -79,6 +88,7 @@ function CreateProposalDialog({
       <DialogTitle
         style={{
           paddingBottom: 0,
+          color: APP_CONFIG.mainCollors.primary,
         }}
       >
         Nova proposta de antecipação salarial
@@ -86,7 +96,8 @@ function CreateProposalDialog({
       <form onSubmit={formik.handleSubmit}>
         <DialogContent
           style={{
-            paddingTop: 0,
+            marginTop: "10px",
+            marginBottom: "30px",
             minWidth: 500,
           }}
         >
@@ -177,39 +188,31 @@ function CreateProposalDialog({
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <Autocomplete
-                fullWidth
-                options={accounts.data}
-                getOptionLabel={(account) =>
-                  account.razao_social
-                    ? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                    : `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                }
-                onInputChange={(_event, value, reason) => {
-                  if (reason !== "reset") {
-                    setFilters({ ...filters, like: value });
-                  }
-                }}
-                onChange={(_event, option) => {
-                  formik.setFieldValue(
-                    "conta_debit_id",
-                    option ? option.id : ""
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Conta débito"
-                    helperText={
-                      errors?.conta_debit_id
-                        ? errors.conta_debit_id.join("")
-                        : null
-                    }
-                    error={
-                      errors?.conta_debit_id ? errors.conta_debit_id : null
-                    }
-                    /* error={
+            {/* 	<Grid item xs={12}>
+							<Autocomplete
+								fullWidth
+								options={accounts.data}
+								getOptionLabel={(account) =>
+									account.razao_social
+										? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+										: `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+								}
+								onInputChange={(_event, value, reason) => {
+									if (reason !== 'reset') {
+										setFilters({ ...filters, like: value });
+									}
+								}}
+								onChange={(_event, option) => {
+									formik.setFieldValue(
+										'conta_debit_id',
+										option ? option.id : ''
+									);
+								}}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Conta débito"
+										error={
 											formik.touched.conta_credit_id &&
 											Boolean(formik.errors.conta_credit_id)
 										}
@@ -218,44 +221,36 @@ function CreateProposalDialog({
 											formik.errors.conta_credit_id
 												? formik.errors.conta_credit_id
 												: 'Conta de onde será debitado valor da proposta'
-										} */
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-                fullWidth
-                options={accounts.data}
-                getOptionLabel={(account) =>
-                  account.razao_social
-                    ? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                    : `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
-                }
-                onInputChange={(_event, value, reason) => {
-                  if (reason !== "reset") {
-                    setFilters({ ...filters, like: value });
-                  }
-                }}
-                onChange={(_event, option) => {
-                  formik.setFieldValue(
-                    "conta_credit_id",
-                    option ? option.id : ""
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Conta crédito"
-                    helperText={
-                      errors?.conta_credit_id
-                        ? errors.conta_credit_id.join("")
-                        : null
-                    }
-                    error={
-                      errors?.conta_credit_id ? errors.conta_credit_id : null
-                    }
-                    /* error={
+										}
+									/>
+								)}
+							/>
+						</Grid>
+						<Grid item xs={12}>
+							<Autocomplete
+								fullWidth
+								options={accounts.data}
+								getOptionLabel={(account) =>
+									account.razao_social
+										? `${account.razao_social}, ${account.cnpj}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+										: `${account.nome}, ${account.documento}, agência: ${account.agencia}, banco: ${account.banco}, conta: ${account.conta}`
+								}
+								onInputChange={(_event, value, reason) => {
+									if (reason !== 'reset') {
+										setFilters({ ...filters, like: value });
+									}
+								}}
+								onChange={(_event, option) => {
+									formik.setFieldValue(
+										'conta_credit_id',
+										option ? option.id : ''
+									);
+								}}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Conta crédito"
+										error={
 											formik.touched.conta_credit_id &&
 											Boolean(formik.errors.conta_credit_id)
 										}
@@ -264,11 +259,11 @@ function CreateProposalDialog({
 											formik.errors.conta_credit_id
 												? formik.errors.conta_credit_id
 												: 'Conta onde será depositada o pagamento da proposta'
-										} */
-                  />
-                )}
-              />
-            </Grid>
+										}
+									/>
+								)}
+							/>
+						</Grid> */}
             {/* 	<Grid item xs={12}>
 							<Autocomplete
 								fullWidth

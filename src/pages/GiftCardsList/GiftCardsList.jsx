@@ -12,9 +12,8 @@ import { generatePath, useHistory, useParams } from "react-router-dom";
 import { faCalendarAlt } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Pagination from "@material-ui/lab/Pagination";
-import moment from "moment";
-import "moment/locale/pt-br";
 import { loadListarProdutosGiftCard } from "../../actions/actions";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
@@ -25,34 +24,20 @@ const columns = [
     headerText: "Criado em",
     key: "created_at",
     CustomValue: (data) => {
-      /* const date = new Date(data);
-			const option = {
-				year: 'numeric',
-				month: 'numeric',
-				day: 'numeric',
-				hour: 'numeric',
-				minute: 'numeric',
-				second: 'numeric',
-			};
-			const formatted = date.toLocaleDateString('pt-br', option);
-			return (
-				<Box display="flex" justifyContent="center">
-					<FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-					<Typography style={{ marginLeft: '6px' }}>
-						{formatted}
-					</Typography>
-				</Box>
-			); */
+      const date = new Date(data);
+      const option = {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      };
+      const formatted = date.toLocaleDateString("pt-br", option);
       return (
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        <Box display="flex" justifyContent="center">
           <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-          {moment.utc(data).format("DD MMMM YYYY, HH:mm")}
+          <Typography style={{ marginLeft: "6px" }}>{formatted}</Typography>
         </Box>
       );
     },
@@ -120,7 +105,13 @@ const columns = [
     CustomValue: (valor) => {
       return (
         <Typography>
-          R$ <b>{valor}</b>
+          R${" "}
+          <b>
+            {parseFloat(valor).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </b>
         </Typography>
       );
     },
@@ -132,7 +123,7 @@ const GiftCardsList = () => {
   const history = useHistory();
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const userData = useSelector((state) => state.userData);
   const [filters, setFilters] = useState({
     like: "",
@@ -144,8 +135,6 @@ const GiftCardsList = () => {
   const [page, setPage] = useState(1);
   const giftCards = useSelector((state) => state.giftCards);
 
-  moment.locale("pt-br");
-
   useEffect(() => {
     dispatch(
       loadListarProdutosGiftCard(
@@ -154,8 +143,8 @@ const GiftCardsList = () => {
         page,
         debouncedLike,
         filters.order,
-        filters.mostrar
-      )
+        filters.mostrar,
+      ),
     );
   }, [page, filters.order, filters.mostrar, debouncedLike, id]);
 
@@ -170,7 +159,7 @@ const GiftCardsList = () => {
         {
           id: id,
           giftCardId: row.id,
-        }
+        },
       );
       history.push(path);
     } else {
@@ -180,17 +169,22 @@ const GiftCardsList = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="Gift Cards"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="Gift Cards" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Gift Cards

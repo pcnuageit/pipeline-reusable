@@ -1,7 +1,8 @@
 import { Route, Switch } from "react-router";
 
-import React from "react";
 import Cadastro from "../pages/Cadastro/Cadastro";
+import ContaCadastradaEtapa from "../pages/Cadastro/ContaCadastradaEtapa";
+import ErroCpfEtapa from "../pages/Cadastro/ErroCpfEtapa";
 import Login from "../pages/Login/Login";
 import Recuperar from "../pages/RecuperarSenha/RecuperarSenha";
 import Solicitar from "../pages/SolicitarRecuperacao/SolicitarRecuperacao";
@@ -17,12 +18,27 @@ const Routes = () => {
         component={SwitchContents}
       />
       <PrivateRoute
-        path="/dashboard/:section/:subsection"
+        path="/dashboard/:section/acao/:subsection"
+        exact
+        component={SwitchContents}
+      />
+      <PrivateRoute
+        path="/dashboard/:section/acao/:subsection/:subsectionId"
+        exact
+        component={SwitchContents}
+      />
+      <PrivateRoute
+        path="/dashboard/:section/:id"
         exact
         component={SwitchContents}
       />
       <PrivateRoute
         path="/dashboard/:section/:id/:subsection"
+        exact
+        component={SwitchContents}
+      />
+      <PrivateRoute
+        path="/dashboard/:section/:id/acao/:subsection"
         exact
         component={SwitchContents}
       />
@@ -34,7 +50,15 @@ const Routes = () => {
 
       <Route path="/login" exact component={Login} />
       <Route path="/cadastro" exact component={Cadastro} />
+      <Route path="/cadastro/criar-conta-pj" exact component={ErroCpfEtapa} />
+      <Route
+        path="/cadastro/conta-cadastrada"
+        exact
+        component={ContaCadastradaEtapa}
+      />
+
       <Route path="/reset-password/:token" exact component={Recuperar} />
+
       <Route path="/solicitar-reset" exact component={Solicitar} />
       <PrivateRoute path="/" />
     </Switch>

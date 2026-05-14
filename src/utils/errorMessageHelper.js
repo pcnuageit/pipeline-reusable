@@ -14,11 +14,7 @@ export const errorMessageHelper = (err) => {
       return err?.response?.data?.error;
     }
 
-    if (err?.response?.data?.error?.message) {
-      return err?.response?.data?.error?.message;
-    }
-    //return err?.response?.data?.error.join(" ");
-    return err?.response?.data?.error;
+    return err?.response?.data?.error.join(" ");
   }
 
   if (err?.response?.data?.result) {

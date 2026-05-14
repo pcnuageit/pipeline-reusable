@@ -6,12 +6,13 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { generatePath, useHistory, useParams } from "react-router-dom";
 import { getChavesPixAction } from "../../actions/actions";
 
 import Pagination from "@material-ui/lab/Pagination";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
@@ -37,10 +38,6 @@ const columns = [
     key: "chave",
   },
   {
-    headerText: "Status",
-    key: "status",
-  },
-  {
     headerText: "Atualizado em",
     key: "updated_at",
     CustomValue: (data) => {
@@ -58,6 +55,26 @@ const columns = [
   {
     headerText: "Tipo",
     key: "tipo",
+    CustomValue: (tipo) => {
+      if (tipo === "email") {
+        return <Typography>Email</Typography>;
+      }
+      if (tipo === "phone") {
+        return <Typography>Telefone</Typography>;
+      }
+      if (tipo === "evp") {
+        return <Typography>Chave Aleatória</Typography>;
+      }
+      if (tipo === "random") {
+        return <Typography>Chave Aleatória</Typography>;
+      }
+      if (tipo === "national_registration") {
+        return <Typography>CPF ou CNPJ</Typography>;
+      }
+      if (tipo === "document") {
+        return <Typography>CPF ou CNPJ</Typography>;
+      }
+    },
   },
 ];
 
@@ -75,7 +92,7 @@ const ChavesPix = () => {
   const history = useHistory();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   useEffect(() => {
     return () => {
       setFilters({ ...filters });
@@ -90,8 +107,8 @@ const ChavesPix = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar, id]);
 
@@ -110,17 +127,22 @@ const ChavesPix = () => {
 
   return (
     <Box display="flex" flexDirection="column">
+      {token && userData === "" ? (
+        <CustomBreadcrumbs
+          path1="Gerenciar Listas"
+          to1="goBack"
+          path2="Chaves PIX"
+        />
+      ) : (
+        <CustomBreadcrumbs path1="Chaves PIX" />
+      )}
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
         <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
+          style={{ marginTop: "8px", color: "#9D9CC6", marginBottom: 30 }}
           variant="h4"
         >
           Chaves PIX

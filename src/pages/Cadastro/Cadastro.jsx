@@ -1,385 +1,307 @@
-import {
-  Grid,
-  LinearProgress,
-  Paper,
-  TextField,
-  useTheme,
-} from "@material-ui/core";
-import Avatar from "@material-ui/core/Avatar";
-import Box from "@material-ui/core/Box";
-import Button from "@material-ui/core/Button";
-import Typography from "@material-ui/core/Typography";
-import { makeStyles } from "@material-ui/styles";
-import { passwordStrength } from "check-password-strength";
-import { useEffect, useState } from "react";
+import { Box } from "@material-ui/core";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useHistory } from "react-router";
 import { toast } from "react-toastify";
-import { postPrimeiroAcesso } from "../../actions/actions";
-import { APP_CONFIG } from "../../constants/config";
+import {
+  postEtapa1Action,
+  postEtapa2Action,
+  postEtapa3Action,
+  postEtapa4Action,
+  postEtapa5Action,
+  postValidarTokenAction,
+  postVerificarContatoAction,
+} from "../../actions/actions";
+import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
+import ConfirmarDadosEtapa from "./ConfirmarDadosEtapa";
+import CriarAcessoEtapa from "./CriarAcessoEtapa";
+import DadosComplementaresEtapa from "./DadosComplementaresEtapa";
+import EnderecoEtapa from "./EnderecoEtapa";
+import RepresentantesEtapa from "./RepresentantesEtapa";
+import ResumoEtapa from "./ResumoEtapa";
+import SociosEtapa from "./SociosEtapa";
+import TokenCelularEtapa from "./TokenCelularEtapa";
+import TokenEmailEtapa from "./TokenEmailEtapa";
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: "flex",
-    background: APP_CONFIG.mainCollors.primaryGradient,
-    margin: "0px",
-    padding: "0px",
-    [theme.breakpoints.down("sm")]: {
-      flexDirection: "column-reverse",
-    },
-  },
-
-  colorPrimary: {
-    backgroundColor: "#00695C",
-  },
-  barColorPrimary: {
-    backgroundColor: "#B2DFDB",
-  },
-
-  text: {
-    color: APP_CONFIG.mainCollors.primary,
-  },
-
-  rightSide: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    width: "55%",
-    height: "100vh",
-
-    color: "#35322f",
-    [theme.breakpoints.down("sm")]: {
-      width: "100vw",
-      height: "100vh",
-    },
-  },
-  leftSideText: {},
-  leftSide: {
-    display: "flex",
-    justifyContent: "center",
-    width: "45%",
-
-    padding: "80px",
-    [theme.breakpoints.down("sm")]: {
-      width: "100vw",
-      height: "100vh",
-      padding: "0px",
-    },
-  },
-
-  paper: {
-    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-    marginTop: theme.spacing(8),
-    display: "flex",
-    flexDirection: "column",
-    height: "600px",
-    alignItems: "center",
-    padding: "40px",
-    width: "60%",
-    borderRadius: "27px",
-    animation: `$myEffect 1000ms ${theme.transitions.easing.easeInOut}`,
-    [theme.breakpoints.down("sm")]: {
-      width: "100%",
-    },
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: APP_CONFIG.mainCollors.primary,
-    color: "white",
-  },
-  form: {
-    width: "100%",
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-
-  "@keyframes myEffect": {
-    "0%": {
-      opacity: 0,
-      transform: "translateX(-10%)",
-    },
-    "100%": {
-      opacity: 1,
-      transform: "translateX(0)",
-    },
-  },
-}));
-
-const Cadastro = () => {
-  const [forcaSenha, setForcaSenha] = useState({
-    id: 0,
-    value: "",
-    contains: [""],
-    length: 0,
-  });
-  const [progress, setProgress] = useState(0);
-  const [color, setColor] = useState("red");
-
-  const classes = useStyles();
-  const [user, setUser] = useState({
-    email: "",
-    token: "",
-    password: "",
-    password_confirmation: "",
-  });
-  const theme = useTheme();
-  const [errosUser, setErrosUser] = useState({});
-  const history = useHistory();
-  const [, setLoading] = useState(false);
+export default function Cadastro() {
+  const [etapa, setEtapa] = useState(1);
   const dispatch = useDispatch();
+  const history = useHistory();
+  const [modalVerificarContato, setModalVerificarContato] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorsEtapa1, setErrorsEtapa1] = useState("");
+  const [errorsEtapa2, setErrorsEtapa2] = useState("");
+  //const [errorsEtapa3, setErrorsEtapa3] = useState('');
+  const [errorsEtapa4, setErrorsEtapa4] = useState("");
+  const [errorsEtapa5, setErrorsEtapa5] = useState("");
 
-  const onCadastrar = async () => {
+  const getNextEtapa = (props) => {
     setLoading(true);
-    let newUser = user;
-    const resUser = await dispatch(postPrimeiroAcesso(newUser));
-    if (resUser) {
-      setErrosUser(resUser);
-      setLoading(false);
-    } else {
-      toast.success(
-        "Cadastro efetuado com sucesso, faça login para ter acesso!"
-      );
-      history.push("/login");
-      setLoading(false);
+    switch (etapa) {
+      case 1:
+        const handleEnviar = async () => {
+          const resEtapa1 = await dispatch(postEtapa1Action(props.dadosEtapa1));
+          if (resEtapa1) {
+            setErrorsEtapa1(resEtapa1);
+            toast.error("Erro");
+          } else {
+            setEtapa(2);
+          }
+        };
+        handleEnviar();
+        break;
+
+      case 2:
+        const handleEnviar2 = async () => {
+          const resEtapa2 = await dispatch(postEtapa2Action(props.dadosEtapa2));
+
+          if (resEtapa2.etapa > 3) {
+            if (resEtapa2.etapa === 4) {
+              setEtapa(6);
+            }
+            if (resEtapa2.etapa === 5) {
+              setEtapa(9);
+            }
+          } else if (resEtapa2.etapa === 2) {
+            const resVerificarContato = await dispatch(
+              postVerificarContatoAction(
+                props.dadosEtapa2.documento,
+                props.dadosEtapa2.email,
+                props.dadosEtapa2.celular,
+              ),
+            );
+            if (resVerificarContato) {
+              toast.error("Erro ao verificar contato");
+            } else {
+              setEtapa(3);
+            }
+          } else if (resEtapa2.etapa === 3) {
+            setEtapa(5);
+          } else {
+            setErrorsEtapa2(resEtapa2);
+            toast.error("Erro");
+            setModalVerificarContato(false);
+          }
+        };
+        handleEnviar2();
+        break;
+
+      /* 	case 3:
+				const handleEnviar3 = async () => {
+					const resEtapa3 = await dispatch(
+						postEtapa3Action(props.dadosEtapa3)
+					);
+					if (resEtapa3) {
+						setErrorsEtapa3(resEtapa3);
+						toast.error('Erro ao criar senha');
+					} else {
+						const resVerificarContato = await dispatch(
+							postVerificarContatoAction(props.verificarContato)
+						);
+						if (resVerificarContato) {
+							toast.error('Erro ao verificar contato');
+						} else {
+							setEtapa(4);
+						}
+					}
+				};
+				handleEnviar3();
+				break; */
+
+      case 3:
+        const handleEnviar4 = async () => {
+          const resEtapa4 = await dispatch(
+            postValidarTokenAction(props.dadosToken),
+          );
+          if (resEtapa4) {
+            toast.error("Erro ao validar Token");
+          } else {
+            toast.success("Token validado com sucesso");
+            setEtapa(4);
+          }
+        };
+        handleEnviar4();
+        break;
+
+      case 4:
+        const handleEnviar5 = async () => {
+          const resEtapa5 = await dispatch(
+            postValidarTokenAction(props.dadosTokenCelular),
+          );
+          if (resEtapa5) {
+            toast.error("Erro ao validar Token");
+          } else {
+            const resEtapa3 = await dispatch(
+              postEtapa3Action(props.dadosTokenCelular.documento),
+            );
+            if (resEtapa3) {
+              toast.error("Erro ao concluir etapa");
+            } else {
+              toast.success("Token validado com sucesso");
+              setEtapa(5);
+            }
+          }
+        };
+        handleEnviar5();
+        break;
+
+      case 5:
+        const handleEnviar6 = async () => {
+          const resEtapa6 = await dispatch(
+            postEtapa4Action(props.dadosEndereco),
+          );
+          if (resEtapa6) {
+            setErrorsEtapa4(errorsEtapa4);
+            toast.error("Erro ao cadastrar endereço");
+          } else {
+            toast.success("Endereço cadastrado com sucesso");
+            setEtapa(6);
+          }
+        };
+        handleEnviar6();
+        break;
+
+      case 6:
+        const handleEnviar7 = () => {
+          if (props.voltar === true) {
+            setEtapa(5);
+          } else {
+            setEtapa(7);
+          }
+        };
+        handleEnviar7();
+        break;
+
+      case 7:
+        const handleEnviar8 = () => {
+          if (props.voltar === true) {
+            setEtapa(6);
+          } else {
+            setEtapa(8);
+          }
+        };
+        handleEnviar8();
+        break;
+
+      case 8:
+        const handleEnviar9 = async () => {
+          if (props.voltar === true) {
+            setEtapa(7);
+            return;
+          }
+          const resEtapa9 = await dispatch(
+            postEtapa5Action(props.dadosComplementares),
+          );
+          if (resEtapa9) {
+            setErrorsEtapa5(resEtapa9);
+            toast.error("Erro ao enviar dados");
+          } else {
+            toast.success("Dados enviados com sucesso");
+            setEtapa(9);
+          }
+        };
+        handleEnviar9();
+        break;
+
+      case 9:
+        const handleEnviar10 = () => {
+          if (props.voltar === true) {
+            setEtapa(8);
+          } else {
+            setEtapa(10);
+          }
+        };
+        handleEnviar10();
+        break;
+
+      case 10:
+        const handleEnviar11 = () => {
+          if (props.voltar === true) {
+            setEtapa(9);
+          } else {
+            history.push("cadastro/conta-cadastrada");
+          }
+        };
+        handleEnviar11();
+        break;
+
+      default:
+        break;
+    }
+    setLoading(false);
+  };
+
+  const renderPage = () => {
+    switch (etapa) {
+      case 1:
+        return (
+          <CriarAcessoEtapa
+            getNextEtapa={getNextEtapa}
+            errorsEtapa1={errorsEtapa1}
+          />
+        );
+
+      case 2:
+        return (
+          <ConfirmarDadosEtapa
+            getNextEtapa={getNextEtapa}
+            errorsEtapa2={errorsEtapa2}
+            modalVerificarContato={modalVerificarContato}
+            setModalVerificarContato={setModalVerificarContato}
+          />
+        );
+
+      /* 	case 3:
+				return (
+					<CriarSenhaEtapa
+						getNextEtapa={getNextEtapa}
+						errorsEtapa3={errorsEtapa3}
+					/>
+				); */
+
+      case 3:
+        return <TokenEmailEtapa getNextEtapa={getNextEtapa} />;
+
+      case 4:
+        return <TokenCelularEtapa getNextEtapa={getNextEtapa} />;
+
+      case 5:
+        return (
+          <EnderecoEtapa
+            getNextEtapa={getNextEtapa}
+            errorsEtapa4={errorsEtapa4}
+          />
+        );
+
+      case 6:
+        return <SociosEtapa getNextEtapa={getNextEtapa} />;
+
+      case 7:
+        return <RepresentantesEtapa getNextEtapa={getNextEtapa} />;
+
+      case 8:
+        return (
+          <DadosComplementaresEtapa
+            getNextEtapa={getNextEtapa}
+            errorsEtapa5={errorsEtapa5}
+          />
+        );
+
+      // case 9:
+      //   return <EnviarDocumentosEtapa getNextEtapa={getNextEtapa} />;
+
+      case 9:
+        return <ResumoEtapa getNextEtapa={getNextEtapa} />;
+
+      default:
+        break;
     }
   };
 
-  useEffect(() => {
-    setForcaSenha({
-      ...forcaSenha,
-      ...passwordStrength(user.password, [
-        {
-          id: 0,
-          value: "Senha muito fraca",
-          minDiversity: 0,
-          minLength: 0,
-        },
-        { id: 1, value: "Senha fraca", minDiversity: 2, minLength: 8 },
-        { id: 2, value: "Senha média", minDiversity: 3, minLength: 8 },
-        { id: 3, value: "Senha forte", minDiversity: 4, minLength: 8 },
-      ]),
-    });
-    // scrollRef.current.scrollToEnd({});
-  }, [user.password]);
-
-  useEffect(() => {
-    setProgress(forcaSenha.id);
-  }, [forcaSenha.id]);
-
-  useEffect(() => {
-    setColor(
-      forcaSenha.id === 0
-        ? "red"
-        : forcaSenha.id === 1
-        ? "orange"
-        : forcaSenha.id === 2
-        ? "green"
-        : forcaSenha.id === 3
-        ? "yellowgreen"
-        : "red"
-    );
-  }, [forcaSenha.id]);
-
   return (
-    <>
-      <Box className={classes.root}>
-        <Box className={classes.leftSide}>
-          <Paper className={classes.paper}>
-            <Avatar className={classes.avatar} />
-            <Typography
-              component="h1"
-              variant="h5"
-              style={{ marginBottom: "4px" }}
-            >
-              Cadastrar
-            </Typography>
-
-            <Grid container spacing={5} className={classes.form}>
-              <Grid item xs={12}>
-                <TextField
-                  variant="outlined"
-                  error={errosUser.token}
-                  helperText={
-                    errosUser.token ? errosUser.token.join(" ") : null
-                  }
-                  autoFocus
-                  label="Código de verificação enviado por e-mail"
-                  fullWidth
-                  required
-                  value={user.token}
-                  onChange={(e) => setUser({ ...user, token: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  autoComplete="off"
-                  variant="outlined"
-                  error={errosUser.email}
-                  helperText={
-                    errosUser.email ? errosUser.email.join(" ") : null
-                  }
-                  type="email"
-                  fullWidth
-                  label="Digite seu email"
-                  name="email"
-                  value={user.email}
-                  onChange={(e) => setUser({ ...user, email: e.target.value })}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  autoComplete="off"
-                  variant="outlined"
-                  error={errosUser.password}
-                  helperText={
-                    errosUser.password ? errosUser.password.join(" ") : null
-                  }
-                  required
-                  fullWidth
-                  name="password"
-                  label="Digite sua senha"
-                  id="password"
-                  value={user.password}
-                  onChange={(e) =>
-                    setUser({ ...user, password: e.target.value })
-                  }
-                />
-                {user.password !== "" || user.password_confirmation !== "" ? (
-                  <Box
-                    style={{
-                      width: "100%",
-                      paddingHorizontal: 10,
-                      marginTop: 10,
-                    }}
-                  >
-                    <LinearProgress
-                      value={progress * 30}
-                      variant="determinate"
-                      style={{
-                        backgroundColor: color,
-                      }}
-                    />
-                    <Box style={{ marginTop: 5 }}>
-                      <Typography className={classes.text}>
-                        {forcaSenha.value}
-                      </Typography>
-                    </Box>
-                    {!forcaSenha.contains.includes("lowercase") ? (
-                      <Typography className={classes.text}>
-                        * Adicione uma letra minuscula
-                      </Typography>
-                    ) : null}
-                    {!forcaSenha.contains.includes("uppercase") ? (
-                      <Typography className={classes.text}>
-                        * Adicione uma letra maiúscula
-                      </Typography>
-                    ) : null}
-                    {!forcaSenha.contains.includes("symbol") ? (
-                      <Typography className={classes.text}>
-                        * Adicione um símbolo
-                      </Typography>
-                    ) : null}
-                    {!forcaSenha.contains.includes("number") ? (
-                      <Typography className={classes.text}>
-                        * Adicione um número
-                      </Typography>
-                    ) : null}
-                    {forcaSenha.length < 8 ? (
-                      <Typography className={classes.text}>
-                        * Senha muito curta
-                      </Typography>
-                    ) : null}
-                  </Box>
-                ) : (
-                  <Box />
-                )}
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  autoComplete="off"
-                  variant="outlined"
-                  error={errosUser.password_confirmation}
-                  helperText={
-                    errosUser.password_confirmation
-                      ? errosUser.password_confirmation.join(" ")
-                      : null
-                  }
-                  required
-                  fullWidth
-                  name="password"
-                  label="Confirmação de senha"
-                  id="password"
-                  value={user.password_confirmation}
-                  onChange={(e) =>
-                    setUser({
-                      ...user,
-                      password_confirmation: e.target.value,
-                    })
-                  }
-                />
-              </Grid>
-              <Button
-                size="large"
-                fullWidth
-                variant="contained"
-                className={classes.submit}
-                style={{
-                  borderRadius: "27px",
-                  backgroundColor: APP_CONFIG.mainCollors.primary,
-                  fontFamily: "Montserrat-Regular",
-                }}
-                onClick={onCadastrar}
-              >
-                <Typography align="center" style={{ color: "white" }}>
-                  Cadastrar
-                </Typography>
-              </Button>
-            </Grid>
-          </Paper>
-        </Box>
-        <Box className={classes.rightSide}>
-          <Box>
-            <img
-              style={{
-                width: "200px",
-                justifySelf: "flex-start",
-                marginTop: "100px",
-              }}
-              src={APP_CONFIG.assets.smallColoredLogo}
-              alt="Itapemirim logo"
-            />
-          </Box>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            marginTop="150px"
-          >
-            <Typography variant="h3" align="center" style={{ color: "white" }}>
-              Primero acesso?
-            </Typography>
-            <Typography
-              align="center"
-              variant="h6"
-              style={{ fontWeight: "100", color: "white" }}
-            >
-              Bem-vindo! Falta pouco para finalizar seu cadastro.
-            </Typography>
-            <Typography
-              align="center"
-              variant="h6"
-              style={{ fontWeight: "100", color: "white" }}
-            >
-              Basta inserir o código enviado via EMAIL e preencher os campos.
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </>
+    <Box>
+      {renderPage()}
+      <LoadingScreen isLoading={loading} />
+    </Box>
   );
-};
-
-export default Cadastro;
+}

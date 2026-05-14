@@ -21,8 +21,26 @@ import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
-import usePermission from "../../hooks/usePermission";
-import px2vw from "../../utils/px2vw";
+
+const useStyles = makeStyles(() => ({
+  root: {
+    position: "absolute",
+    display: "flex",
+    flexDirection: "column",
+    marginRight: "30px",
+  },
+  headerContainer: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    marginBottom: "0px",
+  },
+  tableContainer: { marginTop: "1px" },
+  pageTitle: {
+    color: "#9D9CC6",
+    fontFamily: "Montserrat-SemiBold",
+  },
+}));
 
 const columns = [
   {
@@ -70,7 +88,7 @@ const columns = [
 
 const ListaDispositivosBloqueados = () => {
   const token = useAuth();
-  const { hasPermission, PERMISSIONS } = usePermission();
+  const classes = useStyles();
   const dispatch = useDispatch();
   const listaContas = useSelector((state) => state.listaDeviceBloqueado);
   const history = useHistory();
@@ -84,33 +102,7 @@ const ListaDispositivosBloqueados = () => {
   const debouncedLike = useDebounce(filters.like, 800);
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
-  const useStyles = makeStyles(() => ({
-    root: {
-      position: "absolute",
-      display: "flex",
-      flexDirection: "column",
-      marginRight: "30px",
-    },
-    headerContainer: {
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      marginBottom: "0px",
-      width: px2vw("100%"),
-      "@media (max-width: 1440px)": {
-        width: "950px",
-      },
-      "@media (max-width: 1280px)": {
-        width: "850px",
-      },
-    },
-    tableContainer: { marginTop: "1px" },
-    pageTitle: {
-      color: APP_CONFIG.mainCollors.primary,
-      fontFamily: "Montserrat-SemiBold",
-    },
-  }));
-  const classes = useStyles();
+
   const handleChangePage = (e, value) => {
     setPage(value);
   };
@@ -122,8 +114,8 @@ const ListaDispositivosBloqueados = () => {
         page,
         debouncedLike,
         filters.order,
-        filters.mostrar
-      )
+        filters.mostrar,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar]);
 
@@ -132,31 +124,11 @@ const ListaDispositivosBloqueados = () => {
   return (
     <Box className={classes.root}>
       <Box className={classes.headerContainer}>
-        <Box
-          style={{
-            marginBottom: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <Box style={{ marginBottom: "20px" }}>
           <Typography className={classes.pageTitle}>
             Dispositivos Bloqueados
           </Typography>
-
-          <Box style={{ alignSelf: "flex-end" }}>
-            <IconButton
-              style={{
-                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                color: APP_CONFIG.mainCollors.primary,
-              }}
-              onClick={() => window.location.reload(false)}
-            >
-              <RefreshIcon></RefreshIcon>
-            </IconButton>
-          </Box>
         </Box>
-
         <Box
           style={{
             width: "100%",
@@ -171,59 +143,64 @@ const ListaDispositivosBloqueados = () => {
             alignItems="center"
             style={{ margin: 30 }}
           >
-            {hasPermission(PERMISSIONS.dispositivos_bloqueados.list.search) && (
-              <TextField
-                placeholder="Pesquisar por nome, documento, email..."
-                size="small"
-                variant="outlined"
-                style={{
-                  backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-                  width: "400px",
-                }}
-                onChange={(e) => {
-                  setPage(1);
-                  setFilters({
-                    ...filters,
-                    like: e.target.value,
-                  });
-                }}
-              ></TextField>
-            )}
+            <TextField
+              placeholder="Pesquisar por nome, documento, email..."
+              size="small"
+              variant="outlined"
+              style={{
+                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                width: "400px",
+              }}
+              onChange={(e) => {
+                setPage(1);
+                setFilters({
+                  ...filters,
+                  like: e.target.value,
+                });
+              }}
+            ></TextField>
           </Box>
         </Box>
+      </Box>
 
-        {hasPermission(PERMISSIONS.dispositivos_bloqueados.list.view) && (
-          <Box className={classes.tableContainer}>
-            {listaContas.data && listaContas.per_page ? (
-              <Box minWidth={!matches ? "800px" : null}>
-                <CustomTable
-                  columns={columns ? columns : null}
-                  data={listaContas.data}
-                  handleClickRow={handleClickRow}
-                />
-              </Box>
-            ) : (
-              <Box>
-                <LinearProgress color="secondary" />
-              </Box>
-            )}
-            <Box
-              display="flex"
-              alignSelf="flex-end"
-              marginTop="8px"
-              justifyContent="space-between"
-            >
-              <Pagination
-                variant="outlined"
-                color="secondary"
-                size="large"
-                count={listaContas.last_page}
-                onChange={handleChangePage}
-                page={page}
-              />
-            </Box>
+      <Box className={classes.tableContainer}>
+        {listaContas.data && listaContas.per_page ? (
+          <Box minWidth={!matches ? "800px" : null}>
+            <CustomTable
+              columns={columns ? columns : null}
+              data={listaContas.data}
+              handleClickRow={handleClickRow}
+            />
+          </Box>
+        ) : (
+          <Box width="60vw">
+            <LinearProgress color="secondary" />
           </Box>
         )}
+        <Box
+          display="flex"
+          alignSelf="flex-end"
+          marginTop="8px"
+          justifyContent="space-between"
+        >
+          <Pagination
+            variant="outlined"
+            color="secondary"
+            size="large"
+            count={listaContas.last_page}
+            onChange={handleChangePage}
+            page={page}
+          />
+          <IconButton
+            style={{
+              backgroundColor: "white",
+              boxShadow: "0px 0px 5px 0.7px grey",
+            }}
+            onClick={() => window.location.reload(false)}
+          >
+            <RefreshIcon />
+          </IconButton>
+        </Box>
       </Box>
     </Box>
   );

@@ -6,7 +6,7 @@ import {
   Typography,
   makeStyles,
 } from "@material-ui/core";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import CurrencyInput from "react-currency-input";
 import { useDispatch } from "react-redux";
@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import { postCapturaCobrancaAction } from "../../../actions/actions";
 import GradientButton from "../../../components/CustomButton/CustomButton";
 import LoadingScreen from "../../../components/LoadingScreen/LoadingScreen";
+import { APP_CONFIG } from "../../../constants/config";
 import useAuth from "../../../hooks/useAuth";
 
 const useStyles = makeStyles((theme) => ({
@@ -42,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
     padding: "20px",
   },
   saqueHeader: {
-    background: theme.gradient.main,
+    background: APP_CONFIG.mainCollors.background,
     color: "white",
   },
   currency: {
@@ -92,7 +93,7 @@ const CreditCardCaptureModal = ({ open, onClose, selectedValue, row }) => {
       onClose(selectedValue);
     } else {
       const resCaptura = await dispatch(
-        postCapturaCobrancaAction(token, row.id, captura.valor)
+        postCapturaCobrancaAction(token, row.id, captura.valor),
       );
       if (resCaptura) {
         toast.error("Erro ao capturar");

@@ -69,10 +69,15 @@ const mappedLogs = {
     color: colors.green[500],
     textAction: "Cobrança de tarifa",
   },
-  pagamento_apoio: {
+  antecipacao_creditada: {
     Icon: AttachMoney,
     color: colors.green[500],
-    textAction: "Cobrança do apoio",
+    textAction: "Antecipação liberada",
+  },
+  antecipacao_debitada: {
+    Icon: AttachMoney,
+    color: colors.green[500],
+    textAction: "Antecipação finalizada",
   },
   gerar_qr_code: {
     Icon: Receipt,
@@ -88,16 +93,6 @@ const mappedLogs = {
     Icon: MoneyOff,
     color: colors.red[500],
     textAction: "Saldo Insuficiente",
-  },
-  antecipacao_debitada: {
-    Icon: AttachMoney,
-    color: colors.green[500],
-    textAction: "Antecipação finalizada",
-  },
-  antecipacao_creditada: {
-    Icon: AttachMoney,
-    color: colors.green[500],
-    textAction: "Antecipação liberada",
   },
 };
 

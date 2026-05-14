@@ -1,0 +1,89 @@
+name: "Deploy ALL Dashboards — Production"
+
+# ══════════════════════════════════════════════════════════════════
+# Push em main → deploy de TODOS os clientes em PRODUCTION
+# Sandbox tem workflow próprio (deploy-banco-web-pj-sandbox.yml)
+# ══════════════════════════════════════════════════════════════════
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+
+  workflow_dispatch:
+
+jobs:
+  # ── Banco Concorrência ──
+  concorrencia:
+    uses: ./.github/workflows/deploy-dashboard-concorrencia.yml
+    secrets: inherit
+
+  concorrencia-mt:
+    uses: ./.github/workflows/deploy-dashboard-concorrencia-mt.yml
+    secrets: inherit
+
+  # ── Banco AproBank ──
+  aprobank:
+    uses: ./.github/workflows/deploy-banco-web-pj-aprobank.yml
+    secrets: inherit
+
+  # ── Banco AmazonBank ──
+  amazonbank:
+    uses: ./.github/workflows/deploy-banco-web-pj-amazonbank.yml
+    secrets: inherit
+
+  # ── Secretarias GO ──
+  corumbaiba:
+    uses: ./.github/workflows/deploy-banco-web-pj-corumbaiba.yml
+    secrets: inherit
+
+  firminopolis:
+    uses: ./.github/workflows/deploy-banco-web-pj-firminopolis.yml
+    secrets: inherit
+
+  goiania:
+    uses: ./.github/workflows/deploy-banco-web-pj-goiania.yml
+    secrets: inherit
+
+  itaberai:
+    uses: ./.github/workflows/deploy-banco-web-pj-itaberai.yml
+    secrets: inherit
+
+  itapuranga:
+    uses: ./.github/workflows/deploy-banco-web-pj-itapuranga.yml
+    secrets: inherit
+
+  itumbiara:
+    uses: ./.github/workflows/deploy-banco-web-pj-itumbiara.yml
+    secrets: inherit
+
+  pmgo:
+    uses: ./.github/workflows/deploy-banco-web-pj-pmgo.yml
+    secrets: inherit
+
+  retomada:
+    uses: ./.github/workflows/deploy-banco-web-pj-retomada.yml
+    secrets: inherit
+
+  seapa:
+    uses: ./.github/workflows/deploy-banco-web-pj-seapa.yml
+    secrets: inherit
+
+  secti:
+    uses: ./.github/workflows/deploy-banco-web-pj-secti.yml
+    secrets: inherit
+
+  seds:
+    uses: ./.github/workflows/deploy-banco-web-pj-seds.yml
+    secrets: inherit
+
+  seduc:
+    uses: ./.github/workflows/deploy-banco-web-pj-seduc.yml
+    secrets: inherit
+
+  # ── Secretarias MT ──
+  seaf:
+    uses: ./.github/workflows/deploy-banco-web-pj-seaf.yml
+    secrets: inherit

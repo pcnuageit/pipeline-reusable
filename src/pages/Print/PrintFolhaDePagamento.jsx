@@ -22,10 +22,9 @@ import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import useAuth from "../../hooks/useAuth";
 import useQuery from "../../modules/AntecipacaoSalarial/hooks/useQuery";
 import {
-  getShowPagamentoCartaoPrivado,
-  getShowPagamentoEstabelecimento,
-  getShowPagamentoVoucher,
-} from "../../services/beneficiarios";
+  getShowFolhaDePagamentoConc,
+  getShowFolhaDePagamentoVoucher,
+} from "../../services/services";
 
 import CustomTable from "../../components/CustomTable/CustomTable";
 import { APP_CONFIG } from "../../constants/config";
@@ -70,21 +69,16 @@ const cartaoColumns = [
     ),
   },
   {
-    headerText: "Cartão",
-    key: "cartao.external_msk",
-  },
-  {
-    headerText: "Cidade",
-    key: "cartao.municipio",
+    headerText: "Email",
+    key: "cartao.user.email",
+    CustomValue: (email) => (
+      <Typography style={{ lineBreak: "anywhere" }}>{email}</Typography>
+    ),
   },
   {
     headerText: "CPF",
     key: "cartao.user.documento",
-    CustomValue: (documento) => (
-      <Typography style={{ lineBreak: "anywhere" }}>
-        {documentMask(documento)}
-      </Typography>
-    ),
+    CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
   },
   {
     headerText: "Contato",
@@ -146,11 +140,7 @@ const voucherEEstabelecimentoColumns = [
   {
     headerText: "CPF",
     key: "conta.user.documento",
-    CustomValue: (documento) => (
-      <Typography style={{ lineBreak: "anywhere" }}>
-        {documentMask(documento)}
-      </Typography>
-    ),
+    CustomValue: (data) => <Typography>{documentMask(data)}</Typography>,
   },
   {
     headerText: "Contato",
@@ -195,7 +185,7 @@ const voucherEEstabelecimentoColumns = [
 ];
 
 export default function PrintFolhaDePagamento() {
-  const id = useParams()?.subsection ?? "";
+  const id = useParams()?.subsectionId ?? "";
   const type = useQuery()?.get("type") ?? "";
   const token = useAuth();
   const classes = useStyles();
@@ -213,28 +203,17 @@ export default function PrintFolhaDePagamento() {
           data: data?.aluguel ?? [],
           columns: voucherEEstabelecimentoColumns,
         };
-      case "pagamento_estabelecimento":
-        return {
-          data: data?.estabelecimentos ?? [],
-          columns: voucherEEstabelecimentoColumns,
-        };
+      // case "pagamento_estabelecimento":
+      //   return {
+      //     data: data?.estabelecimentos ?? [],
+      //     columns: voucherEEstabelecimentoColumns,
+      //   };
       default:
         return { data: [], columns: [] };
     }
   })();
 
   const Editar = () => {
-    const handlePrint = () => {
-      const title = document.title;
-      console.log(data);
-      const beneficio =
-        data?.beneficiarios != undefined
-          ? data?.beneficiarios[0]?.cartao?.tipo_beneficio?.nome_beneficio
-          : data?.aluguel[0]?.conta?.tipo_beneficio?.nome_beneficio;
-      if (beneficio) document.title = title + " - " + beneficio;
-      window.print();
-    };
-
     return (
       <>
         <Typography
@@ -246,7 +225,7 @@ export default function PrintFolhaDePagamento() {
         >
           IMPRIMIR
         </Typography>
-        <Button onClick={handlePrint}>
+        <Button onClick={() => window.print()}>
           <PrintIcon style={{ color: APP_CONFIG.mainCollors.primary }} />
         </Button>
       </>
@@ -264,14 +243,14 @@ export default function PrintFolhaDePagamento() {
     try {
       let res;
       if (type === "pagamento_cartao") {
-        res = await getShowPagamentoCartaoPrivado(token, id);
+        res = await getShowFolhaDePagamentoConc(token, id);
       }
       if (type === "pagamento_voucher") {
-        res = await getShowPagamentoVoucher(token, id);
+        res = await getShowFolhaDePagamentoVoucher(token, id);
       }
-      if (type === "pagamento_estabelecimento") {
-        res = await getShowPagamentoEstabelecimento(token, id);
-      }
+      // if (type === "pagamento_estabelecimento") {
+      //   res = await getShowPagamentoEstabelecimento(token, id);
+      // }
       setData(res.data);
     } catch (err) {
       console.log(err);
@@ -312,19 +291,6 @@ export default function PrintFolhaDePagamento() {
       headerText: "DESCRIÇÃO",
       key: "descricao",
       CustomValue: () => data.descricao,
-    },
-    {
-      ...(type === "pagamento_cartao" && data?.beneficiarios?.length > 0
-        ? {
-            headerText: "BENEFÍCIO",
-            key: "",
-            CustomValue: () => (
-              <Typography>
-                {data?.beneficiarios[0]?.cartao?.tipo_beneficio?.nome_beneficio}
-              </Typography>
-            ),
-          }
-        : {}),
     },
     {
       headerText: "STATUS",

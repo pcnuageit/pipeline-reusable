@@ -1,4 +1,12 @@
 import {
+  faBan,
+  faFilePdf,
+  faTable,
+  faTrash,
+  faWallet,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
   Box,
   Button,
   Dialog,
@@ -6,9 +14,7 @@ import {
   Grid,
   IconButton,
   LinearProgress,
-  makeStyles,
   MenuItem,
-  Modal,
   Select,
   TextField,
   Tooltip,
@@ -16,62 +22,45 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-
-import { faFilePdf } from "@fortawesome/free-regular-svg-icons";
-import {
-  faBan,
-  faTable,
-  faTrash,
-  faWallet,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import PrintIcon from "@material-ui/icons/Print";
-import Pagination from "@material-ui/lab/Pagination";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import { addDays } from "date-fns";
-import { pt } from "date-fns/locale";
+import { makeStyles } from "@material-ui/styles";
+import { Pagination } from "@mui/material";
 import moment from "moment";
 import "moment/locale/pt-br";
-import { DateRange } from "react-date-range";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
-import { generatePath, useHistory, useParams } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 import ReactToPrint from "react-to-print";
 import { toast } from "react-toastify";
-
 import {
   getPagamentoContaExtratoAction,
   getPagamentoContaExtratoActionClear,
   getPagamentoPixExtratoAction,
   getPagamentoPixExtratoActionClear,
-  getSincronizarExtratoContaAction,
-  getTedExtratoAction,
-  getTedExtratoActionClear,
   getTransferenciaExtratoAction,
   getTransferenciaExtratoActionClear,
   loadExportExtrato,
   loadExtratoFilter,
+  loadUserData,
 } from "../../actions/actions";
-import useAuth from "../../hooks/useAuth";
-import useDebounce from "../../hooks/useDebounce";
-import { documentMask } from "../../utils/documentMask";
-
-import CustomButton from "../../components/CustomButton/CustomButton";
 import CustomCollapseTable from "../../components/CustomCollapseTable/CustomCollapseTable";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
 import { APP_CONFIG } from "../../constants/config";
+import useAuth from "../../hooks/useAuth";
+import useDebounce from "../../hooks/useDebounce";
 
 const useStyles = makeStyles((theme) => ({
   root: {
     display: "flex",
-
-    /* flexGrow: 1, */
-    /* width: '100vw',
-		height: '100vh', */
   },
-
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    height: "100%",
+    padding: "10px",
+  },
   header: {
     display: "flex",
     alignContent: "center",
@@ -79,236 +68,49 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     width: "100%",
   },
-  /* modalCalendar: {
-		position: 'absolute',
-top: '50%',
-left: '50%',
-transform: translate('-50%', '-50%'),
-	}, */
+  dadosBox: {
+    display: "flex",
+    flexDirection: "row",
+
+    marginTop: "100px",
+    marginLeft: "30px",
+  },
+  cardContainer: {
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
+  },
+  contadorStyle: {
+    display: "flex",
+    fontSize: "30px",
+    fontFamily: "Montserrat-SemiBold",
+  },
 }));
-const columns = [
-  {
-    headerText: "Detalhes da Transação",
-    key: "data",
-    CustomValue: (data) => {
-      return (
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography style={{ marginLeft: "6px" }}>
-            {moment.utc(data).format("DD MMMM")}
-          </Typography>
-        </Box>
-      );
-    },
-  },
-  {
-    headerText: "Valor Bloqueado",
-    key: "valor_bloqueado",
-    CustomValue: (value) => (
-      <Box
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <FontAwesomeIcon icon={faBan} size="lg" />
-        <Typography style={{ marginLeft: "6px", color: "red" }}>
-          R${" "}
-          {parseFloat(value).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </Typography>
-      </Box>
-    ),
-  },
-  {
-    headerText: "Saldo do dia",
-    key: "saldo",
-    CustomValue: (value) => (
-      <Box
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <FontAwesomeIcon icon={faWallet} style={{ fontSize: "17px" }} />
-        <Typography style={{ marginLeft: "6px" }}>
-          R${" "}
-          {parseFloat(value).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </Typography>
-      </Box>
-    ),
-  },
-];
 
-const itemColumns = [
-  {
-    headerText: "Descrição",
-    key: "description",
-  },
-  {
-    headerText: "Origem",
-    key: "transaction_details",
-    CustomValue: (data) =>
-      data
-        ? `${data?.payer_name}\n${documentMask(data?.payer_document_number)}`
-        : "-",
-  },
-  {
-    headerText: "Destino",
-    key: "transaction_details",
-    CustomValue: (data) =>
-      data
-        ? `${data?.receiver_name}\n${documentMask(
-            data?.receiver_document_number
-          )}`
-        : "-",
-  },
-  {
-    headerText: "Transação Id",
-    key: "transaction_key",
-  },
-  {
-    headerText: "end-to-end",
-    key: "transaction_details.end_to_end_id",
-  },
-  // {
-  //   headerText: <Typography variant="h6">NSU</Typography>,
-  //   key: "transaction_key",
-  //   CustomValue: (nsu) => {
-  //     return (
-  //       <Typography variant="" style={{ fontSize: 16 }}>
-  //         {nsu}
-  //       </Typography>
-  //     );
-  //   },
-  // },
-  {
-    headerText: <Typography variant="h6">Taxas</Typography>,
-    key: "fee",
-    CustomValue: (fee) => {
-      if (fee > 0) {
-        return (
-          <Box style={{ display: "flex" }}>
-            <Typography
-              variant=""
-              style={{
-                fontSize: 17,
-                fontWeight: 600,
-                color: "red",
-                marginLeft: "6px",
-              }}
-            >
-              R$ 0,00{fee}
-            </Typography>
-          </Box>
-        );
-      } else {
-        return (
-          <Box style={{ display: "flex" }}>
-            <Typography
-              variant=""
-              style={{
-                fontSize: 17,
-                fontWeight: 600,
-                color: "green",
-                marginLeft: "6px",
-              }}
-            >
-              R$ 0,00 {fee}
-            </Typography>
-          </Box>
-        );
-      }
-    },
-  },
-  {
-    headerText: <Typography variant="h6">Valor</Typography>,
-    key: "transaction_amount",
-    CustomValue: (amount) => {
-      if (amount < 0) {
-        return (
-          <Box style={{ display: "flex" }}>
-            <Typography
-              variant=""
-              style={{
-                fontSize: 17,
-                fontWeight: 600,
-                color: "red",
-                marginLeft: "6px",
-              }}
-            >
-              R${" "}
-              {parseFloat(amount).toLocaleString("pt-br", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Typography>
-          </Box>
-        );
-      } else {
-        return (
-          <Box style={{ display: "flex" }}>
-            <Typography
-              variant=""
-              style={{
-                fontSize: 17,
-                fontWeight: 600,
-                color: "green",
-                marginLeft: "6px",
-              }}
-            >
-              R${" "}
-              {parseFloat(amount).toLocaleString("pt-br", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Typography>
-          </Box>
-        );
-      }
-    },
-  },
-
-  {
-    headerText: "",
-    key: "menuCollapse",
-  },
-];
-
-const AccountStatement = () => {
-  const dispatch = useDispatch();
+const transferTypeName = (tipo) => {
+  switch (tipo) {
+    case "internal_funds_transfer":
+      return "P2P";
+    case "pix_deposit":
+    case "pix_withdrawal":
+    case "internal_pix_transfer":
+      return "PIX";
+    case "incoming_pix_fee":
+      return "Taxa PIX";
+    default:
+      return "Outros";
+  }
+};
+export default function AccountStatement() {
   const classes = useStyles();
-  const token = useAuth();
   const theme = useTheme();
-  const [page, setPage] = useState(1);
-  const userExtrato = useSelector((state) => state.extrato);
-  const userData = useSelector((state) => state.userData);
-  const exportExtrato = useSelector((state) => state.exportExtrato);
-  const transferenciaExtrato = useSelector(
-    (state) => state.transferenciaExtrato
-  );
-  const tedExtrato = useSelector((state) => state.tedExtrato);
-  const pagamentoContaExtrato = useSelector(
-    (state) => state.pagamentoContaExtrato
-  );
-  const pagamentoPixExtrato = useSelector((state) => state.pagamentoPixExtrato);
-  const id = useParams()?.id ?? "";
+  const dispatch = useDispatch();
   const history = useHistory();
+  const matches = useMediaQuery(theme.breakpoints.down("sm"));
+  const token = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [metodosPix, setMetodosPix] = useState("extrato");
   const [filters, setFilters] = useState({
     id: "",
     day: " ",
@@ -319,36 +121,261 @@ const AccountStatement = () => {
     data_final: "",
   });
   const debouncedId = useDebounce(filters.id, 800);
+  const userExtrato = useSelector((state) => state.extrato);
+  const userData = useSelector((state) => state.userData);
+  const exportExtrato = useSelector((state) => state.exportExtrato);
+  const transferenciaExtrato = useSelector(
+    (state) => state.transferenciaExtrato,
+  );
+  const tedExtrato = useSelector((state) => state.tedExtrato);
+  const pagamentoContaExtrato = useSelector(
+    (state) => state.pagamentoContaExtrato,
+  );
+  const pagamentoPixExtrato = useSelector((state) => state.pagamentoPixExtrato);
+  const [page, setPage] = useState(1);
   const componentRef = useRef();
+
   const [extratoModal, setExtratoModal] = useState(false);
   const [semComprovante, setSemComprovante] = useState(false);
   const [operationType, setOperationType] = useState("");
-  const [atualizarFitbankModal, setAtualizarFitbankModal] = useState(false);
-  const [maxDate, setMaxDate] = useState(addDays(new Date(), 29));
-  const [loading, setLoading] = useState(false);
-  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
-  const [state, setState] = useState([
+
+  moment.locale();
+
+  const columns = [
     {
-      startDate: new Date(),
-      endDate: new Date(),
-      key: "selection",
+      headerText: "Detalhes da Transação",
+      key: "data",
+      CustomValue: (data) => {
+        return (
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* <FontAwesomeIcon icon={faCalendarAlt} size="lg" /> */}
+            <Typography style={{ marginLeft: "6px" }}>
+              {moment.utc(data).format("DD MMMM")}
+            </Typography>
+          </Box>
+        );
+      },
     },
-  ]);
-  const [formatedStartDate, setFormatedStartDate] = useState("");
-  const [formatedEndDate, setFormatedEndDate] = useState("");
+    // {
+    //   headerText: "",
+    //   key: "",
+    //   CustomValue: (created_at) => {
+    //     return (
+    //       <Box
+    //         style={{
+    //           backgroundColor: APP_CONFIG.mainCollors.primary,
+    //           display: "flex",
+    //           flexDirection: "column",
+    //           height: "50px",
+    //           width: "50px",
 
-  moment.locale("pt-br");
+    //           borderRadius: "32px",
+    //           alignItems: "center",
+    //           justifyContent: "center",
+    //         }}
+    //       >
+    //         <ReceiptIcon style={{ color: "white", fontSize: "30px" }} />
+    //       </Box>
+    //     );
+    //   },
+    // },
+    {
+      headerText: "Valor Bloqueado",
+      key: "valor_bloqueado",
+      CustomValue: (value) => (
+        <Box
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FontAwesomeIcon icon={faBan} size="lg" />
+          <Typography style={{ marginLeft: "6px", color: "red" }}>
+            R${" "}
+            {parseFloat(value).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </Typography>
+        </Box>
+      ),
+    },
 
-  const handleOnChange = (ranges) => {
-    const { selection } = ranges;
-    setMaxDate(addDays(selection.startDate, 29));
-    setState([selection]);
-  };
+    {
+      headerText: "Saldo do dia",
+      key: "saldo",
+      CustomValue: (value) => (
+        <Box
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FontAwesomeIcon icon={faWallet} style={{ fontSize: "17px" }} />
+          <Typography style={{ marginLeft: "6px" }}>
+            R${" "}
+            {parseFloat(value).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </Typography>
+        </Box>
+      ),
+    },
+  ];
+
+  const itemColumns = [
+    {
+      headerText: "Descrição",
+      key: "description",
+      CustomValue: (description) => {
+        return (
+          <Typography variant="" style={{ fontSize: 16 }}>
+            {description}
+          </Typography>
+        );
+      },
+    },
+    {
+      headerText: <Typography variant="h6">Tipo</Typography>,
+      key: "source_subtype",
+      CustomValue: (tipo) => {
+        return (
+          <Typography variant="" style={{ fontSize: 16 }}>
+            {transferTypeName(tipo)}
+          </Typography>
+        );
+      },
+    },
+    {
+      headerText: <Typography variant="h6">Transação Id</Typography>,
+      key: "transaction_key",
+      CustomValue: (id) => {
+        return (
+          <Typography variant="" style={{ fontSize: 16 }}>
+            {id ? id : null}
+          </Typography>
+        );
+      },
+    },
+    // {
+    // 	headerText: <Typography variant="h6">NSU</Typography>,
+    // 	key: 'metadata.E2EId',
+    // 	CustomValue: (nsu) => {
+    // 		return (
+    // 			<Typography variant="" style={{ fontSize: 16 }}>
+    // 				{nsu}
+    // 			</Typography>
+    // 		);
+    // 	},
+    // },
+    // {
+    // 	headerText: <Typography variant="h6">Taxas</Typography>,
+    // 	key: 'fee',
+    // 	CustomValue: (fee) => {
+    // 		if (fee > 0) {
+    // 			return (
+    // 				<Box style={{ display: 'flex' }}>
+    // 					<Typography
+    // 						variant=""
+    // 						style={{
+    // 							fontSize: 17,
+    // 							fontWeight: 600,
+    // 							color: 'red',
+    // 							marginLeft: '6px',
+    // 						}}
+    // 					>
+    // 						R$ 0,00{fee}
+    // 					</Typography>
+    // 				</Box>
+    // 			);
+    // 		} else {
+    // 			return (
+    // 				<Box style={{ display: 'flex' }}>
+    // 					<Typography
+    // 						variant=""
+    // 						style={{
+    // 							fontSize: 17,
+    // 							fontWeight: 600,
+    // 							color: 'green',
+    // 							marginLeft: '6px',
+    // 						}}
+    // 					>
+    // 						R$ 0,00 {fee}
+    // 					</Typography>
+    // 				</Box>
+    // 			);
+    // 		}
+    // 	},
+    // },
+    {
+      headerText: <Typography variant="h6">Valor</Typography>,
+      key: "transaction_amount",
+      CustomValue: (amount) => {
+        if (amount < 0) {
+          return (
+            <Box style={{ display: "flex" }}>
+              <Typography
+                variant=""
+                style={{
+                  fontSize: 17,
+                  fontWeight: 600,
+                  color: "red",
+                  marginLeft: "6px",
+                }}
+              >
+                R${" "}
+                {parseFloat(amount).toLocaleString("pt-br", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Typography>
+            </Box>
+          );
+        } else {
+          return (
+            <Box style={{ display: "flex" }}>
+              <Typography
+                variant=""
+                style={{
+                  fontSize: 17,
+                  fontWeight: 600,
+                  color: "green",
+                  marginLeft: "6px",
+                }}
+              >
+                R${" "}
+                {parseFloat(amount).toLocaleString("pt-br", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Typography>
+            </Box>
+          );
+        }
+      },
+    },
+
+    {
+      headerText: "",
+      key: "menuCollapse",
+    },
+  ];
 
   useEffect(() => {
-    setFormatedStartDate(moment.utc(state[0].startDate).format("YYYY-MM-DD"));
-    setFormatedEndDate(moment.utc(state[0].endDate).format("YYYY-MM-DD"));
-  }, [state]);
+    dispatch(loadUserData(token));
+  }, [token]);
 
   useEffect(() => {
     dispatch(
@@ -360,10 +387,10 @@ const AccountStatement = () => {
         filters.order,
         filters.mostrar,
         filters.tipo,
-        id,
+        userData.id,
         filters.data_inicial,
-        filters.data_final
-      )
+        filters.data_final,
+      ),
     );
   }, [
     filters.day,
@@ -372,56 +399,27 @@ const AccountStatement = () => {
     filters.tipo,
     page,
     debouncedId,
-    id,
+    userData.id,
     filters.data_inicial,
     filters.data_final,
   ]);
-
-  const handleSincronizarExtrato = async () => {
-    setLoading(true);
-    if (
-      formatedStartDate === "" ||
-      formatedEndDate === "" ||
-      formatedStartDate === formatedEndDate
-    ) {
-      toast.error("Selecione um intervalo válido");
-      setLoading(false);
-    } else {
-      const resSincronizarExtrato = await dispatch(
-        getSincronizarExtratoContaAction(
-          token,
-          id,
-          formatedStartDate,
-          formatedEndDate
-        )
-      );
-      if (resSincronizarExtrato) {
-        toast.error("Erro ao sincronizar extrato");
-        setLoading(false);
-      } else {
-        toast.success("Extrato sincronizado com sucesso");
-        setLoading(false);
-      }
-    }
-  };
 
   const handleChangePage = (e, value) => {
     setPage(value);
   };
 
-  const handleClickRow = (row) => {
-    if (row.transaction && row.transaction.id) {
-      const path = generatePath("/dashboard/detalhes-transacao/:id/ver", {
-        id: row.transaction.id,
-      });
-      history.push(path);
-    } else {
-      return null;
-    }
-  };
+  /* const handleClickRow = (row) => {
+		if (row.transaction && row.transaction.id) {
+			const path = generatePath('/dashboard/detalhes-transacao/:id/ver', {
+				id: row.transaction.id,
+			});
+			history.push(path);
+		} else {
+			return null;
+		}
+	}; */
 
   const handleExportarExtrato = async () => {
-    setLoading(true);
     const res = await dispatch(
       loadExportExtrato(
         token,
@@ -431,22 +429,17 @@ const AccountStatement = () => {
         filters.order,
         filters.mostrar,
         filters.tipo,
-        id,
+        userData.id,
         filters.data_inicial,
-        filters.data_final
-      )
+        filters.data_final,
+      ),
     );
-    toast.warning(
-      res?.message ?? "A exportação pode demorar um pouco, por favor aguarde..."
-    );
-    if (res?.url) {
+    if (res && res.url !== undefined) {
       window.open(`${res.url}`, "", "");
     }
-    setLoading(false);
   };
 
   const handleExportarExtratoPDF = async () => {
-    setLoading(true);
     const res = await dispatch(
       loadExportExtrato(
         token,
@@ -456,16 +449,15 @@ const AccountStatement = () => {
         filters.order,
         filters.mostrar,
         filters.tipo,
-        id,
+        userData.id,
         filters.data_inicial,
         filters.data_final,
-        "pdf"
-      )
+        "pdf",
+      ),
     );
-    if (res?.url) {
+    if (res && res.url !== undefined) {
       window.open(`${res.url}`, "", "");
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -476,11 +468,18 @@ const AccountStatement = () => {
 
   const EditarCollapse = (row) => {
     const comprovanteExtrato = async () => {
-      if (row.row.DocumentNumber || row.row.TransactionId) {
-        if (row.row.OperationType === 6 || row.row.OperationType === 0) {
+      if (
+        row.row.externalId &&
+        (row.row.description === "Internal in out" ||
+          row.row.description === "Payment boleto" ||
+          row.row.description === "Refund out Pix" ||
+          row.row.description === "Cashin Pix" ||
+          row.row.description === "Cashout Pix")
+      ) {
+        if (row.row.description === "Internal in out") {
           await dispatch(getTransferenciaExtratoActionClear());
           const resTransferenciaExtrato = await dispatch(
-            getTransferenciaExtratoAction(token, row.row.DocumentNumber)
+            getTransferenciaExtratoAction(token, row.row.externalId),
           );
           if (resTransferenciaExtrato) {
             setSemComprovante(true);
@@ -488,21 +487,21 @@ const AccountStatement = () => {
             setExtratoModal(true);
           }
         }
-        if (row.row.OperationType === 3 || row.row.OperationType === 4) {
-          await dispatch(getTedExtratoActionClear());
-          const resTedExtrato = await dispatch(
-            getTedExtratoAction(token, row.row.DocumentNumber)
-          );
-          if (resTedExtrato) {
-            setSemComprovante(true);
-          } else {
-            setExtratoModal(true);
-          }
-        }
-        if (row.row.OperationType === 2) {
+        /* if (row.row.description === 3 || row.row.description === 4) {
+					await dispatch(getTedExtratoActionClear());
+					const resTedExtrato = await dispatch(
+						getTedExtratoAction(token, row.row.externalId)
+					);
+					if (resTedExtrato) {
+						setSemComprovante(true);
+					} else {
+						setExtratoModal(true);
+					}
+				} */
+        if (row.row.description === "Payment boleto") {
           await dispatch(getPagamentoContaExtratoActionClear());
           const resPagamentoContaExtrato = await dispatch(
-            getPagamentoContaExtratoAction(token, row.row.DocumentNumber)
+            getPagamentoContaExtratoAction(token, row.row.externalId),
           );
           if (resPagamentoContaExtrato) {
             setSemComprovante(true);
@@ -511,13 +510,13 @@ const AccountStatement = () => {
           }
         }
         if (
-          row.row.OperationType === 40 ||
-          row.row.OperationType === 41 ||
-          row.row.OperationType === 43
+          row.row.description === "Cashin Pix" ||
+          row.row.description === "Cashout Pix" ||
+          row.row.description === "Refund out Pix"
         ) {
           await dispatch(getPagamentoPixExtratoActionClear());
           const resPagamentoPixExtrato = await dispatch(
-            getPagamentoPixExtratoAction(token, row.row.TransactionId)
+            getPagamentoPixExtratoAction(token, row.row.externalId),
           );
           if (resPagamentoPixExtrato) {
             setSemComprovante(true);
@@ -527,2379 +526,1864 @@ const AccountStatement = () => {
         }
       } else {
         toast.error("Falha ao carregar extrato");
+        setSemComprovante(true);
       }
     };
     return (
       <>
-        {(row.row.DocumentNumber || row.row.TransactionId) &&
-          row.row.OperationType && (
-            <Button
-              onClick={() => {
-                comprovanteExtrato();
-                setOperationType(row.row.OperationType);
-              }}
-              variant="outlined"
-              color="primary"
-              style={{
-                fontFamily: "Montserrat-Regular",
-                fontSize: "10px",
-                color: APP_CONFIG.mainCollors.primary,
-                borderRadius: 20,
-              }}
-            >
-              Visualizar
-            </Button>
-          )}
+        {row.row.externalId && row.row.description && (
+          <Button
+            onClick={() => {
+              comprovanteExtrato();
+              setOperationType(row.row.description);
+            }}
+            variant="outlined"
+            color="primary"
+            style={{
+              fontFamily: "Montserrat-Regular",
+              fontSize: "10px",
+              color: APP_CONFIG.mainCollors.primary,
+              borderRadius: 20,
+            }}
+          >
+            Visualizar
+          </Button>
+        )}
       </>
     );
   };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box className={classes.root}>
       <LoadingScreen isLoading={loading} />
 
-      <Typography
-        style={{
-          marginTop: "8px",
-          color: APP_CONFIG.mainCollors.primary,
-          marginBottom: 30,
-        }}
-        variant="h4"
-      >
-        Extrato
-      </Typography>
-      <Box
-        style={{
-          width: "100%",
-          backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-          borderTopLeftRadius: 27,
-          borderTopRightRadius: 27,
-        }}
-      >
-        <Box
-          display="flex"
-          style={{ marginTop: "10px", marginBottom: "16px", margin: 30 }}
-        >
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={2}>
-              <TextField
-                variant="outlined"
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                placeholder="Filtrar por ID da transação"
-                fullWidth
-                value={filters.id}
-                onChange={(e) => setFilters({ ...filters, id: e.target.value })}
-              />
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <Select
-                variant="outlined"
-                style={{
-                  color: APP_CONFIG.mainCollors.secondary,
-                  marginTop: 10,
-                }}
-                fullWidth
-                value={filters.day}
-                onChange={(e) =>
-                  setFilters({ ...filters, day: e.target.value })
-                }
-              >
-                <MenuItem
-                  value=" "
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Período
-                </MenuItem>
-                <MenuItem
-                  value={1}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Hoje
-                </MenuItem>
-                <MenuItem
-                  value={7}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Últimos 7 dias
-                </MenuItem>
-                <MenuItem
-                  value={15}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Últimos 15 dias
-                </MenuItem>
-                <MenuItem
-                  value={30}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Últimos 30 dias
-                </MenuItem>
-                <MenuItem
-                  value={60}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Últimos 60 dias
-                </MenuItem>
-                <MenuItem
-                  value={90}
-                  style={{ color: APP_CONFIG.mainCollors.secondary }}
-                >
-                  Últimos 90 dias
-                </MenuItem>
-              </Select>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <TextField
-                label="Data inicial"
-                variant="outlined"
-                fullWidth
-                InputLabelProps={{
-                  shrink: true,
-                  pattern: "d {4}- d {2}- d {2} ",
-                }}
-                type="date"
-                value={filters.data_inicial}
-                onChange={(e) =>
-                  setFilters({
-                    ...filters,
-                    data_inicial: e.target.value,
-                  })
-                }
-              />
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <TextField
-                label="Data final"
-                variant="outlined"
-                fullWidth
-                InputLabelProps={{
-                  shrink: true,
-                  pattern: "d {4}- d {2}- d {2} ",
-                }}
-                type="date"
-                value={filters.data_final}
-                onChange={(e) =>
-                  setFilters({
-                    ...filters,
-                    data_final: e.target.value,
-                  })
-                }
-              />
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              sm={4}
-              style={{ display: "flex", justifyContent: "flex-end" }}
-            >
-              <Tooltip title="Limpar Filtros">
-                <IconButton
-                  onClick={() =>
-                    setFilters({
-                      ...filters,
-                      id: "",
-                      day: " ",
-                      order: "",
-                      mostrar: "",
-                      tipo: "",
-                      data_inicial: "",
-                      data_final: "",
-                    })
-                  }
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Exportar Excel">
-                <IconButton
-                  variant="outlined"
-                  style={{ marginLeft: "6px" }}
-                  onClick={handleExportarExtrato}
-                >
-                  <FontAwesomeIcon icon={faTable} color="green" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Exportar PDF">
-                <IconButton
-                  variant="outlined"
-                  style={{ marginLeft: "6px" }}
-                  onClick={handleExportarExtratoPDF}
-                >
-                  <FontAwesomeIcon icon={faFilePdf} color="red" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Atualizar extrato QiTech">
-                <IconButton
-                  variant="outlined"
-                  style={{ marginLeft: "6px" }}
-                  onClick={() => setAtualizarFitbankModal(true)}
-                >
-                  <RefreshIcon />
-                </IconButton>
-              </Tooltip>
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
+      <Box className={classes.main}>
+        <CustomHeader pageTitle="Extrato" />
 
-      {userExtrato && userExtrato.per_page ? (
-        <CustomCollapseTable
-          itemColumns={itemColumns}
-          data={userExtrato.data}
-          columns={columns}
-          handleClickRow={handleClickRow}
-          EditarCollapse={EditarCollapse}
-        />
-      ) : (
-        <LinearProgress />
-      )}
-      <Box alignSelf="flex-end" marginTop="8px">
-        {
-          <Pagination
-            variant="outlined"
-            color="secondary"
-            size="large"
-            count={userExtrato.last_page}
-            onChange={handleChangePage}
-            page={page}
-          />
-        }
-      </Box>
-      <Modal
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        open={atualizarFitbankModal}
-        onClose={() => {
-          setAtualizarFitbankModal(false);
-        }}
-      >
-        <Box
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignSelf: "center",
-            backgroundColor: "white",
-            padding: 30,
-            borderRadius: 27,
-            //minWidth: '700px',
-          }}
-        >
-          <Typography
+        <Box className={classes.dadosBox}>
+          <Box
             style={{
-              color: APP_CONFIG.mainCollors.primary,
-              marginTop: "10px",
-              fontSize: 18,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            Selecione o intervalo de tempo em que deseja atualizar o extrato (o
-            intervalo não deve ser maior que 30 dias):
-          </Typography>
+            <Box
+              style={{
+                display: "flex",
+                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                /* alignItems: 'center', */
+                borderRadius: "17px",
+                flexDirection: "column",
+                width: "100%",
+
+                /* alignItems: 'center', */
+              }}
+            >
+              <Box
+                style={{
+                  width: "100%",
+                  backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                  borderTopLeftRadius: 27,
+                  borderTopRightRadius: 27,
+                }}
+              >
+                <Box
+                  display="flex"
+                  style={{
+                    marginTop: "10px",
+                    marginBottom: "16px",
+                    margin: 30,
+                  }}
+                >
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={2}>
+                      <TextField
+                        variant="outlined"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        label="Filtrar por ID da transação"
+                        fullWidth
+                        value={filters.id}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilters({
+                            ...filters,
+                            id: e.target.value,
+                          });
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Select
+                        variant="outlined"
+                        style={{
+                          color: APP_CONFIG.mainCollors.secondary,
+                        }}
+                        fullWidth
+                        value={filters.day}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            day: e.target.value,
+                          })
+                        }
+                      >
+                        <MenuItem
+                          value=" "
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Período
+                        </MenuItem>
+                        <MenuItem
+                          value={1}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Hoje
+                        </MenuItem>
+                        <MenuItem
+                          value={7}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Últimos 7 dias
+                        </MenuItem>
+                        <MenuItem
+                          value={15}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Últimos 15 dias
+                        </MenuItem>
+                        <MenuItem
+                          value={30}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Últimos 30 dias
+                        </MenuItem>
+                        <MenuItem
+                          value={60}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Últimos 60 dias
+                        </MenuItem>
+                        <MenuItem
+                          value={90}
+                          style={{
+                            color: APP_CONFIG.mainCollors.secondary,
+                          }}
+                        >
+                          Últimos 90 dias
+                        </MenuItem>
+                      </Select>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <TextField
+                        variant="outlined"
+                        fullWidth
+                        InputLabelProps={{
+                          shrink: true,
+                          pattern: "d {4}- d {2}- d {2} ",
+                        }}
+                        type="date"
+                        label="Data inicial"
+                        value={filters.data_inicial}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilters({
+                            ...filters,
+                            data_inicial: e.target.value,
+                          });
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <TextField
+                        variant="outlined"
+                        fullWidth
+                        InputLabelProps={{
+                          shrink: true,
+                          pattern: "d {4}- d {2}- d {2} ",
+                        }}
+                        type="date"
+                        label="Data final"
+                        value={filters.data_final}
+                        onChange={(e) => {
+                          setPage(1);
+                          setFilters({
+                            ...filters,
+                            data_final: e.target.value,
+                          });
+                        }}
+                      />
+                    </Grid>
+                    <Grid
+                      item
+                      xs={12}
+                      sm={4}
+                      style={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <Tooltip title="Limpar Filtros">
+                        <IconButton
+                          onClick={() =>
+                            setFilters({
+                              ...filters,
+                              id: "",
+                              day: " ",
+                              order: "",
+                              mostrar: "",
+                              tipo: "",
+                              data_inicial: "",
+                              data_final: "",
+                            })
+                          }
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Exportar Excel">
+                        <IconButton
+                          variant="outlined"
+                          style={{ marginLeft: "6px" }}
+                          onClick={handleExportarExtrato}
+                        >
+                          <FontAwesomeIcon icon={faTable} color="green" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Exportar PDF">
+                        <IconButton
+                          variant="outlined"
+                          style={{ marginLeft: "6px" }}
+                          onClick={handleExportarExtratoPDF}
+                        >
+                          <FontAwesomeIcon icon={faFilePdf} color="red" />
+                        </IconButton>
+                      </Tooltip>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Box>
+
+              {userExtrato && userExtrato.per_page ? (
+                <>
+                  <Box /* minWidth={!matches ? '500px' : null} */>
+                    <CustomCollapseTable
+                      itemColumns={itemColumns}
+                      data={userExtrato.data}
+                      columns={columns}
+                      EditarCollapse={EditarCollapse}
+                      /* handleClickRow={handleClickRow} */
+                    />
+                  </Box>
+                  <Box alignSelf="start" marginTop="8px">
+                    {
+                      <Pagination
+                        variant="outlined"
+                        color="secondary"
+                        size="large"
+                        count={userExtrato.last_page}
+                        onChange={handleChangePage}
+                        page={page}
+                      />
+                    }
+                  </Box>
+                </>
+              ) : (
+                <LinearProgress />
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+      <Dialog
+        ref={componentRef}
+        open={extratoModal}
+        onClose={() => {
+          setExtratoModal(false);
+        }}
+        aria-labelledby="form-dialog-title"
+      >
+        {operationType === "Internal in out" &&
+        transferenciaExtrato?.origem &&
+        transferenciaExtrato?.destino ? (
           <Box
             style={{
               display: "flex",
-              width: "100%",
-              height: "100%",
-              marginTop: "10px",
-              justifyContent: "center",
+              flexDirection: "column",
+              alignSelf: "center",
+              minWidth: "400px",
             }}
           >
-            <DateRange
-              style={{ justifyContent: "center" }}
-              onChange={handleOnChange}
-              maxDate={maxDate}
-              showSelectionPreview={true}
-              moveRangeOnFirstSelection={false}
-              months={2}
-              ranges={state}
-              direction="horizontal"
-              locale={pt}
-              showMonthAndYearPickers={true}
-              showDateDisplay={false}
-              editableDateInputs={false}
-              dateDisplayFormat={"P"}
-            />
+            <Box style={{ marginTop: "30px", padding: "15px" }}>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <img src={APP_CONFIG.assets.smallColoredLogo}></img>
+                </Box>
+                <ReactToPrint
+                  trigger={() => {
+                    return (
+                      <Button>
+                        <PrintIcon
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                  content={() => componentRef.current}
+                />
+              </Box>
+
+              <Box style={{ marginTop: "20px" }}>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    fontSize: "20px",
+                  }}
+                >
+                  {transferenciaExtrato.status === "Falhou"
+                    ? "Comprovante de estorno"
+                    : "Comprovante de transferência"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {moment
+                    .utc(transferenciaExtrato.created_at)
+                    .format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Valor
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  R${" "}
+                  {parseFloat(transferenciaExtrato.valor).toLocaleString(
+                    "pt-br",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Tipo de transferência
+                </Typography>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    maxInlineSize: "min-content",
+                  }}
+                >
+                  {transferenciaExtrato.tipo}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  ID da transação
+                </Typography>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    maxInlineSize: "min-content",
+                  }}
+                >
+                  {transferenciaExtrato.id}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Descrição
+                </Typography>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    maxInlineSize: "min-content",
+                  }}
+                >
+                  {transferenciaExtrato.descricao}
+                </Typography>
+              </Box>
+
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                    marginTop: "20px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Destino
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Instituição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.destino.banco} - FITBANK
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  {transferenciaExtrato.destino.tipo === "Pessoa Jurídica"
+                    ? "Razão Social"
+                    : "Nome"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.destino.tipo === "Pessoa Jurídica"
+                    ? transferenciaExtrato.destino.razao_social
+                    : transferenciaExtrato.destino.nome}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Agência
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.destino.agencia}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Conta
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.destino.conta}
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                    marginTop: "20px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Origem
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Instituição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.origem.banco} - FITBANK
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  {transferenciaExtrato.origem.tipo === "Pessoa Jurídica"
+                    ? "Razão Social"
+                    : "Nome"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.origem.tipo === "Pessoa Jurídica"
+                    ? transferenciaExtrato.origem.razao_social
+                    : transferenciaExtrato.origem.nome}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Agência
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.origem.agencia}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                  marginBottom: "40px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Conta
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {transferenciaExtrato.origem.conta}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
+        ) : operationType === "Payment boleto" &&
+          pagamentoContaExtrato?.conta ? (
           <Box
             style={{
+              display: "flex",
+              flexDirection: "column",
               alignSelf: "center",
-              marginTop: "10px",
+              minWidth: "400px",
             }}
           >
-            <CustomButton onClick={() => handleSincronizarExtrato()}>
-              <Typography style={{ fontSize: 12 }}>
-                Atualizar Extrato QiTech
-              </Typography>
-            </CustomButton>
+            <Box style={{ marginTop: "30px", padding: "15px" }}>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <img src={APP_CONFIG.assets.smallColoredLogo}></img>
+                </Box>
+                <ReactToPrint
+                  trigger={() => {
+                    return (
+                      <Button>
+                        <PrintIcon
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                  content={() => componentRef.current}
+                />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    fontSize: "20px",
+                  }}
+                >
+                  Boleto pago
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {moment
+                    .utc(pagamentoContaExtrato.created_at)
+                    .format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Valor
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  R${" "}
+                  {parseFloat(pagamentoContaExtrato.valor).toLocaleString(
+                    "pt-br",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </Typography>
+              </Box>
+
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                    marginTop: "20px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  Dados do boleto
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Nome do pagador
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoContaExtrato.conta.nome}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Documento do pagador
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  ***
+                  {pagamentoContaExtrato.conta.documento.substring(3, 6)}
+                  {pagamentoContaExtrato.conta.documento.substring(6, 11)}
+                  -**
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Descrição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoContaExtrato.descricao}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                  marginBottom: "40px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  ID
+                </Typography>
+                <Typography
+                  style={{
+                    color: APP_CONFIG.mainCollors.primary,
+                    maxInlineSize: "min-content",
+                  }}
+                >
+                  {pagamentoContaExtrato.id}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
-        </Box>
-      </Modal>
-      {pagamentoPixExtrato ||
-      pagamentoContaExtrato ||
-      tedExtrato ||
-      transferenciaExtrato ? (
-        <Dialog
-          ref={componentRef}
-          open={extratoModal}
-          onClose={() => {
-            setExtratoModal(false);
-          }}
-          aria-labelledby="form-dialog-title"
-        >
-          {(operationType === 6 || operationType === 0) &&
-          transferenciaExtrato &&
-          transferenciaExtrato.origem &&
-          transferenciaExtrato.destino ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
+        ) : operationType === "Cashin Pix" &&
+          pagamentoPixExtrato.conta &&
+          pagamentoPixExtrato.response?.pix_in ? (
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignSelf: "center",
+              minWidth: "400px",
+            }}
+          >
+            <Box style={{ marginTop: "30px", padding: "15px" }}>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <img src={APP_CONFIG.assets.smallColoredLogo}></img>
+                </Box>
+                <ReactToPrint
+                  trigger={() => {
+                    return (
+                      <Button>
+                        <PrintIcon
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                  content={() => componentRef.current}
+                />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    color: APP_CONFIG.mainCollors.primary,
+                    fontSize: "20px",
                   }}
                 >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
+                  {transferenciaExtrato.status === "Cancel"
+                    ? "Comprovante de estorno"
+                    : "Comprovante de transferência"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {moment
+                    .utc(pagamentoPixExtrato.created_at)
+                    .format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Valor
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  R${" "}
+                  {parseFloat(pagamentoPixExtrato.valor).toLocaleString(
+                    "pt-br",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Tipo de transferência
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.tipo_pix}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
+                  style={{
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
+                  }}
+                >
+                  Descrição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.descricao}
+                </Typography>
+              </Box>
 
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Falhou"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(transferenciaExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {transferenciaExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
+                  Destino
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {transferenciaExtrato.tipo}
-                  </Typography>
-                </Box>
-                <Box
+                  {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
+                    ? "Razão Social"
+                    : "Nome"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
+                    ? pagamentoPixExtrato.conta.razao_social
+                    : pagamentoPixExtrato.conta.nome}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    ID da transação
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {transferenciaExtrato.id}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.conta.documento.length < 12 ||
+                  pagamentoPixExtrato.conta.documento.includes("-") ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.conta.documento.substring(3, 6)}
+                      {pagamentoPixExtrato.conta.documento.substring(6, 11)}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.conta.documento
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                  marginBottom: "40px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {transferenciaExtrato.descricao}
-                  </Typography>
-                </Box>
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_in.PayerBankIspb}
+                </Typography>
+              </Box>
 
-                <Box className={classes.lineGrey} />
-                <Box
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.destino.banco} - Qitech
-                  </Typography>
-                </Box>
-                <Box
+                  Origem
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {transferenciaExtrato.destino.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.destino.tipo === "Pessoa Jurídica"
-                      ? transferenciaExtrato.destino.razao_social
-                      : transferenciaExtrato.destino.nome}
-                  </Typography>
-                </Box>
-                <Box
+                  Nome
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_in.PayeeName}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.destino.agencia}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_in.PayeeDocument.length <
+                    12 ||
+                  pagamentoPixExtrato.response.pix_in.PayeeDocument.includes(
+                    "-",
+                  ) ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                        3,
+                        6,
+                      )}
+                      {pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                        6,
+                        11,
+                      )}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                      0,
+                      2,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                      2,
+                      5,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                      5,
+                      8,
+                    ) +
+                    "/" +
+                    pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                      8,
+                      12,
+                    ) +
+                    "-" +
+                    pagamentoPixExtrato.response.pix_in.PayeeDocument.substring(
+                      12,
+                      14,
+                    )
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.destino.conta}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.origem.banco} - Qitech
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {transferenciaExtrato.origem.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.origem.tipo === "Pessoa Jurídica"
-                      ? transferenciaExtrato.origem.razao_social
-                      : transferenciaExtrato.origem.nome}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.origem.agencia}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {transferenciaExtrato.origem.conta}
-                  </Typography>
-                </Box>
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_in.PayeeBankIspb}
+                </Typography>
               </Box>
             </Box>
-          ) : operationType === 3 && tedExtrato && tedExtrato.conta_model ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
+          </Box>
+        ) : operationType === "Cashout Pix" &&
+          pagamentoPixExtrato?.conta &&
+          pagamentoPixExtrato?.response?.pix_out?.payee?.account ? (
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignSelf: "center",
+              minWidth: "400px",
+            }}
+          >
+            <Box style={{ marginTop: "30px", padding: "15px" }}>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <img src={APP_CONFIG.assets.smallColoredLogo}></img>
+                </Box>
+                <ReactToPrint
+                  trigger={() => {
+                    return (
+                      <Button>
+                        <PrintIcon
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                  content={() => componentRef.current}
+                />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    color: APP_CONFIG.mainCollors.primary,
+                    fontSize: "20px",
                   }}
                 >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Falhou"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(tedExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
+                  {transferenciaExtrato.status === "Cancel"
+                    ? "Comprovante de estorno"
+                    : "Comprovante de transferência"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {moment
+                    .utc(pagamentoPixExtrato.created_at)
+                    .format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {tedExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
+                  Valor
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  R${" "}
+                  {parseFloat(pagamentoPixExtrato.valor).toLocaleString(
+                    "pt-br",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.tipo_conta}
-                  </Typography>
-                </Box>
-                <Box
+                  Tipo de transferência
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.tipo_pix}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    ID da transação
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {tedExtrato.id}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.descricao}
-                  </Typography>
-                </Box>
+                  Descrição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.descricao}
+                </Typography>
+              </Box>
 
-                <Box className={classes.lineGrey} />
-                <Box
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Banco
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.banco}
-                  </Typography>
-                </Box>
-                <Box
+                  Origem
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.nome}
-                  </Typography>
-                </Box>
-                <Box
+                  {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
+                    ? "Razão Social"
+                    : "Nome"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
+                    ? pagamentoPixExtrato.conta.razao_social
+                    : pagamentoPixExtrato.conta.nome}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.agencia}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.conta.documento.length < 12 ||
+                  pagamentoPixExtrato.conta.documento.includes("-") ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.conta.documento.substring(3, 6)}
+                      {pagamentoPixExtrato.conta.documento.substring(6, 11)}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.conta.documento
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_out.payer.account.ispb}
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Banco
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.banco} - Qitech
-                  </Typography>
-                </Box>
-                <Box
+                  Destino
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {tedExtrato.conta_model.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.tipo === "Pessoa Jurídica"
-                      ? tedExtrato.conta_model.razao_social
-                      : tedExtrato.conta_model.nome}
-                  </Typography>
-                </Box>
-                <Box
+                  Nome
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_out.payee.name}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.agencia}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_out.payee.document.length <
+                    12 ||
+                  pagamentoPixExtrato.response.pix_out.payee.document.includes(
+                    "-",
+                  ) ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                        3,
+                        6,
+                      )}
+                      {pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                        6,
+                        11,
+                      )}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                      0,
+                      2,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                      2,
+                      5,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                      5,
+                      8,
+                    ) +
+                    "/" +
+                    pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                      8,
+                      12,
+                    ) +
+                    "-" +
+                    pagamentoPixExtrato.response.pix_out.payee.document.substring(
+                      12,
+                      14,
+                    )
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                  marginBottom: "40px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.conta}
-                  </Typography>
-                </Box>
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_out.payee.account.ispb}
+                </Typography>
               </Box>
             </Box>
-          ) : operationType === 4 && tedExtrato && tedExtrato.conta_model ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
+          </Box>
+        ) : operationType === "Refund out Pix" &&
+          pagamentoPixExtrato?.conta &&
+          pagamentoPixExtrato?.response?.pix_refund ? (
+          <Box
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignSelf: "center",
+              minWidth: "400px",
+            }}
+          >
+            <Box style={{ marginTop: "30px", padding: "15px" }}>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <img src={APP_CONFIG.assets.smallColoredLogo}></img>
+                </Box>
+                <ReactToPrint
+                  trigger={() => {
+                    return (
+                      <Button>
+                        <PrintIcon
+                          style={{
+                            color: APP_CONFIG.mainCollors.primary,
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                  content={() => componentRef.current}
+                />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    color: APP_CONFIG.mainCollors.primary,
+                    fontSize: "20px",
                   }}
                 >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Falhou"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(tedExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
+                  {transferenciaExtrato.status === "Cancel"
+                    ? "Comprovante de estorno"
+                    : "Comprovante de transferência"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {moment
+                    .utc(pagamentoPixExtrato.created_at)
+                    .format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {tedExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
+                  Valor
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  R${" "}
+                  {parseFloat(pagamentoPixExtrato.valor).toLocaleString(
+                    "pt-br",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.tipo_conta}
-                  </Typography>
-                </Box>
-                <Box
+                  Tipo de transferência
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.tipo_pix}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    ID da transação
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {tedExtrato.id}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.descricao}
-                  </Typography>
-                </Box>
+                  Descrição
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.descricao}
+                </Typography>
+              </Box>
 
-                <Box className={classes.lineGrey} />
-                <Box
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Banco
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.banco}
-                  </Typography>
-                </Box>
-                <Box
+                  Destino
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.nome}
-                  </Typography>
-                </Box>
-                <Box
+                  Nome
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayeeName}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.agencia}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayeeDocument
+                    .length < 12 ||
+                  pagamentoPixExtrato.response.pix_refund.PayeeDocument.includes(
+                    "-",
+                  ) ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                        3,
+                        6,
+                      )}
+                      {pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                        6,
+                        11,
+                      )}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                      0,
+                      2,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                      2,
+                      5,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                      5,
+                      8,
+                    ) +
+                    "/" +
+                    pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                      8,
+                      12,
+                    ) +
+                    "-" +
+                    pagamentoPixExtrato.response.pix_refund.PayeeDocument.substring(
+                      12,
+                      14,
+                    )
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayeeBankIspb}
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                     marginTop: "20px",
+                    marginBottom: "10px",
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Banco
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.banco} - Qitech
-                  </Typography>
-                </Box>
-                <Box
+                  Origem
+                </Typography>
+              </Box>
+              <Box className={classes.lineGrey} />
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "20px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {tedExtrato.conta_model.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.tipo === "Pessoa Jurídica"
-                      ? tedExtrato.conta_model.razao_social
-                      : tedExtrato.conta_model.nome}
-                  </Typography>
-                </Box>
-                <Box
+                  {pagamentoPixExtrato.response.pix_refund.PayerDocumentType ===
+                  "Cnpj"
+                    ? "Razão Social"
+                    : "Nome"}
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayerName}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Agência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.agencia}
-                  </Typography>
-                </Box>
-                <Box
+                  Documento
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayerDocument
+                    .length < 12 ||
+                  pagamentoPixExtrato.response.pix_refund.PayerDocument.includes(
+                    "-",
+                  ) ? (
+                    <>
+                      ***
+                      {pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                        3,
+                        6,
+                      )}
+                      {pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                        6,
+                        11,
+                      )}
+                      -**
+                    </>
+                  ) : (
+                    pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                      0,
+                      2,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                      2,
+                      5,
+                    ) +
+                    "." +
+                    pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                      5,
+                      8,
+                    ) +
+                    "/" +
+                    pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                      8,
+                      12,
+                    ) +
+                    "-" +
+                    pagamentoPixExtrato.response.pix_refund.PayerDocument.substring(
+                      12,
+                      14,
+                    )
+                  )}
+                </Typography>
+              </Box>
+              <Box
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "10px",
+                  marginBottom: "40px",
+                }}
+              >
+                <Typography
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
+                    fontFamily: "Montserrat-ExtraBold",
+                    color: APP_CONFIG.mainCollors.primary,
                   }}
                 >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Conta
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {tedExtrato.conta_model.conta}
-                  </Typography>
-                </Box>
+                  ISPB
+                </Typography>
+                <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+                  {pagamentoPixExtrato.response.pix_refund.PayerBankIspb}
+                </Typography>
               </Box>
             </Box>
-          ) : operationType === 2 &&
-            pagamentoContaExtrato &&
-            pagamentoContaExtrato.conta ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    Boleto pago
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(pagamentoContaExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {pagamentoContaExtrato.valor}
-                  </Typography>
-                </Box>
-
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Dados do boleto
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome do pagador
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoContaExtrato.conta.nome}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento do pagador
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***
-                    {pagamentoContaExtrato.conta.documento.substring(3, 6)}
-                    {pagamentoContaExtrato.conta.documento.substring(6, 11)}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoContaExtrato.descricao}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    ID
-                  </Typography>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      maxInlineSize: "min-content",
-                    }}
-                  >
-                    {pagamentoContaExtrato.id}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ) : operationType === 40 &&
-            pagamentoPixExtrato.conta &&
-            pagamentoPixExtrato.response.consulta.Infos ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Cancel"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(pagamentoPixExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {pagamentoPixExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.tipo_pix}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.descricao}
-                  </Typography>
-                </Box>
-
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.response.consulta.Infos.ReceiverName}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***.
-                    {pagamentoPixExtrato.response.consulta.Infos.ReceiverTaxNumber.substring(
-                      3,
-                      6
-                    )}
-                    .
-                    {pagamentoPixExtrato.response.consulta.Infos.ReceiverTaxNumber.substring(
-                      6,
-                      9
-                    )}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.response.consulta.Infos.ReceiverBank}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
-                      ? pagamentoPixExtrato.conta.razao_social
-                      : pagamentoPixExtrato.conta.nome}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***
-                    {pagamentoPixExtrato.conta.documento.substring(3, 6)}
-                    {pagamentoPixExtrato.conta.documento.substring(6, 11)}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.banco_pagou}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ) : operationType === 41 &&
-            pagamentoPixExtrato.conta &&
-            pagamentoPixExtrato.response &&
-            pagamentoPixExtrato.response.pix_out &&
-            pagamentoPixExtrato.response.pix_out.FromTaxNumber ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Cancel"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(pagamentoPixExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {pagamentoPixExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.tipo_pix}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.descricao}
-                  </Typography>
-                </Box>
-
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.conta.nome}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***
-                    {pagamentoPixExtrato.conta.documento.substring(3, 6)}
-                    {pagamentoPixExtrato.conta.documento.substring(6, 11)}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.banco}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.response.pix_out.FromName}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***.
-                    {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
-                      3,
-                      6
-                    )}
-                    .
-                    {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
-                      6,
-                      9
-                    )}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.banco_pagou}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ) : operationType === 43 &&
-            pagamentoPixExtrato.conta &&
-            pagamentoPixExtrato.response.pix_out ? (
-            <Box
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignSelf: "center",
-                minWidth: "400px",
-              }}
-            >
-              <Box style={{ marginTop: "30px", padding: "15px" }}>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <img src={APP_CONFIG.assets.smallColoredLogo}></img>
-                  </Box>
-                  <ReactToPrint
-                    trigger={() => {
-                      return (
-                        <Button>
-                          <PrintIcon
-                            style={{
-                              color: APP_CONFIG.mainCollors.primary,
-                            }}
-                          />
-                        </Button>
-                      );
-                    }}
-                    content={() => componentRef.current}
-                  />
-                </Box>
-                <Box style={{ marginTop: "20px" }}>
-                  <Typography
-                    style={{
-                      color: APP_CONFIG.mainCollors.primary,
-                      fontSize: "20px",
-                    }}
-                  >
-                    {transferenciaExtrato.status === "Cancel"
-                      ? "Comprovante de estorno"
-                      : "Comprovante de transferência"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {moment
-                      .utc(pagamentoPixExtrato.created_at)
-                      .format("DD/MM/YYYY, HH:mm")}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Valor
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    R$ {pagamentoPixExtrato.valor}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Tipo de transferência
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.tipo_pix}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Descrição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.descricao}
-                  </Typography>
-                </Box>
-
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Destino
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Nome
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.response.pix_out.FromName}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***.
-                    {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
-                      3,
-                      6
-                    )}
-                    .
-                    {pagamentoPixExtrato.response.pix_out.FromTaxNumber.substring(
-                      6,
-                      9
-                    )}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.banco}
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                      marginTop: "20px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    Origem
-                  </Typography>
-                </Box>
-                <Box className={classes.lineGrey} />
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "20px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    {pagamentoPixExtrato.conta.tipo}
-                    {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
-                      ? "Razão Social"
-                      : "Nome"}
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.conta.tipo === "Pessoa Jurídica"
-                      ? pagamentoPixExtrato.conta.razao_social
-                      : pagamentoPixExtrato.conta.nome}
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Documento
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    ***
-                    {pagamentoPixExtrato.conta.documento.substring(3, 6)}
-                    {pagamentoPixExtrato.conta.documento.substring(6, 11)}
-                    -**
-                  </Typography>
-                </Box>
-                <Box
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "10px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <Typography
-                    style={{
-                      fontFamily: "Montserrat-ExtraBold",
-                      color: APP_CONFIG.mainCollors.primary,
-                    }}
-                  >
-                    Instituição
-                  </Typography>
-                  <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-                    {pagamentoPixExtrato.banco_pagou}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ) : null}
-        </Dialog>
-      ) : null}
-
+          </Box>
+        ) : null}
+      </Dialog>
       <Dialog
         open={semComprovante}
         onClose={() => {
@@ -2926,6 +2410,4 @@ const AccountStatement = () => {
       </Dialog>
     </Box>
   );
-};
-
-export default AccountStatement;
+}

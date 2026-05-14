@@ -1,21 +1,14 @@
 import { InputLabel, MenuItem, Select } from "@material-ui/core";
 import { useEffect, useState } from "react";
 
-import { APP_CONFIG } from "../../constants/config";
 import { getCidadeSearch } from "../../services/services";
 
-export default function SelectCidade({
-  state,
-  setState,
-  label = "Nome da cidade",
-  multiple = false,
-}) {
+export default function SelectCidade({ state, setState, multiple = false }) {
   const [cidades, setCidades] = useState([]);
 
   const getData = async () => {
-    const estado = APP_CONFIG?.estado ?? "";
     try {
-      const { data } = await getCidadeSearch(estado);
+      const { data } = await getCidadeSearch("GO");
       setCidades(data);
     } catch (err) {
       console.log(err);
@@ -33,7 +26,7 @@ export default function SelectCidade({
         shrink="true"
         style={{ marginBottom: "-14px" }}
       >
-        {label}
+        Nome da cidade
       </InputLabel>
       <Select
         labelId="select-label"
@@ -45,8 +38,8 @@ export default function SelectCidade({
         onChange={setState}
         multiple={multiple}
       >
-        {cidades.map((item, index) => (
-          <MenuItem key={index} value={item?.nome}>
+        {cidades.map((item) => (
+          <MenuItem key={item?.nome} value={item?.nome}>
             {item?.nome}
           </MenuItem>
         ))}

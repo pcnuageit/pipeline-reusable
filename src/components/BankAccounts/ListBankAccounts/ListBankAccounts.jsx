@@ -1,5 +1,5 @@
 import { Box, Button, LinearProgress, Menu, MenuItem } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
 import { delContaBancaria, loadContaBancaria } from "../../../actions/actions";
@@ -16,7 +16,7 @@ const columns = [
 
 const ListBankAccounts = () => {
   const contasBancariasUser = useSelector((state) => state.contasBancarias);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   const token = useAuth();
   const dispatch = useDispatch();
 

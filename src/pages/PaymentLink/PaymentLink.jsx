@@ -8,18 +8,19 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import CustomTable from "../../components/CustomTable/CustomTable";
 
 import Pagination from "@material-ui/lab/Pagination";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory, useParams } from "react-router-dom";
+import { generatePath, useHistory, useParams } from "react-router-dom";
 
 import { faCopy, faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
 import { loadLinkPagamentoFilter } from "../../actions/actions";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
@@ -47,13 +48,17 @@ const columns = [
         <Box display="flex" justifyContent="center">
           <TextField
             value={
-              APP_CONFIG.linkDePagamento + "/link-pagamento/" + id + "/pagar"
+              "https://banking.integrapay.com.br/link-pagamento/" +
+              id +
+              "/pagar"
             }
           />
           <Tooltip title="Copiar">
             <CopyToClipboard
               text={
-                APP_CONFIG.linkDePagamento + "/link-pagamento/" + id + "/pagar"
+                "https://banking.integrapay.com.br/link-pagamento/" +
+                id +
+                "/pagar"
               }
             >
               <Button
@@ -167,7 +172,7 @@ const AccountStatement = () => {
   const history = useHistory();
   const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const userData = useSelector((state) => state.userData);
-  const id = useParams()?.id ?? "";
+  const { id } = useParams();
   useEffect(() => {
     return () => {
       setFilters({ ...filters });
@@ -182,8 +187,8 @@ const AccountStatement = () => {
         debouncedLike,
         filters.order,
         filters.mostrar,
-        id
-      )
+        id,
+      ),
     );
   }, [page, debouncedLike, filters.order, filters.mostrar, id]);
 
@@ -193,31 +198,26 @@ const AccountStatement = () => {
     setPage(value);
   };
 
-  /* const handleClickRow = (row) => {
-		const path = generatePath('/dashboard/detalhes-link/:id/ver', {
-			id: row.id,
-		});
-		history.push(path);
-	}; */
+  const handleClickRow = (row) => {
+    const path = generatePath(
+      "/dashboard/gerenciar-lista-contas/:id/detalhes-link",
+      {
+        id: row.id,
+      },
+    );
+    history.push(path);
+  };
 
   return (
-    <Box display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column" padding="0px">
+      <Box style={{ marginBottom: "10px" }}>
+        <CustomHeader pageTitle="Link de Pagamento" />
+      </Box>
       <Box
         display="flex"
         justifyContent="space-between"
         flexDirection={matches ? "column" : null}
       >
-        <Typography
-          style={{
-            marginTop: "8px",
-            color: APP_CONFIG.mainCollors.primary,
-            marginBottom: 30,
-          }}
-          variant="h4"
-        >
-          Link de Pagamento
-        </Typography>
-
         {/* {token && userData === '' ? null : (
 					<Link to="novo-link-pagamento">
 						<GradientButton buttonText="+Novo Link" />
@@ -236,7 +236,7 @@ const AccountStatement = () => {
           <TextField
             variant="outlined"
             fullWidth
-            placeholder="Pesquisar por valor, descrição, número do pedido..."
+            label="Pesquisar por valor, descrição, número do pedido..."
             value={filters.like}
             onChange={(e) =>
               setFilters({
@@ -252,7 +252,7 @@ const AccountStatement = () => {
         <CustomTable
           columns={columns}
           data={linkPagamentos.data}
-          /* handleClickRow={handleClickRow} */
+          handleClickRow={handleClickRow}
         />
       ) : (
         <LinearProgress />

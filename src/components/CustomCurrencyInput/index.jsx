@@ -4,10 +4,9 @@ import CurrencyInput from "react-currency-input";
 export default function CustomCurrencyInput({
   label = "Pesquisar por valor",
   value = "",
-  onChangeEvent = (event, maskedvalue, floatvalue) => null,
+  onChangeEvent = (event, maskedValue, floatValue) => null,
   error,
-  prefix = "R$ ",
-  gridSm = 4,
+  gridSizeSm = 4,
 }) {
   const classes = useStyles();
   function errorMsg() {
@@ -16,8 +15,8 @@ export default function CustomCurrencyInput({
   }
 
   return (
-    <Grid item xs={12} sm={gridSm}>
-      <div style={{ position: "relative", marginTop: "16px" }}>
+    <Grid item xs={12} sm={gridSizeSm}>
+      <div style={{ position: "relative", marginTop: "4px" }}>
         <label className={classes.label}>{label}</label>
         <div
           className={classes.outline}
@@ -29,7 +28,7 @@ export default function CustomCurrencyInput({
             className={classes.input}
             decimalSeparator=","
             groupSeparator="."
-            prefix={prefix}
+            prefix="R$ "
           />
         </div>
       </div>
@@ -62,6 +61,7 @@ const useStyles = makeStyles((theme) => ({
     height: "45px",
     borderRadius: "27px",
     border: "1px solid",
+    width: "100%",
   },
   input: {
     color: "#15191E",

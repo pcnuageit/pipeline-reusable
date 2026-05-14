@@ -1,4 +1,3 @@
-import { faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import {
   Box,
   Button,
@@ -6,139 +5,192 @@ import {
   DialogTitle,
   FormControl,
   LinearProgress,
-  makeStyles,
-  Menu,
-  MenuItem,
   TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import React, { useEffect, useState } from "react";
+import { makeStyles } from "@material-ui/styles";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { generatePath, useHistory, useParams } from "react-router";
-import {
-  getAllContasAction,
-  getTerminaisPOSFilterAction,
-  postTerminalPosAction,
-} from "../../actions/actions";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Pagination from "@material-ui/lab/Pagination";
+import { generatePath, useHistory } from "react-router-dom";
 import { toast } from "react-toastify";
-import CustomButton from "../../components/CustomButton/CustomButton";
-import CustomTable from "../../components/CustomTable/CustomTable";
+import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
-import SplitModal from "../../components/SplitModal/SplitModal";
-import { APP_CONFIG } from "../../constants/config";
+
+import {
+  getTerminaisPOSAction,
+  loadUserData,
+  postTerminalPosAction,
+  setHeaderLike,
+} from "../../actions/actions";
 import useAuth from "../../hooks/useAuth";
+
+import { faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Pagination } from "@mui/material";
 import useDebounce from "../../hooks/useDebounce";
 
+import moment from "moment";
+
+import CustomTable from "../../components/CustomTable/CustomTable";
+
+import CustomButton from "../../components/CustomButton/CustomButton";
+import { APP_CONFIG } from "../../constants/config";
+
 const useStyles = makeStyles((theme) => ({
-  SplitModal: {
-    padding: "20px",
+  root: {
+    display: "flex",
   },
-  saqueHeader: {
-    background: APP_CONFIG.mainCollors.primary,
-    color: "white",
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    height: "100%",
+    padding: "10px",
+  },
+  header: {
+    display: "flex",
+    alignContent: "center",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+  },
+  dadosBox: {
+    display: "flex",
+    flexDirection: "row",
+    marginTop: "30px",
+    marginLeft: "0px",
+  },
+  cardContainer: {
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
+  },
+  contadorStyle: {
+    display: "flex",
+    fontSize: "30px",
+    fontFamily: "Montserrat-SemiBold",
+  },
+  paper: {
+    backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+    display: "flex",
+    width: "100%",
+    flexDirection: "column",
+    boxShadow: "none",
+    borderRadius: "0px",
+    alignSelf: "center",
+    modal: {
+      outline: " none",
+      display: "flex",
+      flexDirection: "column",
+      alignSelf: "center",
+      position: "absolute",
+      top: "10%",
+      left: "35%",
+      width: "30%",
+      height: "80%",
+      backgroundColor: "white",
+      border: "0px solid #000",
+      boxShadow: 24,
+    },
+
+    closeModalButton: {
+      alignSelf: "end",
+      padding: "5px",
+      "&:hover": {
+        backgroundColor: APP_CONFIG.mainCollors.primaryVariant,
+        cursor: "pointer",
+      },
+    },
+    inputLabelNoShrink: {
+      transform: "translate(45px, 15px) scale(1)",
+    },
+    currencyInput: {
+      marginBottom: "6px",
+
+      alignSelf: "center",
+      textAlign: "center",
+      height: 45,
+      fontSize: 17,
+      borderWidth: "0px !important",
+      borderRadius: 27,
+
+      color: APP_CONFIG.mainCollors.primary,
+      backgroundColor: "transparent",
+      fontFamily: "Montserrat-Regular",
+    },
   },
 }));
-
-const columns = [
-  {
-    headerText: "Criado em",
-    key: "created_at",
-    CustomValue: (data) => {
-      const p = data.split(/\D/g);
-      const dataFormatada = [p[2], p[1], p[0]].join("/");
-      return (
-        <Box display="flex" justifyContent="center">
-          <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
-          <Typography style={{ marginLeft: "6px" }}>{dataFormatada}</Typography>
-        </Box>
-      );
-    },
-  },
-  {
-    headerText: "Identificador do POS",
-    key: "id",
-    CustomValue: (value) => (
-      <Box display="flex" justifyContent="center">
-        <Typography>{value}</Typography>
-      </Box>
-    ),
-  },
-  {
-    headerText: "Nome",
-    key: "name",
-    CustomValue: (name) => {
-      return (
-        <Typography
-          style={{
-            borderRadius: "27px",
-          }}
-        >
-          <b>{name}</b>
-        </Typography>
-      );
-    },
-  },
-];
-
-const ListaTerminaisPOS = () => {
-  const token = useAuth();
+export default function ListaTerminaisPOS() {
   const classes = useStyles();
   const theme = useTheme();
-  const matches = useMediaQuery(theme.breakpoints.down("sm"));
   const dispatch = useDispatch();
-  const [page, setPage] = useState(1);
   const history = useHistory();
-  const terminaisPOS = useSelector((state) => state.terminaisPOS);
-  const contasUser = useSelector((state) => state.contas);
-  const userData = useSelector((state) => state.userData);
-  const [openDialog, setOpenDialog] = useState(false);
+  const matches = useMediaQuery(theme.breakpoints.down("sm"));
+  const token = useAuth();
   const [loading, setLoading] = useState(false);
-  const [tokenPos, setTokenPos] = useState("");
-
-  const id = useParams()?.id ?? "";
-  useEffect(() => {
-    dispatch(getAllContasAction(token));
-  }, []);
+  const [data_liberacao, setData_liberacao] = useState("");
+  const terminaisPOS = useSelector((state) => state.terminaisPOS);
+  const userData = useSelector((state) => state.userData);
+  const [page, setPage] = useState(1);
+  const [value, setValue] = useState(0);
   const [filters, setFilters] = useState({
-    like: "",
     order: "",
     mostrar: "",
+    like: "",
+    type: "",
   });
-
   const debouncedLike = useDebounce(filters.like, 800);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [tokenPos, setTokenPos] = useState("");
+
+  moment.locale();
 
   useEffect(() => {
-    dispatch(getTerminaisPOSFilterAction(token, page, debouncedLike, id));
-  }, [page, debouncedLike, id]);
+    dispatch(loadUserData(token));
+  }, [token]);
+
+  useEffect(() => {
+    dispatch(
+      getTerminaisPOSAction(
+        token,
+        page,
+        userData.id,
+        debouncedLike,
+        filters.order,
+        filters.mostrar,
+      ),
+    );
+  }, [token, page, filters.order, filters.mostrar, debouncedLike, userData.id]);
 
   useEffect(() => {
     return () => {
-      setFilters({ ...filters });
+      dispatch(setHeaderLike(""));
     };
   }, []);
 
-  const handleStorePos = async () => {
-    const resStorePos = await dispatch(
-      postTerminalPosAction(token, id, tokenPos)
-    );
-    if (resStorePos) {
-      toast.success(
-        "POS habilitado! Ele será visível após a primeira transação."
+  const handleClickRow = (row) => {
+    if (row.id) {
+      const path = generatePath(
+        "/dashboard/adquirencia/acao/terminais-pos/:id",
+        {
+          subsectionId: row.id,
+        },
       );
-      handleClose();
-      setTokenPos("");
-    } else {
-      toast.error("Erro ao habilitar POS!");
+      history.push(path);
     }
   };
 
   const handleChangePage = (e, value) => {
     setPage(value);
+  };
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+  const handleChangeIndex = (index) => {
+    setValue(index);
   };
 
   const handleNewPos = () => {
@@ -149,153 +201,172 @@ const ListaTerminaisPOS = () => {
     setOpenDialog(false);
   };
 
-  const handleClickRow = (row) => {
-    if (row.id) {
-      const path = generatePath(
-        "/dashboard/gerenciar-contas/:id/detalhes-terminal-pos",
-        {
-          id: row.id,
-        }
+  const handleStorePos = async () => {
+    const resStorePos = await dispatch(
+      postTerminalPosAction(token, userData.id, tokenPos),
+    );
+    if (resStorePos) {
+      toast.error("Erro ao habilitar POS!");
+    } else {
+      toast.success(
+        "POS habilitado! Ele será visível após a primeira transação.",
       );
-      history.push(path);
+      handleClose();
+      setTokenPos("");
     }
   };
+  /* 
+	useEffect(() => {
+		return () => {
+			setFilters({ ...filters });
+		};
+	}, []); */
 
-  const Editar = ({ row }) => {
-    const [anchorEl, setAnchorEl] = useState(null);
-    const handleClick = (event) => {
-      setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-      setAnchorEl(null);
-    };
-    const [openSplit, setOpenSplit] = useState(false);
+  const columns = [
+    {
+      headerText: "Data",
+      key: "created_at",
+      CustomValue: (data) => {
+        const dataFormatada = moment.utc(data).format("dd/MM/yyyy HH:mm:ss");
+        return (
+          <Box display="flex" justifyContent="center">
+            <FontAwesomeIcon icon={faCalendarAlt} size="lg" />
+            <Typography style={{ marginLeft: "6px" }}>
+              {dataFormatada}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      headerText: "Identificador do POS",
+      key: "id",
+      CustomValue: (value) => (
+        <Box display="flex" justifyContent="center">
+          <Typography>{value}</Typography>
+        </Box>
+      ),
+    },
+    {
+      headerText: "Nome",
+      key: "name",
+      CustomValue: (name) => {
+        return (
+          <Typography
+            style={{
+              borderRadius: "27px",
+            }}
+          >
+            <b>{name}</b>
+          </Typography>
+        );
+      },
+    },
+  ];
 
-    return (
-      <Box>
-        {token && userData === "" ? null : (
-          <>
-            <Button
-              style={{ height: "15px", width: "10px" }}
-              aria-controls="simple-menu"
-              aria-haspopup="true"
-              onClick={handleClick}
-            >
-              ...
-            </Button>
-            <Menu
-              id="simple-menu"
-              anchorEl={anchorEl}
-              keepMounted
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
-            >
-              <MenuItem
-                onClick={() => {
-                  setAnchorEl(null);
-                  window.open(`${row.url}`, "Boleto", "height=1000,width=1000");
-                }}
-              >
-                Visualizar
-              </MenuItem>
-            </Menu>
-            {openSplit ? (
-              <SplitModal
-                row={row}
-                open={openSplit}
-                onClose={() => setOpenSplit(false)}
-                contasUser={contasUser.data}
-              />
-            ) : null}
-          </>
-        )}
-      </Box>
-    );
+  const Editar = (row) => {
+    return <></>;
   };
 
   return (
-    <Box display="flex" flexDirection="column">
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        flexDirection={matches ? "column" : null}
-        alignItems="center"
-      >
-        <Typography
-          style={{
-            marginTop: "8px",
-            marginBottom: 30,
-            color: APP_CONFIG.mainCollors.primary,
-          }}
-          variant="h4"
-        >
-          Terminais POS
-        </Typography>
-        <CustomButton color="purple" onClick={handleNewPos}>
-          <Typography style={{ fontSize: "14px" }}>Habilitar POS</Typography>
-        </CustomButton>
+    <Box className={classes.root}>
+      <LoadingScreen isLoading={loading} />
 
-        {/* {token && userData === '' ? null : (
-					<Box>
-						<Button
-							style={{ borderRadius: '27px', marginRight: '12px' }}
-							variant="outlined"
-						>
-							Boleto em Lote
-						</Button>
-						<CustomButton
-							onClick={handleNewBoleto}
-							buttonText="Nova Cobrança"
-						/>
-					</Box>
-				)} */}
-      </Box>
-      <Box
-        style={{
-          width: "100%",
-          backgroundColor: APP_CONFIG.mainCollors.backgrounds,
-          borderTopLeftRadius: 27,
-          borderTopRightRadius: 27,
-        }}
-      >
-        <Box marginTop="16px" marginBottom="16px" style={{ margin: 30 }}>
-          <TextField
-            variant="outlined"
-            fullWidth
-            placeholder="Procurar por documento, nome..."
-            value={filters.like}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                like: e.target.value,
-              })
-            }
-          />
+      <Box className={classes.main}>
+        <CustomHeader pageTitle="Terminais POS" />
+
+        <Box className={classes.dadosBox}>
+          <Box
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              style={{
+                display: "flex",
+                backgroundColor: APP_CONFIG.mainCollors.backgrounds,
+                alignItems: "center",
+                borderRadius: "17px",
+                flexDirection: "column",
+                /* maxWidth: '90%', */
+                minWidth: "100%",
+
+                /* alignItems: 'center', */
+              }}
+            >
+              <Box style={{ alignSelf: "flex-end", padding: "12px" }}>
+                <CustomButton color="purple" onClick={handleNewPos}>
+                  <Typography style={{ fontSize: "14px" }}>
+                    Habilitar POS
+                  </Typography>
+                </CustomButton>
+              </Box>
+              <Box
+                style={{
+                  width: "100%",
+
+                  borderRadius: 27,
+                  borderTopLeftRadius: 27,
+                  borderTopRightRadius: 27,
+                }}
+              >
+                <Box
+                  display="flex"
+                  style={{
+                    marginTop: "10px",
+                    marginBottom: "16px",
+                    margin: 30,
+                  }}
+                >
+                  <Box
+                    style={
+                      value === 3
+                        ? {
+                            width: "100%",
+                            borderTopRightRadius: 27,
+                            borderTopLeftRadius: 27,
+                          }
+                        : {
+                            width: "100%",
+                            borderTopRightRadius: 27,
+                            borderTopLeftRadius: 27,
+                          }
+                    }
+                  >
+                    {terminaisPOS.data && terminaisPOS.per_page > 0 ? (
+                      <>
+                        <Box minWidth={!matches ? "800px" : null}>
+                          <CustomTable
+                            handleClickRow={handleClickRow}
+                            data={terminaisPOS.data}
+                            columns={columns}
+                          />
+                        </Box>
+                        <Box alignSelf="flex-end" marginTop="8px">
+                          <Pagination
+                            variant="outlined"
+                            color="secondary"
+                            size="large"
+                            count={terminaisPOS.last_page}
+                            onChange={handleChangePage}
+                            page={page}
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <Box>
+                        <LinearProgress color="secondary" />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </Box>
       </Box>
-
-      <>
-        {terminaisPOS.data && terminaisPOS.per_page ? (
-          <CustomTable
-            columns={columns}
-            data={terminaisPOS.data}
-            Editar={Editar}
-            handleClickRow={handleClickRow}
-          />
-        ) : (
-          <LinearProgress />
-        )}
-        <Box alignSelf="flex-end" marginTop="8px">
-          <Pagination
-            variant="outlined"
-            color="secondary"
-            size="large"
-            count={terminaisPOS.last_page}
-            onChange={handleChangePage}
-            page={page}
-          />
-        </Box>
-      </>
       <Dialog
         onClose={handleClose}
         open={openDialog}
@@ -369,6 +440,4 @@ const ListaTerminaisPOS = () => {
       </Dialog>
     </Box>
   );
-};
-
-export default ListaTerminaisPOS;
+}

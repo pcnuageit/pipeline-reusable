@@ -53,7 +53,7 @@ function AddAccountsDialog({ proposal, open = false, onClose = () => {} }) {
     },
     {
       refetchOnMountOrArgChange: true,
-    }
+    },
   );
 
   const { data: pjAccounts } = useGetAccountsQuery(
@@ -65,7 +65,7 @@ function AddAccountsDialog({ proposal, open = false, onClose = () => {} }) {
     },
     {
       refetchOnMountOrArgChange: true,
-    }
+    },
   );
 
   const handleSubmit = async () => {
@@ -116,6 +116,10 @@ function AddAccountsDialog({ proposal, open = false, onClose = () => {} }) {
   };
 
   useEffect(() => {
+    console.log(accountIdListToAdd);
+  }, [accountIdListToAdd]);
+
+  useEffect(() => {
     if (filters.tipo === "1") setShowAccounts(true);
     if (filters.tipo === "2" && contaPjId) setShowAccounts(true);
     if (filters.tipo === "2" && !contaPjId) setShowAccounts(false);
@@ -132,7 +136,7 @@ function AddAccountsDialog({ proposal, open = false, onClose = () => {} }) {
       headerText: "Documento",
       key: "custom_documento",
       FullObject: (data) => (
-        <Typography>{documentMask(data.cnpj ?? data.documento)}</Typography>
+        <Typography>{documentMask(data?.cnpj ?? data?.documento)}</Typography>
       ),
     },
     { headerText: "Email", key: "email" },
@@ -326,7 +330,7 @@ function AddAccountsDialog({ proposal, open = false, onClose = () => {} }) {
                 />
               </Box>
             ) : (
-              <Box>
+              <Box width="60vw">
                 <LinearProgress color="secondary" />
               </Box>
             )}

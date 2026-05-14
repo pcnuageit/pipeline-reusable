@@ -1,0 +1,107 @@
+import {
+  faCreditCard,
+  faGift,
+  faMobileAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+  Box,
+  makeStyles,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@material-ui/core";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useHistory, useParams } from "react-router";
+import AccountCollectionItem from "../../components/AccountCollections/AccountCollectionItem/AccountCollectionItem";
+import CustomBreadcrumbs from "../../components/CustomBreadcrumbs/CustomBreadcrumbs";
+import LoadingScreen from "../../components/LoadingScreen/LoadingScreen";
+import useAuth from "../../hooks/useAuth";
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    position: "absolute",
+    display: "flex",
+    flexDirection: "column",
+  },
+  headerContainer: {
+    /* padding: '80px 400px ', */
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    marginBottom: "25px",
+  },
+  pageTitle: {
+    color: "#c6930a",
+    fontFamily: "Montserrat-SemiBold",
+  },
+  subTitleContainer: {
+    margin: "15px 15px",
+    display: "flex",
+    justifyContent: "space-between",
+  },
+  contentContainer: {
+    marginTop: "20px",
+  },
+  responsiveContainer: {
+    display: "flex",
+    justifyContent: "center",
+    [theme.breakpoints.down(850)]: {
+      flexDirection: "column",
+      alignItems: "center",
+    },
+  },
+}));
+
+const ListPartner = () => {
+  const classes = useStyles();
+  const token = useAuth();
+  const history = useHistory();
+  const theme = useTheme();
+  const [loading, setLoading] = useState(false);
+  const matches = useMediaQuery(theme.breakpoints.down("sm"));
+  const { id } = useParams();
+  const dispatch = useDispatch();
+
+  return (
+    <Box display="flex" flexDirection="column" className={classes.root}>
+      <LoadingScreen isLoading={loading} />
+      <CustomBreadcrumbs
+        path1="Contas"
+        path2="Usuários"
+        to1="/dashboard/contas"
+        to2={`/dashboard/contas/1/users`}
+        path3="Parceiros"
+      />
+      <Typography style={{ marginTop: "8px", color: "#9D9CC6" }} variant="h4">
+        Parceiros
+      </Typography>
+
+      <Box className={classes.responsiveContainer}>
+        <Box display="flex" alignItems="center">
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "jeitto"
+            /*  : null} */ text="Jeitto"
+            icon={faCreditCard}
+          />
+        </Box>
+        <Box display="flex" alignItems="center">
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "recarga-celular-admin"
+            /*  : null} */ text="Celcoin Recargar"
+            icon={faMobileAlt}
+          />
+        </Box>
+        <Box display="flex" alignItems="center">
+          <AccountCollectionItem
+            link=/* {permissoes.includes('Cobranca - Cartao') ?  */ "gift-cards-admin"
+            /*  : null} */ text="Celcoin GiftCard"
+            icon={faGift}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default ListPartner;

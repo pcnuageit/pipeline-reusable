@@ -15,15 +15,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── Banco Concorrência ──
-  concorrencia:
-    uses: ./.github/workflows/deploy-dashboard-concorrencia.yml
-    secrets: inherit
-
-  concorrencia-mt:
-    uses: ./.github/workflows/deploy-dashboard-concorrencia-mt.yml
-    secrets: inherit
-
   # ── Banco AproBank ──
   aprobank:
     uses: ./.github/workflows/deploy-banco-web-pj-aprobank.yml

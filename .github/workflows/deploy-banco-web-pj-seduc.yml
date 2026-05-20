@@ -13,9 +13,9 @@ jobs:
       s3_bucket: "web-pj-seduc-prod-385697366782"
       cloudfront_distribution_id: "E23FOAHBDO6V8B"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://dncpv8soeg0sz.cloudfront.net/api"
+      react_app_api_url: "https://sandbox.qitech.integrapay.com.br/api"
       react_app_front_app: "seduc"
-      react_app_title: "SEDUC"
+      react_app_title: "Seduc"
       react_app_description: "Dashboard da Secretaria de Estado da Educação - SEDUC"
       react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
     secrets: inherit

@@ -13,7 +13,7 @@ jobs:
       s3_bucket: "web-pj-corumbaiba-prod-385697366782"
       cloudfront_distribution_id: "E250G8FI0Q8LBC"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://d1m0rnmxv3qomn.cloudfront.net/api"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
       react_app_front_app: "corumbaiba"
       react_app_title: "Corumbaiba"
       react_app_description: "Dashboard da prefeitura de Corumbaíba"

@@ -13,7 +13,7 @@ jobs:
       s3_bucket: "web-pj-itapuranga-prod-385697366782"
       cloudfront_distribution_id: "E3NOSPSAPP12A5"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://dex1mifd6pkj3.cloudfront.net/api"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
       react_app_front_app: "itapuranga"
       react_app_title: "Itapuranga"
       react_app_description: "Dashboard da prefeitura de Itapuranga"

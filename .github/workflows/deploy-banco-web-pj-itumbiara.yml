@@ -13,7 +13,7 @@ jobs:
       s3_bucket: "web-pj-itumbiara-prod-385697366782"
       cloudfront_distribution_id: "E6UZSE2F7EGPI"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://d4m90r8vlj2sn.cloudfront.net/api"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
       react_app_front_app: "itumbiara"
       react_app_title: "Itumbiara"
       react_app_description: "Dashboard da prefeitura de Itumbiara"

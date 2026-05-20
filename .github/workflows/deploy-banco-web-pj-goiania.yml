@@ -13,9 +13,9 @@ jobs:
       s3_bucket: "web-pj-goiania-prod-385697366782"
       cloudfront_distribution_id: "E1844YN8RLPO8O"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://dxnhvmh3oe1se.cloudfront.net/api"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
       react_app_front_app: "goiania"
-      react_app_title: "Goiania"
+      react_app_title: "goiania"
       react_app_description: "Dashboard da Secretaria Goiânia"
       react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
     secrets: inherit

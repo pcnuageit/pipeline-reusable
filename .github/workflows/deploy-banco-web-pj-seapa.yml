@@ -13,7 +13,7 @@ jobs:
       s3_bucket: "web-pj-seapa-prod-385697366782"
       cloudfront_distribution_id: "E26FVJ223XNY7W"
       aws_region: "sa-east-1"
-      react_app_api_url: "https://dotm20v6sl5t5.cloudfront.net/api"
+      react_app_api_url: "https://d26txt3qcqqefr.cloudfront.net/api"
       react_app_front_app: "seapa"
       react_app_title: "SEAPA"
       react_app_description: "Dashboard da Secretaria de Estado de Agricultura, Pecuária e Abastecimento - SEAPA"

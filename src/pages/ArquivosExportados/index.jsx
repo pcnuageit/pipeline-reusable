@@ -20,9 +20,9 @@ import useDebounce from "../../hooks/useDebounce";
 
 import { Download } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import CustomButtonReloadPage from "../../components/CustomButtonReloadPage";
 import CustomHeader from "../../components/CustomHeader/CustomHeader";
 import CustomTable from "../../components/CustomTable/CustomTable";
-import { TableHeaderButton } from "../../components/TableHeaderButtons";
 import {
   getArquivosExportados,
   getDownloadArquivoExportado,
@@ -205,6 +205,7 @@ export default function ArquivosExportados() {
     <Box className={classes.root}>
       <Box className={classes.main}>
         <CustomHeader pageTitle="Arquivos exportados" customButtons={[]} />
+        <CustomButtonReloadPage />
 
         <Box className={classes.dadosBox}>
           <Box
@@ -232,13 +233,10 @@ export default function ArquivosExportados() {
                 }}
               >
                 <Box style={{ margin: 30, flex: 1 }}>
-                  <TableHeaderButton
+                  {/* <TableHeaderButton
                     text="Atualizar"
-                    onClick={() => {
-                      getData();
-                      setPage(1);
-                    }}
-                  />
+                    onClick={() => setPage(1)}}
+                  /> */}
 
                   {/* <Grid container spacing={3}>
                     <Grid item xs={12} sm={4}>

@@ -1008,13 +1008,11 @@ export default function ListaBeneficiarios() {
     });
   };
 
-  const filters = `nome=${filter.nome}&documento=${filter.documento}&email=${
-    filter.email
-  }&celular=${filter.celular}&razao_social=${
-    filter.razao_social
-  }&tipo_beneficio_id=${JSON.stringify(
-    filter.tipo_beneficio_id,
-  )}&cidade=${JSON.stringify(filter.cidade)}&mostrar=${filter.mostrar}`;
+  const filters = `nome=${filter.nome}&documento=${filter.documento}&email=${filter.email
+    }&celular=${filter.celular}&razao_social=${filter.razao_social
+    }&tipo_beneficio_id=${JSON.stringify(
+      filter.tipo_beneficio_id,
+    )}&cidade=${JSON.stringify(filter.cidade)}&mostrar=${filter.mostrar}`;
 
   const getData = async (page = 1) => {
     setLoading(true);
@@ -1032,8 +1030,9 @@ export default function ListaBeneficiarios() {
     toast.warn(
       `Exportando arquivo ${type}. Você poderá fazer o download na área "Arquivos exportados"`,
     );
+    let url = `${process.env.REACT_APP_API_URL}/concorrencia/beneficiario/export`;
     try {
-      await getExportTable(token, "beneficiario", type, page, filters);
+      await getExportTable(token, url, type, page, filters);
     } catch (err) {
       console.log(err);
       toast.error("Ocorreu um erro ao exportar o arquivo. Tente novamente.");
@@ -1050,22 +1049,22 @@ export default function ListaBeneficiarios() {
 
   const beneficiarioButtons = id
     ? [
-        {
-          text: "Arquivos em lote",
-          callback: () => {
-            const path = generatePath(
-              "lista-arquivos-de-lote?type=beneficiario",
-            );
-            history.push(path);
-          },
+      {
+        text: "Arquivos em lote",
+        callback: () => {
+          const path = generatePath(
+            "lista-arquivos-de-lote?type=beneficiario",
+          );
+          history.push(path);
         },
-        {
-          text: "Novo cadastro",
-          callback: () => setShowCadastrarBeneficiarioModal(true),
-          color: "horizontalGradient",
-          icon: <AddIcon style={{ color: "white", marginRight: "10px" }} />,
-        },
-      ]
+      },
+      {
+        text: "Novo cadastro",
+        callback: () => setShowCadastrarBeneficiarioModal(true),
+        color: "horizontalGradient",
+        icon: <AddIcon style={{ color: "white", marginRight: "10px" }} />,
+      },
+    ]
     : [];
 
   return (
@@ -1322,8 +1321,8 @@ export default function ListaBeneficiarios() {
                     }}
                   >
                     {!loading &&
-                    listaBeneficiarios.data &&
-                    listaBeneficiarios.per_page ? (
+                      listaBeneficiarios.data &&
+                      listaBeneficiarios.per_page ? (
                       <>
                         <Box minWidth={!matches ? "800px" : null}>
                           <CustomTable

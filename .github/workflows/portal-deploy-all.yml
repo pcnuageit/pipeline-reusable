@@ -1,0 +1,69 @@
+name: "Portal — Deploy ALL Production"
+
+on:
+  push:
+    branches:
+      - sandbox_concorrencia
+
+  workflow_dispatch:
+
+jobs:
+  aprobank:
+    uses: ./.github/workflows/portal-deploy-aprobank.yml
+    secrets: inherit
+
+  amazonbank:
+    uses: ./.github/workflows/portal-deploy-amazonbank.yml
+    secrets: inherit
+
+  corumbaiba:
+    uses: ./.github/workflows/portal-deploy-corumbaiba.yml
+    secrets: inherit
+
+  firminopolis:
+    uses: ./.github/workflows/portal-deploy-firminopolis.yml
+    secrets: inherit
+
+  goiania:
+    uses: ./.github/workflows/portal-deploy-goiania.yml
+    secrets: inherit
+
+  itaberai:
+    uses: ./.github/workflows/portal-deploy-itaberai.yml
+    secrets: inherit
+
+  itapuranga:
+    uses: ./.github/workflows/portal-deploy-itapuranga.yml
+    secrets: inherit
+
+  itumbiara:
+    uses: ./.github/workflows/portal-deploy-itumbiara.yml
+    secrets: inherit
+
+  pmgo:
+    uses: ./.github/workflows/portal-deploy-pmgo.yml
+    secrets: inherit
+
+  retomada:
+    uses: ./.github/workflows/portal-deploy-retomada.yml
+    secrets: inherit
+
+  seapa:
+    uses: ./.github/workflows/portal-deploy-seapa.yml
+    secrets: inherit
+
+  secti:
+    uses: ./.github/workflows/portal-deploy-secti.yml
+    secrets: inherit
+
+  seds:
+    uses: ./.github/workflows/portal-deploy-seds.yml
+    secrets: inherit
+
+  seduc:
+    uses: ./.github/workflows/portal-deploy-seduc.yml
+    secrets: inherit
+
+  seaf:
+    uses: ./.github/workflows/portal-deploy-seaf.yml
+    secrets: inherit

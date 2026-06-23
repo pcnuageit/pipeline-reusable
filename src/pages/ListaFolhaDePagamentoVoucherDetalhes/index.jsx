@@ -368,6 +368,9 @@ export default function ListaFolhaDePagamentoVoucherDetalhes() {
                                   (row?.status === "Aguardando" &&
                                     row?.response)
                                 }
+                                patchStatus={
+                                  row?.status === "Aprovado" ? null : "voucher"
+                                }
                               />
                             )}
                           />

@@ -256,8 +256,8 @@ export function CadastroEmLote({
             )}
 
             {tipo === "pagamento_cartao" ||
-            tipo === "pagamento_estabelecimento" ||
-            tipo === "pagamento_voucher" ? (
+              tipo === "pagamento_estabelecimento" ||
+              tipo === "pagamento_voucher" ? (
               <Box
                 style={{
                   display: "flex",

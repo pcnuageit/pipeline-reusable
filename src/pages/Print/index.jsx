@@ -14,7 +14,8 @@ export default function Print() {
     case "comprovante_pix":
       return <ComprovantePix />;
     case "comprovante_transacoes_cartao":
-      return <ComprovanteTransacoesCartao />;
+    case "pagamentos_recebidos":
+      return <ComprovanteTransacoesCartao type={type} />;
     default:
       return null;
   }

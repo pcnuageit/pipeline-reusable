@@ -19,7 +19,7 @@ export default function ExportTableButtons({
   const [loading, setLoading] = useState(false);
 
   const handleExportTable = async (type) => {
-    let url = `${API_URL}/concorrencia/${path}`;
+    let url = `${API_URL}/concorrencia/${path}/export`;
     if (apiPath) {
       url = `${API_URL}/${apiPath}`;
     }

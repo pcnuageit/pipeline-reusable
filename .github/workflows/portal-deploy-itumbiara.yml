@@ -1,0 +1,21 @@
+name: "Portal — Deploy Itumbiara"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "itumbiara"
+      environment: "production"
+      s3_bucket: "portal-itumbiara-prod-385697366782"
+      cloudfront_distribution_id: "E3G7UF0A3TDLAR"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "itumbiara"
+      react_app_title: "Itumbiara"
+      react_app_description: "Dashboard da prefeitura de Itumbiara"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

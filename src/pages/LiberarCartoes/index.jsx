@@ -149,6 +149,7 @@ export default function LiberarCartoes() {
 
   const resetFilters = () => {
     setPage(1);
+    setRegistros([]);
     setFilter({
       tipo_beneficio_id: "",
       documento: "",
@@ -176,10 +177,17 @@ export default function LiberarCartoes() {
     setRegistros(selected);
   };
 
-  const handleLiberarCartao = async (dataToken) => {
+  const handleLiberarCartao = async (password) => {
     setLoading(true);
     try {
-      await postLiberarCartoes(token, id, registros, aprovarTodos, filters);
+      await postLiberarCartoes(
+        token,
+        id,
+        password,
+        registros,
+        aprovarTodos,
+        filters,
+      );
 
       toast.success("Cartões liberados");
       setRegistros([]);
@@ -502,6 +510,7 @@ export function ModalLiberarCartoes({
 }) {
   const classes = useStyles();
   const [dataToken, setDataToken] = useState("");
+  const [password, setPassword] = useState("");
   const [clicked, setClicked] = useState(false);
 
   const handelCLickDebounce = () => {
@@ -549,6 +558,17 @@ export function ModalLiberarCartoes({
               marginTop: "30px",
             }}
           >
+            <Typography>Digite sua senha para confirmar.</Typography>
+            <TextField
+              fullWidth
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              variant="outlined"
+              required
+              type="password"
+            />
+
             <Box style={{ marginTop: "10px" }}>
               <CustomButton
                 variant="contained"
@@ -556,7 +576,7 @@ export function ModalLiberarCartoes({
                 style={{ marginTop: "10px" }}
                 onClick={() => {
                   handelCLickDebounce();
-                  handleAprovar(dataToken);
+                  handleAprovar(password);
                 }}
                 disabled={clicked}
               >

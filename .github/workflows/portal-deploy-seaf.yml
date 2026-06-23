@@ -1,0 +1,21 @@
+name: "Portal — Deploy SEAF (MT)"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "seaf"
+      environment: "production"
+      s3_bucket: "portal-seaf-prod-385697366782"
+      cloudfront_distribution_id: "E2LEOT4KOLAYLS"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "seaf"
+      react_app_title: "seaf"
+      react_app_description: "Desenvolve MT - Dashboard da Secretaria de Estado de Agricultura Familiar - SEAF"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

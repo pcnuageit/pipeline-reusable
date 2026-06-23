@@ -7,8 +7,12 @@ const useStyles = makeStyles((theme) => ({
   row: {
     display: "flex",
     flexDirection: "row",
+    gap: "16px",
     justifyContent: "space-between",
     margin: "16px 0",
+    "& > *:nth-child(2)": {
+      textAlign: "right",
+    },
   },
   title: {
     fontFamily: "Montserrat-ExtraBold",
@@ -25,7 +29,7 @@ export function Comprovante({ data = {} }) {
   const classes = useStyles();
 
   return (
-    <Box>
+    <Box style={{ padding: "16px" }}>
       <Typography
         style={{
           color: APP_CONFIG.mainCollors.primary,
@@ -75,20 +79,45 @@ export function Comprovante({ data = {} }) {
         </Typography>
       </Box>
 
-      <Box className={classes.row}>
-        <Typography
-          style={{
-            fontFamily: "Montserrat-ExtraBold",
-            color: APP_CONFIG.mainCollors.primary,
-          }}
-        >
-          Tipo de transferência
-        </Typography>
+      {data?.taxa && (
+        <Box className={classes.row}>
+          <Typography
+            style={{
+              fontFamily: "Montserrat-ExtraBold",
+              color: APP_CONFIG.mainCollors.primary,
+            }}
+          >
+            Taxa
+          </Typography>
 
-        <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
-          {data?.tipo}
-        </Typography>
-      </Box>
+          <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+            <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+              {parseFloat(data?.taxa).toLocaleString("pt-br", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+              %
+            </Typography>
+          </Typography>
+        </Box>
+      )}
+
+      {data?.tipo && (
+        <Box className={classes.row}>
+          <Typography
+            style={{
+              fontFamily: "Montserrat-ExtraBold",
+              color: APP_CONFIG.mainCollors.primary,
+            }}
+          >
+            Tipo de transferência
+          </Typography>
+
+          <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+            {data?.tipo}
+          </Typography>
+        </Box>
+      )}
 
       {data?.id ? (
         <Box className={classes.row}>
@@ -207,15 +236,24 @@ function Details({ titulo, data = {} }) {
         </Typography>
       </Box>
 
+      {data?.chavePix ? (
+        <Box className={classes.row}>
+          <Typography
+            style={{
+              fontFamily: "Montserrat-ExtraBold",
+              color: APP_CONFIG.mainCollors.primary,
+            }}
+          >
+            Chave Pix
+          </Typography>
+          <Typography style={{ color: APP_CONFIG.mainCollors.primary }}>
+            {data?.chavePix}
+          </Typography>
+        </Box>
+      ) : null}
+
       {data?.banco ? (
-        <Box
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: "10px",
-            marginBottom: "40px",
-          }}
-        >
+        <Box className={classes.row}>
           <Typography
             style={{
               fontFamily: "Montserrat-ExtraBold",

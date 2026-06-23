@@ -5,6 +5,7 @@ import {
   Button,
   Checkbox,
   FormHelperText,
+  IconButton,
   LinearProgress,
   makeStyles,
   Modal,
@@ -16,7 +17,7 @@ import {
   useTheme,
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { Payments } from "@mui/icons-material";
+import { Payments, Visibility } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article";
 import CloseIcon from "@mui/icons-material/Close";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
@@ -52,7 +53,9 @@ import useAuth from "../../hooks/useAuth";
 import CustomButton from "../CustomButton/CustomButton";
 import CustomCollapseTablePix from "../CustomCollapseTablePix/CustomCollapseTablePix";
 import CustomRoundedCard from "../CustomRoundedCard/CustomRoundedCard";
+import ModalAprovadores from "../ExtratoPixContainer/ModalAprovadores";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
+import { MenuOptionsTable } from "../MenuOptionsTable";
 
 moment.locale();
 
@@ -122,7 +125,7 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
   const dispatch = useDispatch();
   const token = useAuth();
   const [page, setPage] = useState(1);
-
+  const [showAprovadoresModal, setShowAprovadoresModal] = useState(false);
   const statusCobranca = {
     1: "Aberto",
     2: "Pago",
@@ -468,7 +471,7 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
       CustomValue: (created_at) => {
         return (
           <>
-            <Typography style={{ width: "40px", marginRight: "10px" }}>
+            <Typography style={{ width: "50px", marginRight: "10px" }}>
               {moment.utc(created_at).format("DD MMMM")}
             </Typography>
           </>
@@ -499,7 +502,7 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
       },
     },
     {
-      headerText: "Status",
+      headerText: "Tipo",
       key: "tipo_pix",
       CustomValue: (tipo_pix) => {
         return (
@@ -562,31 +565,43 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
       key: "",
       FullObject: (data) => {
         return (
-          <>
-            {data.status_aprovado === "Error" ? (
-              <>
-                {data.status_aprovado}
-                <Tooltip
-                  title={
-                    data &&
-                    data.response &&
-                    data.response.pix_out &&
-                    data.response.pix_out.result &&
-                    data.response.pix_out.result.Message &&
-                    data.response.pix_out.result.Message
-                  }
-                >
-                  <Box marginLeft="12px">
-                    <FontAwesomeIcon icon={faQuestionCircle} />
-                  </Box>
+          <Box
+            style={{
+              display: "flex",
+              width: "100%",
+              alignItems: "center",
+              gap: "0.25rem",
+            }}
+          >
+            <Typography>{data.status_aprovado}</Typography>
+            {data.status_aprovado === "Error" && (
+              <Box
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Tooltip title={data?.response?.pix_out?.result?.Message ?? ""}>
+                  <FontAwesomeIcon icon={faQuestionCircle} />
                 </Tooltip>
-              </>
-            ) : (
-              <Typography>{data.status_aprovado}</Typography>
+
+                <MenuOptionsTable row={data} JSONResponse={data?.response} />
+              </Box>
             )}
-          </>
+          </Box>
         );
       },
+    },
+    {
+      headerText: "Aprovadores",
+      key: "",
+      FullObject: (obj) => (
+        <IconButton onClick={() => setShowAprovadoresModal(obj?.aprovacoes)}>
+          <Visibility style={{ color: APP_CONFIG.mainCollors.primary }} />
+        </IconButton>
+      ),
     },
     {
       headerText: "",
@@ -1677,7 +1692,6 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
             marginTop: "30px",
             marginBottom: "30px",
             width: "100%",
-            maxWidth: 900,
             padding: "10px",
           }}
         >
@@ -1987,6 +2001,11 @@ const AprovacoesContainer = ({ tipoAprovacao, title, changePath, ...rest }) => {
             </>
           ) : null}
         </Box>
+
+        <ModalAprovadores
+          show={showAprovadoresModal}
+          setShow={setShowAprovadoresModal}
+        />
 
         <Modal open={openModal} onBackdropClick={() => setOpenModal(false)}>
           <Box className={classes.modal}>

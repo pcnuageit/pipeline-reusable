@@ -1,0 +1,21 @@
+name: "Portal — Deploy Retomada"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "retomada"
+      environment: "production"
+      s3_bucket: "portal-retomada-prod-385697366782"
+      cloudfront_distribution_id: "E3U4AC2H3QN5TI"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "retomada"
+      react_app_title: "Retomada"
+      react_app_description: "Dashboard da prefeitura de Retomada"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

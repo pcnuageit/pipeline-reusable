@@ -1,0 +1,21 @@
+name: "Portal — Deploy Itapuranga"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "itapuranga"
+      environment: "production"
+      s3_bucket: "portal-itapuranga-prod-385697366782"
+      cloudfront_distribution_id: "E32Z1OBR2L21FH"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "itapuranga"
+      react_app_title: "Itapuranga"
+      react_app_description: "Dashboard da prefeitura de Itapuranga"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

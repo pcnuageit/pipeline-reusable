@@ -1,8 +1,9 @@
 {
   "files": {
-    "main.css": "/static/css/main.c241d225.css",
-    "main.js": "/static/js/main.e1f2b5ee.js",
+    "main.css": "/static/css/main.f253514c.css",
+    "main.js": "/static/js/main.f315be5f.js",
     "pdf.worker.js": "/5d8192fda2d290cb96c5609562171173.js",
+    "static/media/logoImg.png": "/static/media/logoImg.396e23d9055f3be13e2e.png",
     "static/media/arial.ttf": "/static/media/arial.0f047617a8f23f8443be.ttf",
     "static/media/amazonBankLogo.svg": "/static/media/amazonBankLogo.3abb74f1d5d8c1339dca414e6b34a59a.svg",
     "static/media/backgroundLogo.svg": "/static/media/backgroundLogo.2efb5dddb95f2dc8c66f23bb5b2a544b.svg",
@@ -16,6 +17,9 @@
     "static/media/instrucaoCartao2.svg": "/static/media/instrucaoCartao2.f94e9cb4eff79cb3df396b7a9bed1b85.svg",
     "static/media/instrucaoCartao.svg": "/static/media/instrucaoCartao.691619c9cc9a4c0a6f7a51646f188384.svg",
     "static/media/smallColoredLogoBelobank.svg": "/static/media/smallColoredLogoBelobank.94327381244a7c93037584d35cf53bc4.svg",
+    "static/media/logoColored.png": "/static/media/logoColored.73a3838d253692691ef0.png",
+    "static/media/logoWhite.png": "/static/media/logoWhite.06ec14209fc375aa575c.png",
+    "static/media/logoImg.jpg": "/static/media/logoImg.d367972e2be4bf70a6e6.jpg",
     "static/media/Montserrat-SemiBold.otf": "/static/media/Montserrat-SemiBold.d27053e99c1f63ed3fcf.otf",
     "static/media/tokenImageAcium.svg": "/static/media/tokenImageAcium.c90920b225dfae9b5fb480c5f46a385c.svg",
     "static/media/tokenImage.svg": "/static/media/tokenImage.a8528625872a7057aa1e8a454548be31.svg",
@@ -25,9 +29,12 @@
     "static/media/tokenImageBankzz.svg": "/static/media/tokenImageBankzz.99318cba06592bd1b873f74904702ae0.svg",
     "static/media/tokenImageAprobank.svg": "/static/media/tokenImageAprobank.a55e058008eff3fd3d006b44c6e2079d.svg",
     "static/media/tokenImagePomelo.svg": "/static/media/tokenImagePomelo.a55e058008eff3fd3d006b44c6e2079d.svg",
+    "static/media/logoColored.svg": "/static/media/logoColored.99da500f224a3e10a1848d173f31e386.svg",
+    "static/media/logoWhite.svg": "/static/media/logoWhite.f2be64ac9ba430450f0d07db5d4ef81a.svg",
     "static/media/backgroundLoginBankzz.svg": "/static/media/backgroundLoginBankzz.a02048dcb0eb0ad9d7311ee986c28c28.svg",
     "static/media/smallColoredLogoBankzz.svg": "/static/media/smallColoredLogoBankzz.03996ab5269c055bb7ca13b8617a4225.svg",
     "static/media/smallWhiteLogoBelobank.svg": "/static/media/smallWhiteLogoBelobank.3c756ba64feee0c2e153d3bf4bc4bec6.svg",
+    "static/media/logotype.svg": "/static/media/logotype.f5c7b98ab90000dd75bbc14397996e06.svg",
     "static/media/Montserrat-Regular.otf": "/static/media/Montserrat-Regular.d7faa247e52835ac2b4a.otf",
     "static/media/backgroundLogoBankzz.svg": "/static/media/backgroundLogoBankzz.995288b93475f8a67e90fa1821c1bb3a.svg",
     "static/media/backgroundLogoBelobank.svg": "/static/media/backgroundLogoBelobank.eab3c7e39ddd6217b98ef50c4623c058.svg",
@@ -40,6 +47,7 @@
     "static/media/humanist-777-lt-bt-light.ttf": "/static/media/humanist-777-lt-bt-light.457f76c5ed127b9f783a.ttf",
     "static/media/loginSvgAcium.svg": "/static/media/loginSvgAcium.0a49c6c6c651b97273716ef026861939.svg",
     "static/media/microgramma-d-bold-extended.otf": "/static/media/microgramma-d-bold-extended.9d81240ce329ee3337f7.otf",
+    "static/media/loginSvgPJ.svg": "/static/media/loginSvgPJ.7b4f798f395dd4e74add60deec2e0baf.svg",
     "static/media/loginSvgBelobank.svg": "/static/media/loginSvgBelobank.8ab93b765911c0562c429934a80e8e11.svg",
     "static/media/loginSvgSimer.svg": "/static/media/loginSvgSimer.0ce5520e9f279281ccb82e5cde5c9cd9.svg",
     "static/media/loginSvgXbankPJ.svg": "/static/media/loginSvgXbankPJ.b3207433d06035727f9f81ef2a3303fb.svg",
@@ -53,7 +61,6 @@
     "static/media/backgroundLogoConcorrencia.svg": "/static/media/backgroundLogoConcorrencia.2be9bd7a68674e45408d3df424c96ddf.svg",
     "static/media/loginSvgPomelo.svg": "/static/media/loginSvgPomelo.4ef52b27a206fbe647a944432cadc561.svg",
     "static/media/americanexpress.svg": "/static/media/americanexpress.285da3086ba28c33f3a2c56f8ef6435e.svg",
-    "static/media/vBankLogoRoxa.svg": "/static/media/vBankLogoRoxa.a6cc56d0eaa3fba328b398901d07be6f.svg",
     "static/media/vBankLogo.svg": "/static/media/vBankLogo.871879c5d30d9910cc5bafc719bca6b1.svg",
     "static/media/hipercard.svg": "/static/media/hipercard.6cf1962fd96069e2ec01fe7869d96e10.svg",
     "static/media/smallWhiteLogoSimer.svg": "/static/media/smallWhiteLogoSimer.d0ce837fd31369e8cc72b90c01d7ad54.svg",
@@ -65,8 +72,6 @@
     "static/media/jcb.svg": "/static/media/jcb.136bee2a70358ee162e277d2e2210055.svg",
     "static/media/smallWhiteLogoAprobank.svg": "/static/media/smallWhiteLogoAprobank.d9064bf9d3f6c687b0a4caa7fdf47cfb.svg",
     "static/media/vBankSmallLogo.svg": "/static/media/vBankSmallLogo.66c71e0c45410a89bfa7e18737ea751a.svg",
-    "static/media/ItaDash1.svg": "/static/media/ItaDash1.9b4427127777935265229cf36914bcc3.svg",
-    "static/media/ItaDash4.svg": "/static/media/ItaDash4.25e98a3b60103ade70e7b7159e98f68b.svg",
     "static/media/hiper.svg": "/static/media/hiper.3f4757ed7aa7a01e4133b2eff6471a03.svg",
     "static/media/elo.svg": "/static/media/elo.6421ebab9fb70c425a7c9782dbf9ef88.svg",
     "static/media/bloquearCartao.svg": "/static/media/bloquearCartao.376e1c762fb27927b209fcfce634d23b.svg",
@@ -85,11 +90,11 @@
     "static/media/backgroundLogoAcium.svg": "/static/media/backgroundLogoAcium.9dbb5daeb65b82cc78624456379f5c0d.svg",
     "static/media/smallColoredLogoAcium.svg": "/static/media/smallColoredLogoAcium.f71ade32eb36783f60bb27177f7023cd.svg",
     "static/media/smallWhiteLogoAcium.svg": "/static/media/smallWhiteLogoAcium.56de22d5bace7ffcdc553f104ddec2ed.svg",
-    "main.c241d225.css.map": "/static/css/main.c241d225.css.map",
-    "main.e1f2b5ee.js.map": "/static/js/main.e1f2b5ee.js.map"
+    "main.f253514c.css.map": "/static/css/main.f253514c.css.map",
+    "main.f315be5f.js.map": "/static/js/main.f315be5f.js.map"
   },
   "entrypoints": [
-    "static/css/main.c241d225.css",
-    "static/js/main.e1f2b5ee.js"
+    "static/css/main.f253514c.css",
+    "static/js/main.f315be5f.js"
   ]
 }

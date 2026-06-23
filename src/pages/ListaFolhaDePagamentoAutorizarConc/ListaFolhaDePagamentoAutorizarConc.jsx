@@ -373,7 +373,7 @@ export default function ListaFolhaDePagamentoAutorizar() {
                 </Grid>
 
                 {listaFolhaDePagamentoAprovar?.data &&
-                listaFolhaDePagamentoAprovar?.per_page ? (
+                  listaFolhaDePagamentoAprovar?.per_page ? (
                   <>
                     <Box minWidth={!matches ? "800px" : null}>
                       <CustomCollapseTable

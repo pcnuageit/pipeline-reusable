@@ -121,36 +121,36 @@ const columns = [
       );
     },
   },
-  {
-    headerText: "Valor da taxa",
-    key: "valor_taxa",
-    CustomValue: (valor) => {
-      return (
-        <Box>
-          R${" "}
-          {parseFloat(valor).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </Box>
-      );
-    },
-  },
-  {
-    headerText: "Valor líquido",
-    key: "valor_liquido",
-    CustomValue: (valor) => {
-      return (
-        <Box>
-          R${" "}
-          {parseFloat(valor).toLocaleString("pt-br", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </Box>
-      );
-    },
-  },
+  // {
+  //   headerText: "Valor da taxa",
+  //   key: "valor_taxa",
+  //   CustomValue: (valor) => {
+  //     return (
+  //       <Box>
+  //         R${" "}
+  //         {parseFloat(valor).toLocaleString("pt-br", {
+  //           minimumFractionDigits: 2,
+  //           maximumFractionDigits: 2,
+  //         })}
+  //       </Box>
+  //     );
+  //   },
+  // },
+  // {
+  //   headerText: "Valor líquido",
+  //   key: "valor_liquido",
+  //   CustomValue: (valor) => {
+  //     return (
+  //       <Box>
+  //         R${" "}
+  //         {parseFloat(valor).toLocaleString("pt-br", {
+  //           minimumFractionDigits: 2,
+  //           maximumFractionDigits: 2,
+  //         })}
+  //       </Box>
+  //     );
+  //   },
+  // },
   {
     headerText: "Origem",
     key: "is_seeded",

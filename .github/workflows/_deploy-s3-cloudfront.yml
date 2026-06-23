@@ -3,7 +3,7 @@
 # Reusable workflow — Build React (CRA) + Deploy S3 + Invalidação CloudFront
 #
 # Jobs:
-#   1. build    → Checkout, Node 20, install, build (artefato)
+#   1. build    → Checkout, Node, install, build (artefato)
 #   2. deploy   → Download artefato, S3 sync, CloudFront invalidation
 #   3. summary  → Resumo do deploy
 #
@@ -12,9 +12,12 @@
 #   - sandbox:    conta 118690287580 (deploy livre)
 #   - production: conta 385697366782 (com aprovação opcional)
 #
-# Actions: v5 (Node.js 24 runtime)
+# Monorepo:
+#   Usa working_directory para buildar apps em subdiretórios.
+#
+# Actions: v4 (Node.js 20 runtime)
 # Autor: Platform Team
-# Versão: 3.0.0
+# Versão: 4.0.0
 ##############################################################################
 
 name: "Reusable — Deploy S3 + CloudFront"
@@ -44,13 +47,13 @@ on:
       aws_region:
         required: true
         type: string
-        description: "Região AWS do bucket S3 (sa-east-1 ou us-east-1)"
+        description: "Região AWS do bucket S3 (sa-east-1)"
 
       # ── Build Config ──
       node_version:
         required: false
         type: string
-        default: "18"
+        default: "16"
       build_command:
         required: false
         type: string
@@ -62,21 +65,28 @@ on:
 
       # ── React Environment Variables ──
       react_app_api_url:
-        required: true
+        required: false
         type: string
       react_app_front_app:
-        required: true
+        required: false
         type: string
       react_app_title:
-        required: true
+        required: false
         type: string
       react_app_description:
-        required: true
+        required: false
         type: string
       react_app_sga_api_base_url:
         required: false
         type: string
         default: ""
+
+      # ── Monorepo ──
+      working_directory:
+        required: false
+        type: string
+        default: "."
+        description: "Diretório do app dentro do monorepo (ex: app/portal)"
 
       # ── Options ──
       skip_invalidation:
@@ -87,26 +97,28 @@ on:
 jobs:
   # ════════════════════════════════════════════════════════════════
   # JOB 1: BUILD
-  # Não precisa de credentials AWS — apenas código
   # ════════════════════════════════════════════════════════════════
   build:
     runs-on: ubuntu-latest
     name: "📦 Build — ${{ inputs.client_name }} [${{ inputs.environment }}]"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js ${{ inputs.node_version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
           cache: "yarn"
+          cache-dependency-path: ${{ inputs.working_directory }}/yarn.lock
 
       - name: Install dependencies
         run: yarn install
+        working-directory: ${{ inputs.working_directory }}
 
       - name: Build — ${{ inputs.client_name }}
         run: ${{ inputs.build_command }}
+        working-directory: ${{ inputs.working_directory }}
         env:
           CI: false
           NODE_ENV: production
@@ -117,17 +129,15 @@ jobs:
           REACT_APP_SGA_API_BASE_URL: ${{ inputs.react_app_sga_api_base_url }}
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ inputs.client_name }}-${{ inputs.environment }}
-          path: ${{ inputs.build_output }}/
+          path: ${{ inputs.working_directory }}/${{ inputs.build_output }}/
           retention-days: 1
           if-no-files-found: error
 
   # ════════════════════════════════════════════════════════════════
   # JOB 2: DEPLOY
-  # Usa GitHub Environment para pegar secrets da conta correta
-  # Se production tiver "required reviewers", aguarda aprovação aqui
   # ════════════════════════════════════════════════════════════════
   deploy:
     needs: build
@@ -136,7 +146,7 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v4
         with:
           name: build-${{ inputs.client_name }}-${{ inputs.environment }}
           path: ${{ inputs.build_output }}/

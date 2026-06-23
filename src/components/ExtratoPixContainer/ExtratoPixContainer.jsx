@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Grid,
+  IconButton,
   InputLabel,
   LinearProgress,
   makeStyles,
@@ -12,7 +13,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
-import { Delete } from "@material-ui/icons";
+import { Delete, Visibility } from "@material-ui/icons";
 import PixIcon from "@mui/icons-material/Pix";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { Pagination, TableContainer } from "@mui/material";
@@ -32,6 +33,7 @@ import CustomCurrencyInput from "../CustomCurrencyInput";
 import CustomRoundedCard from "../CustomRoundedCard/CustomRoundedCard";
 import { ExportTableButtons, TableHeaderButton } from "../TableHeaderButtons";
 import TextFieldCpfCnpj from "../TextFieldCpfCnpj";
+import ModalAprovadores from "./ModalAprovadores";
 
 moment.locale("pt-br");
 
@@ -64,6 +66,7 @@ const ExtratoPixContainer = ({ title, changePath, ...rest }) => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pagamentoPix, setPagamentoPix] = useState([]);
+  const [showAprovadoresModal, setShowAprovadoresModal] = useState(false);
   const resetFilter = () => {
     setPage(1);
     setFilter({
@@ -194,6 +197,15 @@ const ExtratoPixContainer = ({ title, changePath, ...rest }) => {
       },
     },
     {
+      headerText: "Aprovadores",
+      key: "",
+      FullObject: (obj) => (
+        <IconButton onClick={() => setShowAprovadoresModal(obj?.aprovacoes)}>
+          <Visibility style={{ color: APP_CONFIG.mainCollors.primary }} />
+        </IconButton>
+      ),
+    },
+    {
       headerText: "",
       key: "",
       FullObject: (data) => {
@@ -286,7 +298,7 @@ const ExtratoPixContainer = ({ title, changePath, ...rest }) => {
       >
         <Box
           style={{
-            width: "90%",
+            width: "100%",
             height: "1px",
             backgroundColor: APP_CONFIG.mainCollors.primary,
           }}
@@ -559,7 +571,6 @@ const ExtratoPixContainer = ({ title, changePath, ...rest }) => {
             marginTop: "30px",
             marginBottom: "30px",
             width: "100%",
-            maxWidth: 900,
             padding: "10px",
           }}
         >
@@ -612,6 +623,11 @@ const ExtratoPixContainer = ({ title, changePath, ...rest }) => {
             <LinearProgress />
           )}
         </Box>
+
+        <ModalAprovadores
+          show={showAprovadoresModal}
+          setShow={setShowAprovadoresModal}
+        />
       </Box>
     </>
   );

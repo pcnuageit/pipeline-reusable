@@ -5,9 +5,8 @@ const API_URL = `${process.env.REACT_APP_API_URL}/concorrencia`;
 
 export const getBeneficios = async (token, documento, page, filters = "") => {
   //conta_secretaria_id para user adm e documento para user secretaria
-  const url = `${API_URL}/tipo-beneficio?documento=${documento}${
-    page ? `&page=${page}` : ""
-  }&${filters}`;
+  const url = `${API_URL}/tipo-beneficio?documento=${documento}${page ? `&page=${page}` : ""
+    }&${filters}`;
 
   return axios({
     method: "get",
@@ -320,6 +319,7 @@ export const postCartoesTrocarStatus = async (
 export const postLiberarCartoes = async (
   token,
   conta_id,
+  password,
   cartao_ids,
   liberar_todos = false,
   filters = "",
@@ -334,6 +334,7 @@ export const postLiberarCartoes = async (
     },
     data: {
       conta_id,
+      password,
       cartao_ids,
       liberar_todos,
     },
@@ -542,13 +543,13 @@ export const postAddVoucher = async (token, tipo_beneficio_id, data) => {
       ...(data?.tipo_transferencia === "Dict"
         ? { chave_pix: data?.chave_pix }
         : {
-            nome_conta: data?.nome_conta,
-            documento_conta: data?.documento_conta,
-            banco: data?.banco,
-            tipo_conta: data?.tipo_conta,
-            agencia: data?.agencia,
-            conta: data?.conta + "-" + data?.conta_digito,
-          }),
+          nome_conta: data?.nome_conta,
+          documento_conta: data?.documento_conta,
+          banco: data?.banco,
+          tipo_conta: data?.tipo_conta,
+          agencia: data?.agencia,
+          conta: data?.conta + "-" + data?.conta_digito,
+        }),
     },
   });
 };
@@ -568,13 +569,13 @@ export const putUpdateVoucher = async (token, id, data) => {
       ...(data?.tipo_transferencia === "Dict"
         ? { chave_pix: data?.chave_pix }
         : {
-            nome_conta: data?.nome_conta,
-            documento_conta: data?.documento_conta,
-            banco: data?.banco,
-            tipo_conta: data?.tipo_conta,
-            agencia: data?.agencia,
-            conta: data?.conta + "-" + data?.conta_digito,
-          }),
+          nome_conta: data?.nome_conta,
+          documento_conta: data?.documento_conta,
+          banco: data?.banco,
+          tipo_conta: data?.tipo_conta,
+          agencia: data?.agencia,
+          conta: data?.conta + "-" + data?.conta_digito,
+        }),
     },
   });
 };
@@ -848,12 +849,12 @@ export const postAutorizarPagamentosVoucher = (
 
 export const getExportTable = (
   token,
-  apiURL = "", // extrato || aluguel-conta || beneficiario || beneficiario/contas || beneficiario/cartoes-privados || cartao-privado-pagamento || pagamento-estabelecimento || pagamento-aluguel || pagamento-pix
+  apiURL = "", // extrato || aluguel-conta || beneficiario || beneficiario/contas || beneficiario/cartoes-privados || cartao-privado-pagamento || pagamento-estabelecimento || pagamento-aluguel || pagamento-pix || conta/notificacao/export
   export_type = "xlsx", //xlsx || pdf
   page = 1,
   filters = "",
 ) => {
-  const url = `${apiURL}/export?export_type=${export_type}&page=${page}&${filters}`;
+  const url = `${apiURL}?export_type=${export_type}&page=${page}&${filters}`;
 
   return axios({
     method: "GET",
@@ -1013,7 +1014,7 @@ export const postBlockCard = (token, id) => {
   });
 };
 
-export const postUnblockCard = (token, id) => {
+export const postUnblockCard = (token, id, schedule_at) => {
   const url = `${API_URL}/beneficiario/card/${id}/unblock`;
 
   return axios({
@@ -1021,6 +1022,9 @@ export const postUnblockCard = (token, id) => {
     url,
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+    data: {
+      schedule_at,
     },
   });
 };
@@ -1075,6 +1079,18 @@ export const getTransacoesEstabelecimento = async (
   filters = "",
 ) => {
   const url = `${API_URL}/estabelecimento/transacoes?page=${page}&${filters}`;
+
+  return axios({
+    method: "get",
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const getTransacaoEstabelecimento = async (token, id) => {
+  const url = `${API_URL}/estabelecimento/transacoes/${id}`;
 
   return axios({
     method: "get",

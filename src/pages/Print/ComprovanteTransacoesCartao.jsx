@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom/cjs/react-router-dom.min";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
-import { getHistoricoTransacao } from "../../services/beneficiarios";
+import {
+  getHistoricoTransacao,
+  getTransacaoEstabelecimento,
+} from "../../services/beneficiarios";
 import translateCardTransactionType from "../../utils/translateCardTransactionType";
 import { translateStatus } from "../../utils/translateStatus";
 import { Comprovante } from "./components/Comprovante";
@@ -24,7 +27,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function ComprovanteTransacoesCartao() {
+export default function ComprovanteTransacoesCartao({
+  type = "comprovante_transacoes_cartao",
+}) {
   const id = useParams()?.id ?? "";
   const token = useAuth();
   const classes = useStyles();
@@ -34,7 +39,13 @@ export default function ComprovanteTransacoesCartao() {
   const getData = async () => {
     setLoading(true);
     try {
-      const { data } = await getHistoricoTransacao(token, id);
+      let data;
+      if (type === "comprovante_transacoes_cartao") {
+        data = (await getHistoricoTransacao(token, id))?.data;
+      }
+      if (type === "pagamentos_recebidos") {
+        data = (await getTransacaoEstabelecimento(token, id))?.data;
+      }
       setData(data);
     } catch (err) {
       console.log(err);
@@ -43,43 +54,78 @@ export default function ComprovanteTransacoesCartao() {
     }
   };
 
-  const getDataCallback = useCallback(getData, [id, token]);
+  const getDataCallback = useCallback(getData, [id, token, type]);
 
   useEffect(() => {
     getDataCallback();
   }, [getDataCallback, token]);
 
   function parseData() {
-    let obj = {
-      created_at: data?.created_at,
-      status: translateStatus(data?.status),
-      valor: data?.valor,
-      tipo: translateCardTransactionType(data?.tipo_operacao),
-      id: data?.nsu,
-      external_msk: data?.concorrencia_cartao?.external_msk,
-      beneficio: data?.concorrencia_cartao?.tipo_beneficio?.nome_beneficio,
-      descricao: data?.descricao,
-      origem: {
-        nome:
-          data?.transactionable_from.razao_social ??
-          data?.transactionable_from.nome,
-        documento:
-          data?.transactionable_from.cnpj ??
-          data?.transactionable_from.documento,
-      },
-      destino: {
-        nome:
-          data?.transactionable_to.razao_social ??
-          data?.transactionable_to.nome,
-        documento:
-          data?.transactionable_to.cnpj ?? data?.transactionable_to.documento,
-      },
-    };
+    let obj;
+    if (type === "comprovante_transacoes_cartao") {
+      obj = {
+        created_at: data?.created_at,
+        status: translateStatus(data?.status),
+        valor: data?.valor,
+        tipo: translateCardTransactionType(data?.tipo_operacao),
+        id: data?.nsu,
+        external_msk: data?.concorrencia_cartao?.external_msk,
+        beneficio: data?.concorrencia_cartao?.tipo_beneficio?.nome_beneficio,
+        descricao: data?.descricao,
+        origem: {
+          nome:
+            data?.transactionable_from?.razao_social ??
+            data?.transactionable_from?.nome,
+          documento:
+            data?.transactionable_from?.cnpj ??
+            data?.transactionable_from?.documento,
+        },
+        destino: {
+          nome:
+            data?.transactionable_to?.razao_social ??
+            data?.transactionable_to?.nome,
+          documento:
+            data?.transactionable_to?.cnpj ??
+            data?.transactionable_to?.documento,
+        },
+      };
 
-    if (data?.aprovado) {
-      obj.titulo = "Comprovante de transferência";
-    } else {
-      obj.titulo = obj?.status;
+      if (data?.aprovado) {
+        obj.titulo = "Comprovante de transferência";
+      } else {
+        obj.titulo = obj?.status;
+      }
+    }
+
+    if (type === "pagamentos_recebidos") {
+      obj = {
+        created_at: data?.pagamento_pix?.data_agendamento,
+        status: translateStatus(data?.status),
+        valor: data?.valor,
+        id: data?.reference_id,
+        taxa: data?.taxa,
+        beneficio: data?.tipo_beneficio?.nome_beneficio,
+        descricao: data?.pagamento_pix?.descricao,
+        origem: {
+          nome: data?.conta_origem?.razao_social ?? data?.conta_origem?.nome,
+          documento: data?.conta_origem?.cnpj ?? data?.conta_origem?.documento,
+          banco: data?.pagamento_pix?.banco_pagou,
+          chavePix: data?.conta_origem?.chave_pix,
+        },
+        destino: {
+          nome: data?.conta_destino?.razao_social ?? data?.conta_destino?.nome,
+          documento:
+            data?.conta_destino?.cnpj ?? data?.conta_destino?.documento,
+          banco: data?.pagamento_pix?.banco,
+          chavePix: data?.conta_destino?.chave_pix,
+        },
+      };
+
+      if (obj?.status === "succeeded") {
+        obj.titulo = "Comprovante de transferência";
+      } else {
+        obj.titulo = obj?.status;
+      }
     }
 
     return obj;

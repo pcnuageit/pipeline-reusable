@@ -1,12 +1,15 @@
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
   Grid,
+  IconButton,
+  InputLabel,
   LinearProgress,
   MenuItem,
   Select,
@@ -15,27 +18,35 @@ import {
   Typography,
 } from "@material-ui/core";
 import {
+  BorderAll,
   CompareArrows,
   Delete,
   Lock,
   LockOpen,
+  PictureAsPdf,
   Print,
+  ReplayOutlined,
   Search,
 } from "@material-ui/icons";
-import { DataObject, ReplayOutlined } from "@mui/icons-material";
+import { DataObject, Download, FileOpenOutlined } from "@mui/icons-material";
 import { Pagination } from "@mui/material";
 import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import {
   generatePath,
   useHistory,
+  useParams,
 } from "react-router-dom/cjs/react-router-dom.min";
 import { toast } from "react-toastify";
-
+import {
+  ExportTableButtons,
+  TableHeaderButton,
+} from "../../components/TableHeaderButtons";
 import { APP_CONFIG } from "../../constants/config";
 import useAuth from "../../hooks/useAuth";
 import useDebounce from "../../hooks/useDebounce";
 import {
+  getExportTable,
   getHistoricoTransacoes,
   getHistoricoTransacoesEntradas,
   patchPagamentosContratoAluguelStatusToCreated,
@@ -44,11 +55,6 @@ import {
   postUnblockCard,
 } from "../../services/beneficiarios";
 import { translateStatus } from "../../utils/translateStatus";
-
-import {
-  ExportTableButtons,
-  TableHeaderButton,
-} from "../../components/TableHeaderButtons";
 import CustomTable from "../CustomTable/CustomTable";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
 import SelectBeneficio from "../SelectBeneficio";
@@ -70,6 +76,8 @@ export function MenuOptionsTable({
   navigateTo,
   cancelPix,
   sendSMS,
+  exportRow,
+  viewAttachedFiles,
 }) {
   const history = useHistory();
   const [showDeletarModal, setShowDeletarModal] = useState(false);
@@ -83,6 +91,8 @@ export function MenuOptionsTable({
   const [showCancelCardModal, setShowCancelCardModal] = useState(false);
   const [showCancelPixModal, setShowCancelPixModal] = useState(false);
   const [showSendSMSModal, setShowSendSMSModal] = useState(false);
+  const [showViewAttachedFilesModal, setShowViewAttachedFiles] =
+    useState(false);
 
   return (
     <Box style={{ display: "flex", flexDirection: "row" }}>
@@ -226,15 +236,6 @@ export function MenuOptionsTable({
         </>
       ) : null} */}
 
-      {navigateTo ? (
-        <>
-          <navigateTo.icon
-            style={{ color: "#202020", fontSize: "28px" }}
-            onClick={() => history.push(navigateTo.path)}
-          />
-        </>
-      ) : null}
-
       {/* {cancelPix ? (
         <>
           <ReplayOutlined
@@ -265,6 +266,29 @@ export function MenuOptionsTable({
           />
         </>
       ) : null} */}
+
+      {exportRow ? <ExportRow path={exportRow} row={row} /> : null}
+
+      {!!viewAttachedFiles?.length ? (
+        <>
+          <FileOpenOutlined
+            style={{ color: "#202020", fontSize: "28px" }}
+            onClick={() => setShowViewAttachedFiles(true)}
+          />
+
+          <ViewAttachedFiles
+            show={showViewAttachedFilesModal}
+            setShow={() => setShowViewAttachedFiles(false)}
+            data={viewAttachedFiles}
+          />
+        </>
+      ) : null}
+
+      {navigateTo ? (
+        <IconButton onClick={() => history.push(navigateTo.path)}>
+          <navigateTo.icon style={{ color: "#202020", fontSize: "28px" }} />
+        </IconButton>
+      ) : null}
     </Box>
   );
 }
@@ -389,6 +413,8 @@ const ExtratoBeneficiarioModal = ({
     tipo_beneficio_id: "",
     data_inicio: "",
     data_fim: "",
+    status: " ",
+    tipo_operacao: " ",
   });
   const debouncedFilter = useDebounce(filter, 800);
   const [transactionType, setTransactionType] = useState("out"); // in || out
@@ -396,16 +422,20 @@ const ExtratoBeneficiarioModal = ({
   const [page, setPage] = useState(1);
   const [pagamentos, setPagamentos] = useState([]);
 
-  const resetFilter = () =>
+  const resetFilter = () => {
+    setPage(1);
     setFilter({
       documento_conta: "",
       // documento_beneficiario: "",
       tipo_beneficio_id: "",
       data_inicio: "",
       data_fim: "",
+      status: " ",
+      tipo_operacao: " ",
     });
+  };
 
-  const filters = `user_id=${data?.id}&documento_conta=${debouncedFilter.documento_conta}&documento_beneficiario=${data?.documento}&tipo_beneficio_id=${debouncedFilter.tipo_beneficio_id}&data_inicio=${debouncedFilter.data_inicio}&data_fim=${debouncedFilter.data_fim}`;
+  const filters = `user_id=${data?.id}&documento_conta=${debouncedFilter.documento_conta}&documento_beneficiario=${data?.documento}&tipo_beneficio_id=${debouncedFilter.tipo_beneficio_id}&data_inicio=${debouncedFilter.data_inicio}&data_fim=${debouncedFilter.data_fim}&status=${debouncedFilter.status}&tipo_operacao=${debouncedFilter.tipo_operacao}`;
 
   const getData = async () => {
     setLoading(true);
@@ -467,6 +497,7 @@ const ExtratoBeneficiarioModal = ({
         });
         const valueColor = transactionType === "out" && value < 0 ? "red" : "";
 
+        if (!valor) return <Typography>-</Typography>;
         return (
           <Typography style={{ color: valueColor }}>
             R$ {parsedValue}
@@ -474,6 +505,21 @@ const ExtratoBeneficiarioModal = ({
         );
       },
     },
+    transactionType === "out"
+      ? {
+          headerText: "Saldo",
+          key: "saldo_final",
+          CustomValue: (valor) => {
+            const parsedValue = parseFloat(valor).toLocaleString("pt-br", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+
+            if (!valor) return <Typography>-</Typography>;
+            return <Typography>R$ {parsedValue}</Typography>;
+          },
+        }
+      : {},
     transactionType === "out"
       ? {
           headerText: "NSU",
@@ -503,15 +549,6 @@ const ExtratoBeneficiarioModal = ({
           ),
         }
       : {},
-    transactionType === "out"
-      ? {
-          headerText: "Cidade",
-          key: "transactionable_to",
-          CustomValue: (data) => (
-            <Typography>{data?.endereco?.cidade}</Typography>
-          ),
-        }
-      : {},
     {
       headerText: "Benefício",
       key: "",
@@ -526,9 +563,8 @@ const ExtratoBeneficiarioModal = ({
       headerText: "Cartão",
       key: "",
       FullObject: (obj) => {
-        const v =
-          obj?.concorrencia_cartao?.external_msk ??
-          obj?.cartao_privado?.external_msk;
+        const v = obj?.external_msk ?? obj?.concorrencia_cartao?.external_msk;
+        // obj?.cartao_privado?.external_msk;
         return <Typography>{v?.replace(/\D/g, "")}</Typography>;
       },
     },
@@ -583,7 +619,7 @@ const ExtratoBeneficiarioModal = ({
                     style={{ marginTop: "10px" }}
                     value={transactionType}
                     onChange={(e) => {
-                      setPage(1);
+                      resetFilter();
                       setTransactionType(e.target.value);
                     }}
                   >
@@ -663,7 +699,7 @@ const ExtratoBeneficiarioModal = ({
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <SelectBeneficio
                     state={filter?.tipo_beneficio_id}
                     setState={(e) => {
@@ -675,6 +711,62 @@ const ExtratoBeneficiarioModal = ({
                     }}
                   />
                 </Grid>
+
+                {transactionType === "out" && (
+                  <Grid item xs={12} sm={4}>
+                    <InputLabel id="status-label" shrink="true">
+                      Status
+                    </InputLabel>
+                    <Select
+                      labelId="status-label"
+                      variant="outlined"
+                      fullWidth
+                      required
+                      value={filter.status}
+                      onChange={(e) => {
+                        setPage(1);
+                        setFilter((prev) => ({
+                          ...prev,
+                          status: e.target.value,
+                        }));
+                      }}
+                    >
+                      <MenuItem value={" "}>Todos</MenuItem>
+                      <MenuItem value={"success"}>
+                        {translateStatus("success")}
+                      </MenuItem>
+                      <MenuItem value={"pending"}>
+                        {translateStatus("pending")}
+                      </MenuItem>
+                    </Select>
+                  </Grid>
+                )}
+
+                {transactionType === "in" && (
+                  <Grid item xs={12} sm={4}>
+                    <InputLabel id="operation-label" shrink="true">
+                      Operação
+                    </InputLabel>
+                    <Select
+                      labelId="operation-label"
+                      variant="outlined"
+                      fullWidth
+                      required
+                      value={filter.tipo_operacao}
+                      onChange={(e) => {
+                        setPage(1);
+                        setFilter((prev) => ({
+                          ...prev,
+                          tipo_operacao: e.target.value,
+                        }));
+                      }}
+                    >
+                      <MenuItem value={" "}>Todos</MenuItem>
+                      <MenuItem value={"C"}>Crédito</MenuItem>
+                      <MenuItem value={"D"}>Devolução</MenuItem>
+                    </Select>
+                  </Grid>
+                )}
 
                 {/* <Grid item xs={12} sm={3}>
                   <ReactInputMask
@@ -877,8 +969,8 @@ const PatchStatusModal = ({
       if (type === "contrato")
         await patchPagamentosContratoAluguelStatusToCreated(token, data?.id);
 
-      toast.success("O status do item foi alterado");
-      getData(token);
+      toast.success("Status alterado com sucesso.");
+      await getData(token);
     } catch (err) {
       console.log(err);
       toast.error(
@@ -933,9 +1025,10 @@ const BlockUnblockCardModal = ({
   show = false,
   setShow = () => false,
   data = {},
-  getData = () => null,
+  getData = async () => null,
 }) => {
   const token = useAuth();
+  const [dataAgendamento, setDataAgendamento] = useState(null);
   const [loading, setLoading] = useState("");
 
   const handleClose = () => {
@@ -949,8 +1042,8 @@ const BlockUnblockCardModal = ({
     setLoading(true);
     try {
       if (data?.is_blocked) {
-        await postUnblockCard(token, data?.id);
-      } else await postBlockCard(token, data?.id);
+        await postUnblockCard(token, data?.id, dataAgendamento);
+      } else await postBlockCard(token, data?.id, dataAgendamento);
 
       await getData(token);
     } catch (err) {
@@ -988,6 +1081,19 @@ const BlockUnblockCardModal = ({
               </>
             ) : null}
           </DialogContentText>
+
+          <TextField
+            fullWidth
+            label="Data de agendamento"
+            variant="outlined"
+            InputLabelProps={{
+              shrink: true,
+              pattern: "d {4}- d {2}- d {2} ",
+            }}
+            type="date"
+            value={dataAgendamento}
+            onChange={(e) => setDataAgendamento(e.target.value)}
+          />
         </DialogContent>
 
         <DialogActions>
@@ -1007,9 +1113,10 @@ const BlockUnblockCardModal = ({
 //   show = false,
 //   setShow = () => false,
 //   data = {},
-//   getData = () => null,
+//   getData = async () => null,
 // }) => {
 //   const token = useAuth();
+//   const [dataAgendamento, setDataAgendamento] = useState(null);
 //   const [loading, setLoading] = useState("");
 
 //   const handleClose = () => {
@@ -1020,12 +1127,12 @@ const BlockUnblockCardModal = ({
 //     e.preventDefault();
 //     setLoading(true);
 //     try {
-//       await postCancelCard(token, data?.id);
+//       await postCancelCard(token, data?.id, dataAgendamento);
 //       await getData(token);
 //     } catch (err) {
 //       console.log(err);
 //       toast.error(
-//         `Ocorreu um erro, não possivel cancelar o cartão. Tente novamente.`
+//         `Ocorreu um erro, não possivel cancelar o cartão. Tente novamente.`,
 //       );
 //     } finally {
 //       handleClose();
@@ -1059,6 +1166,19 @@ const BlockUnblockCardModal = ({
 //               </>
 //             ) : null}
 //           </DialogContentText>
+
+//           <TextField
+//             fullWidth
+//             label="Data de agendamento"
+//             variant="outlined"
+//             InputLabelProps={{
+//               shrink: true,
+//               pattern: "d {4}- d {2}- d {2} ",
+//             }}
+//             type="date"
+//             value={dataAgendamento}
+//             onChange={(e) => setDataAgendamento(e.target.value)}
+//           />
 //         </DialogContent>
 
 //         <DialogActions>
@@ -1173,8 +1293,8 @@ const BlockUnblockCardModal = ({
 //           dadosNotificacao.mensagem,
 //           data?.id,
 //           false,
-//           ""
-//         )
+//           "",
+//         ),
 //       );
 //       if (resEnviarNotificacao) {
 //         toast.error("Erro ao enviar notificação");
@@ -1265,3 +1385,126 @@ const BlockUnblockCardModal = ({
 //     </>
 //   );
 // };
+
+function ExportRow({ path = "", row = {} }) {
+  const id = useParams()?.id ?? "";
+  const token = useAuth();
+  const [loading, setLoading] = useState({
+    xlsx: false,
+    pdf: false,
+  });
+
+  const API_URL = `${process.env.REACT_APP_API_URL}`;
+  const url = `${API_URL}/concorrencia/${path}/export`;
+  const filters = `conta_id=${id}&id=${row?.id}`;
+
+  async function handleExportRow(type) {
+    setLoading((prev) => ({ ...prev, [type]: true }));
+    try {
+      const { data } = await getExportTable(token, url, type, "", filters);
+      toast.warn(
+        data?.message ??
+          `Exportando arquivo ${type}. Você poderá fazer o download na área "Arquivos exportados"`,
+      );
+    } catch (err) {
+      console.log(err);
+      toast.error("Ocorreu um erro ao exportar o arquivo. Tente novamente.");
+    }
+    setLoading((prev) => ({ ...prev, [type]: false }));
+  }
+
+  return (
+    <>
+      <IconButton
+        onClick={() => handleExportRow("xlsx")}
+        disabled={loading?.xlsx}
+      >
+        {loading?.xlsx ? (
+          <CircularProgress size={24} />
+        ) : (
+          <BorderAll style={{ color: APP_CONFIG.mainCollors.primary }} />
+        )}
+      </IconButton>
+
+      <IconButton
+        onClick={() => handleExportRow("pdf")}
+        disabled={loading?.pdf}
+      >
+        {loading?.pdf ? (
+          <CircularProgress size={24} />
+        ) : (
+          <PictureAsPdf style={{ color: APP_CONFIG.mainCollors.primary }} />
+        )}
+      </IconButton>
+    </>
+  );
+}
+
+const ViewAttachedFiles = ({ show, setShow, data }) => {
+  const handleDownload = (row) => {
+    if (!row?.arquivo) {
+      toast.error("Arquivo não disponível");
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = row?.arquivo;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const columns = [
+    {
+      headerText: "Criado em",
+      key: "created_at",
+      CustomValue: (text) => (
+        <Typography align="center">
+          {moment(text).format("DD/MM/YYYY")}
+        </Typography>
+      ),
+    },
+    {
+      headerText: "Nome",
+      key: "nome",
+    },
+    { headerText: "", key: "menu" },
+  ];
+
+  return (
+    <>
+      <Dialog
+        open={show}
+        onClose={() => {
+          setShow(false);
+        }}
+        aria-labelledby="form-dialog-title"
+      >
+        <DialogTitle id="form-dialog-title">Arquivos anexados</DialogTitle>
+
+        <DialogContent>
+          <CustomTable
+            columns={columns}
+            data={data ?? []}
+            Editar={({ row }) => (
+              <Download onClick={() => handleDownload(row)} />
+            )}
+          />
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShow(false);
+            }}
+            color="primary"
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};

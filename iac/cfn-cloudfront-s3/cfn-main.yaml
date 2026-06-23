@@ -1,0 +1,1405 @@
+################################################################################
+# Template CloudFormation - CloudFront Distribution com S3 Origin e OAC
+################################################################################
+# Descricao: Template robusto e flexivel para provisionar uma distribuicao 
+#            CloudFront com bucket S3 como origem, utilizando Origin Access 
+#            Control (OAC) para acesso seguro ao bucket.
+#
+# Recursos Provisionados:
+#   - S3 Bucket (origem) com criptografia e politicas de seguranca
+#   - S3 Bucket para logs do CloudFront (opcional)
+#   - CloudFront Distribution com OAC
+#   - CloudFront Function para redirecionamento de index.html
+#   - Response Headers Policy com headers de seguranca
+#   - CloudWatch Alarms para monitoramento (producao)
+#   - CloudWatch Log Groups
+#
+# Design Decisions:
+#   1. OAC vs OAI: Utilizamos OAC (Origin Access Control) por ser o metodo 
+#      recomendado pela AWS, oferecendo melhor seguranca com SigV4.
+#   2. Politicas Managed: Utilizamos politicas managed da AWS para cache
+#      (CachingOptimized) garantindo best practices.
+#   3. Condicionais: Recursos como logs e alarmes sao condicionais para
+#      flexibilidade entre ambientes.
+#   4. Security Headers: HSTS, X-Frame-Options, CSP configuraveis.
+#   5. Geo-Restriction: Suporte opcional para restricao geografica.
+#
+# Autor: Infrastructure Team
+# Versao: 2.0.0
+# Ultima Atualizacao: 2026-01-22
+################################################################################
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  CloudFormation template para provisionar CloudFront Distribution com S3 Origin,
+  Origin Access Control (OAC), headers de seguranca, e configuracoes avancadas
+  de cache. Suporta ambientes development, staging e production com configuracoes
+  especificas por ambiente.
+
+################################################################################
+# Metadata - Organizacao dos parametros na Console AWS
+################################################################################
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Identificacao do Projeto"
+        Parameters:
+          - ProjectName
+          - ApplicationName
+          - Environment
+          - CostCenter
+          - Owner
+      - Label:
+          default: "Configuracao do S3 Bucket"
+        Parameters:
+          - CreateNewBucket
+          - ExistingBucketName
+          - EnableVersioning
+          - EnableLifecycleRules
+          - NoncurrentVersionExpirationDays
+      - Label:
+          default: "Configuracao do CloudFront"
+        Parameters:
+          - CloudFrontAliases
+          - AcmCertificateArn
+          - PriceClass
+          - DefaultRootObject
+          - HttpVersion
+          - EnableIPv6
+      - Label:
+          default: "Configuracao de Seguranca"
+        Parameters:
+          - MinimumTLSVersion
+          - EnableGeoRestriction
+          - GeoRestrictionType
+          - GeoRestrictionLocations
+          - HostedZoneId
+          - WebACLId
+      - Label:
+          default: "Configuracao de Cache"
+        Parameters:
+          - DefaultTTL
+          - MaxTTL
+          - MinTTL
+          - EnableCompression
+      - Label:
+          default: "Configuracao de Logs e Monitoramento"
+        Parameters:
+          - EnableCloudFrontLogging
+          - EnableCloudWatchAlarms
+          - EnableDashboard
+          - LogRetentionDays
+          - AlarmSNSTopicArn
+      - Label:
+          default: "Headers de Seguranca"
+        Parameters:
+          - EnableSecurityHeaders
+          - FrameOption
+          - ContentSecurityPolicy
+    ParameterLabels:
+      ProjectName:
+        default: "Nome do Projeto"
+      ApplicationName:
+        default: "Nome da Aplicacao"
+      Environment:
+        default: "Ambiente"
+
+################################################################################
+# Mappings - Mapeamentos para abreviacoes e configuracoes por ambiente
+################################################################################
+Mappings:
+  # Abreviacoes dos ambientes para nomes de recursos (limite S3: 63 caracteres)
+  EnvironmentMap:
+    development:
+      Abbrev: "dev"
+      OriginShield: "false"
+    staging:
+      Abbrev: "stg"
+      OriginShield: "false"
+    uat:
+      Abbrev: "uat"
+      OriginShield: "false"
+    production:
+      Abbrev: "prod"
+      OriginShield: "true"
+    sandbox:
+      Abbrev: "sbx"
+      OriginShield: "false"
+    devops:
+      Abbrev: "devops"
+      OriginShield: "false"
+
+################################################################################
+# Parameters - Parametros de entrada do template
+################################################################################
+Parameters:
+  # ============================================================================
+  # Identificacao do Projeto
+  # ============================================================================
+  ProjectName:
+    Type: String
+    Default: "project-name"
+    Description: >
+      Nome do projeto. Utilizado para nomenclatura de recursos e tags.
+      Exemplo: 'ecommerce', 'portal-cliente', 'landing-page'
+    AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    MinLength: 3
+    MaxLength: 32
+    ConstraintDescription: >
+      Deve conter apenas letras minusculas, numeros e hifens. 
+      Nao pode comecar ou terminar com hifen.
+
+  ApplicationName:
+    Type: String
+    Default: "front-static"
+    Description: >
+      Nome da aplicacao. Utilizado para identificar o componente especifico.
+      Exemplo: 'frontend', 'static-assets', 'spa-app'
+    AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    MinLength: 3
+    MaxLength: 32
+    ConstraintDescription: >
+      Deve conter apenas letras minusculas, numeros e hifens.
+
+  Environment:
+    Type: String
+    Default: "development"
+    AllowedValues:
+      - development
+      - staging
+      - uat
+      - production
+      - sandbox
+      - devops
+    Description: >
+      Ambiente de deployment. Afeta configuracoes como Origin Shield,
+      alarmes CloudWatch e politicas de lifecycle do S3.
+      Abreviacoes usadas nos nomes de bucket: dev, stg, uat, prod, sbx, devops
+
+  CostCenter:
+    Type: String
+    Default: "infrastructure"
+    Description: >
+      Centro de custo para billing e chargeback. 
+      Utilizado na tag 'CostCenter' dos recursos.
+    MaxLength: 64
+
+  Owner:
+    Type: String
+    Default: "platform-team"
+    Description: >
+      Time ou pessoa responsavel pelo recurso.
+      Utilizado na tag 'Owner' dos recursos.
+    MaxLength: 64
+
+  # ============================================================================
+  # Configuracao do S3 Bucket
+  # ============================================================================
+  CreateNewBucket:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Se 'true', cria um novo bucket S3. Se 'false', utiliza um bucket existente
+      especificado em 'ExistingBucketName'.
+
+  ExistingBucketName:
+    Type: String
+    Default: ""
+    Description: >
+      Nome do bucket S3 existente (apenas se CreateNewBucket=false).
+      Deixe vazio se estiver criando um novo bucket.
+
+  EnableVersioning:
+    Type: String
+    Default: "Enabled"
+    AllowedValues:
+      - "Enabled"
+      - "Suspended"
+    Description: >
+      Habilita versionamento no bucket S3. Recomendado para production
+      para permitir rollback de conteudo.
+
+  EnableLifecycleRules:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Habilita regras de lifecycle para limpeza automatica de versoes antigas.
+      Recomendado manter habilitado quando versionamento esta ativo.
+
+  NoncurrentVersionExpirationDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 365
+    Description: >
+      Numero de dias apos os quais versoes nao-correntes (antigas) sao deletadas.
+      Aplicavel apenas quando versionamento esta habilitado.
+      Recomendado: 30-90 dias para manter historico de deploys recentes.
+
+  # ============================================================================
+  # Configuracao do CloudFront
+  # ============================================================================
+  CloudFrontAliases:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: >
+      Lista de dominios alternativos (CNAMEs) para a distribuicao CloudFront.
+      Separados por virgula. Deixe VAZIO para deploy sem dominio customizado.
+      Exemplo: 'cdn.example.com,www.example.com'
+
+  AcmCertificateArn:
+    Type: String
+    Default: ""
+    Description: >
+      ARN do certificado SSL/TLS no AWS Certificate Manager.
+      Para CloudFront: certificado DEVE estar na regiao us-east-1.
+      Deixe VAZIO para deploy sem dominio customizado (acesso via *.cloudfront.net).
+
+  PriceClass:
+    Type: String
+    Default: "PriceClass_100"
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+    Description: >
+      Classe de preco do CloudFront que determina as edge locations utilizadas.
+      PriceClass_100: America do Norte e Europa (mais economico)
+      PriceClass_200: Inclui Asia, Africa, Oriente Medio
+      PriceClass_All: Todas as edge locations (melhor performance global)
+
+  DefaultRootObject:
+    Type: String
+    Default: "index.html"
+    Description: >
+      Objeto padrao retornado quando o usuario acessa a raiz da distribuicao.
+    MaxLength: 256
+
+  HttpVersion:
+    Type: String
+    Default: "http2and3"
+    AllowedValues:
+      - http1.1
+      - http2
+      - http2and3
+    Description: >
+      Versao do protocolo HTTP suportada pela distribuicao.
+      http2and3: Recomendado para melhor performance.
+
+  EnableIPv6:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Habilita suporte a IPv6 na distribuicao CloudFront.
+
+  # ============================================================================
+  # Configuracao de Seguranca
+  # ============================================================================
+  MinimumTLSVersion:
+    Type: String
+    Default: "TLSv1.2_2021"
+    AllowedValues:
+      - TLSv1.2_2018
+      - TLSv1.2_2019
+      - TLSv1.2_2021
+    Description: >
+      Versao minima do protocolo TLS aceita pelo CloudFront.
+      TLSv1.2_2021: Recomendado para maxima seguranca.
+
+  EnableGeoRestriction:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Habilita restricao geografica de acesso a distribuicao.
+
+  GeoRestrictionType:
+    Type: String
+    Default: "whitelist"
+    AllowedValues:
+      - whitelist
+      - blacklist
+    Description: >
+      Tipo de restricao geografica.
+      whitelist: Permite apenas os paises especificados.
+      blacklist: Bloqueia os paises especificados.
+
+  GeoRestrictionLocations:
+    Type: CommaDelimitedList
+    Default: "BR,US"
+    Description: >
+      Lista de codigos de pais ISO 3166-1 alpha-2 para restricao geografica.
+      Exemplo: 'BR,US,CA,MX' (Brasil, EUA, Canada, Mexico)
+
+  HostedZoneId:
+    Type: String
+    Default: ""
+    Description: >
+      ID da Hosted Zone no Route 53 para criacao automatica de registros DNS.
+      Deixe vazio para nao criar registros DNS automaticamente.
+      Exemplo: 'Z0123456789ABCDEFGHIJ'
+
+  WebACLId:
+    Type: String
+    Default: ""
+    Description: >
+      ARN do AWS WAF Web ACL para protecao adicional.
+      Deixe vazio para nao associar WAF a distribuicao.
+
+  # ============================================================================
+  # Configuracao de Cache
+  # ============================================================================
+  DefaultTTL:
+    Type: Number
+    Default: 86400
+    MinValue: 0
+    MaxValue: 31536000
+    Description: >
+      TTL padrao em segundos para objetos sem headers Cache-Control.
+      86400 = 24 horas.
+
+  MaxTTL:
+    Type: Number
+    Default: 31536000
+    MinValue: 0
+    MaxValue: 31536000
+    Description: >
+      TTL maximo em segundos. 31536000 = 1 ano.
+
+  MinTTL:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 31536000
+    Description: >
+      TTL minimo em segundos forcado mesmo se origin especificar menor.
+
+  EnableCompression:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Habilita compressao automatica (gzip/brotli) para tipos de conteudo suportados.
+
+  # ============================================================================
+  # Configuracao de Logs e Monitoramento
+  # ============================================================================
+  EnableCloudFrontLogging:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Habilita logs de acesso do CloudFront em bucket S3 dedicado.
+
+  EnableCloudWatchAlarms:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Cria alarmes CloudWatch para monitoramento de erros 4xx/5xx.
+      Recomendado para production e staging.
+
+  EnableDashboard:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Cria CloudWatch Dashboard para visualizacao de metricas.
+      Opcional para production e staging. Nao disponivel em development.
+
+  LogRetentionDays:
+    Type: Number
+    Default: 90
+    AllowedValues:
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 180
+      - 365
+    Description: >
+      Numero de dias para retencao de logs no CloudWatch e S3.
+
+  AlarmSNSTopicArn:
+    Type: String
+    Default: ""
+    Description: >
+      ARN do topico SNS para notificacoes de alarmes CloudWatch.
+      Deixe vazio se nao desejar notificacoes.
+
+  # ============================================================================
+  # Headers de Seguranca
+  # ============================================================================
+  EnableSecurityHeaders:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: >
+      Adiciona headers de seguranca (HSTS, X-Frame-Options, CSP, etc.)
+      as respostas do CloudFront.
+
+  FrameOption:
+    Type: String
+    Default: "DENY"
+    AllowedValues:
+      - DENY
+      - SAMEORIGIN
+    Description: >
+      Valor do header X-Frame-Options.
+      DENY: Bloqueia completamente embedding em iframes.
+      SAMEORIGIN: Permite apenas iframes do mesmo dominio.
+
+  ContentSecurityPolicy:
+    Type: String
+    Default: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https: wss:; frame-ancestors 'none';"
+    Description: >
+      Valor do header Content-Security-Policy. 
+      Ajuste conforme necessidades da aplicacao.
+      Inclui worker-src e blob: para suporte a Web Workers (QR Code, etc).
+    MaxLength: 1024
+
+################################################################################
+# Conditions - Logica condicional para recursos
+################################################################################
+Conditions:
+  # Ambiente
+  IsProduction: !Equals [!Ref Environment, "production"]
+  IsStaging: !Equals [!Ref Environment, "staging"]
+  IsUAT: !Equals [!Ref Environment, "uat"]
+  IsDevelopment: !Equals [!Ref Environment, "development"]
+  IsSandbox: !Equals [!Ref Environment, "sandbox"]
+  IsDevOps: !Equals [!Ref Environment, "devops"]
+  # Ambientes que requerem monitoramento avancado (alarmes, dashboards)
+  IsProductionOrStaging: !Or
+    - !Condition IsProduction
+    - !Condition IsStaging
+    - !Condition IsUAT
+
+  # S3 Bucket
+  ShouldCreateBucket: !Equals [!Ref CreateNewBucket, "true"]
+  ShouldEnableLifecycle: !Equals [!Ref EnableLifecycleRules, "true"]
+
+  # CloudFront
+  ShouldEnableCloudFrontLogging: !Equals [!Ref EnableCloudFrontLogging, "true"]
+  ShouldEnableGeoRestriction: !Equals [!Ref EnableGeoRestriction, "true"]
+  ShouldEnableIPv6: !Equals [!Ref EnableIPv6, "true"]
+  ShouldEnableCompression: !Equals [!Ref EnableCompression, "true"]
+  HasWebACL: !Not [!Equals [!Ref WebACLId, ""]]
+
+  # Monitoramento
+  ShouldCreateAlarms: !And
+    - !Equals [!Ref EnableCloudWatchAlarms, "true"]
+    - !Condition IsProductionOrStaging
+  HasSNSTopic: !Not [!Equals [!Ref AlarmSNSTopicArn, ""]]
+  ShouldNotifySNS: !And
+    - !Condition ShouldCreateAlarms
+    - !Condition HasSNSTopic
+
+  # Seguranca
+  ShouldEnableSecurityHeaders: !Equals [!Ref EnableSecurityHeaders, "true"]
+
+  # Certificado ACM (opcional — sem certificado = acesso via *.cloudfront.net)
+  HasCertificate: !Not [!Equals [!Ref AcmCertificateArn, ""]]
+
+  # Route 53 DNS (opcional — cria registros A/AAAA alias para CloudFront)
+  HasHostedZone: !Not [!Equals [!Ref HostedZoneId, ""]]
+  ShouldCreateDNS: !And
+    - !Condition HasCertificate
+    - !Condition HasHostedZone
+
+  # Dashboard (opcional para production e staging)
+  ShouldCreateDashboard: !And
+    - !Equals [!Ref EnableDashboard, "true"]
+    - !Condition IsProductionOrStaging
+
+################################################################################
+# Resources - Recursos AWS provisionados
+################################################################################
+Resources:
+  # ============================================================================
+  # S3 Bucket Principal (Origem do CloudFront)
+  # ============================================================================
+  # Bucket S3 para armazenar o conteudo estatico servido pelo CloudFront.
+  # Configurado com:
+  # - Criptografia server-side (AES256)
+  # - Bloqueio total de acesso publico
+  # - Versionamento (configuravel)
+  # - Lifecycle rules para otimizacao de custos (configuravel)
+  # ============================================================================
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Condition: ShouldCreateBucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # Nome seguindo padrao: project-app-env-accountid (limite S3: 63 caracteres)
+      # Exemplo: dashboard-banco-aprobank-prod-385697366782
+      BucketName: !Sub
+        - "${ProjectName}-${ApplicationName}-${EnvAbbrev}-${AWS::AccountId}"
+        - EnvAbbrev: !FindInMap [EnvironmentMap, !Ref Environment, Abbrev]
+      
+      # Versionamento para rollback e protecao contra delecao acidental
+      VersioningConfiguration:
+        Status: !Ref EnableVersioning
+      
+      # Criptografia server-side obrigatoria
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      
+      # Bloqueio total de acesso publico - acesso apenas via CloudFront
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      
+      # Regras de lifecycle para limpeza (otimizado para conteudo estatico)
+      # Nota: Transicoes para STANDARD_IA e GLACIER removidas pois nao sao 
+      # recomendadas para conteudo estatico servido pelo CloudFront
+      LifecycleConfiguration:
+        Rules:
+          # Limpeza de uploads incompletos (sempre ativo)
+          - Id: "DeleteIncompleteMultipartUploads"
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          
+          # Limpeza de versoes antigas (para buckets com versionamento)
+          # Mantem conteudo em STANDARD para acesso rapido pelo CloudFront
+          - Id: "CleanupOldVersions"
+            Status: !If [ShouldEnableLifecycle, "Enabled", "Disabled"]
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref NoncurrentVersionExpirationDays
+      
+      # Configuracao de CORS (necessario para algumas SPAs)
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+            MaxAge: 3600
+      
+      # Tags para identificacao e controle de custos
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ProjectName}-${ApplicationName}-${Environment}-bucket"
+        - Key: "Project"
+          Value: !Ref ProjectName
+        - Key: "Application"
+          Value: !Ref ApplicationName
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "CostCenter"
+          Value: !Ref CostCenter
+        - Key: "Owner"
+          Value: !Ref Owner
+        - Key: "ManagedBy"
+          Value: "CloudFormation"
+        - Key: "Purpose"
+          Value: "CloudFront Origin"
+
+  # ============================================================================
+  # S3 Bucket para Logs do CloudFront
+  # ============================================================================
+  # Bucket separado para armazenar logs de acesso do CloudFront.
+  # Criado condicionalmente apenas quando logging esta habilitado.
+  # ============================================================================
+  CloudFrontLogsBucket:
+    Type: AWS::S3::Bucket
+    Condition: ShouldEnableCloudFrontLogging
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # Nome seguindo padrao: project-app-env-accountid-cf-logs (limite S3: 63 caracteres)
+      # Exemplo: dashboard-banco-aprobank-prod-385697366782-cf-logs
+      BucketName: !Sub
+        - "${ProjectName}-${ApplicationName}-${EnvAbbrev}-${AWS::AccountId}-cf-logs"
+        - EnvAbbrev: !FindInMap [EnvironmentMap, !Ref Environment, Abbrev]
+      
+      # Criptografia obrigatoria para logs
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      
+      # Bloqueio de acesso publico
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      
+      # Ownership Controls necessario para logs do CloudFront
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+      
+      # Lifecycle para expiracao automatica de logs antigos
+      LifecycleConfiguration:
+        Rules:
+          - Id: "DeleteOldLogs"
+            Status: Enabled
+            ExpirationInDays: !Ref LogRetentionDays
+          - Id: "TransitionOldLogsToIA"
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+      
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ProjectName}-${ApplicationName}-${Environment}-logs-bucket"
+        - Key: "Project"
+          Value: !Ref ProjectName
+        - Key: "Application"
+          Value: !Ref ApplicationName
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "CostCenter"
+          Value: !Ref CostCenter
+        - Key: "Owner"
+          Value: !Ref Owner
+        - Key: "ManagedBy"
+          Value: "CloudFormation"
+        - Key: "Purpose"
+          Value: "CloudFront Access Logs"
+
+  # Politica do bucket de logs para permitir escrita do CloudFront
+  CloudFrontLogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: ShouldEnableCloudFrontLogging
+    Properties:
+      Bucket: !Ref CloudFrontLogsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: "AllowCloudFrontLogDelivery"
+            Effect: "Allow"
+            Principal:
+              Service: "delivery.logs.amazonaws.com"
+            Action: "s3:PutObject"
+            Resource: !Sub "arn:aws:s3:::${CloudFrontLogsBucket}/*"
+            Condition:
+              StringEquals:
+                "s3:x-amz-acl": "bucket-owner-full-control"
+                "aws:SourceAccount": !Ref AWS::AccountId
+
+  # ============================================================================
+  # S3 Bucket Policy
+  # ============================================================================
+  # Politica que permite acesso ao bucket apenas via CloudFront (OAC).
+  # Inclui tambem negacao de conexoes nao seguras (HTTP).
+  # ============================================================================
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: ShouldCreateBucket
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # Permite acesso do CloudFront via OAC
+          - Sid: "AllowCloudFrontServicePrincipalReadOnly"
+            Effect: "Allow"
+            Principal:
+              Service: "cloudfront.amazonaws.com"
+            Action: 
+              - "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+          
+          # Permite listagem do bucket pelo CloudFront (necessario para 404 customizado)
+          - Sid: "AllowCloudFrontServicePrincipalListBucket"
+            Effect: "Allow"
+            Principal:
+              Service: "cloudfront.amazonaws.com"
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+          
+          # Nega conexoes nao seguras (enforce HTTPS)
+          - Sid: "DenyInsecureConnections"
+            Effect: "Deny"
+            Principal: "*"
+            Action: "s3:*"
+            Resource: 
+              - !Sub "arn:aws:s3:::${S3Bucket}"
+              - !Sub "arn:aws:s3:::${S3Bucket}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": "false"
+          
+          # Nega delecao de objetos (protecao adicional)
+          - Sid: "DenyObjectDeletion"
+            Effect: "Deny"
+            Principal: "*"
+            Action:
+              - "s3:DeleteObject"
+              - "s3:DeleteObjectVersion"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+            Condition:
+              StringNotEquals:
+                "aws:PrincipalAccount": !Ref AWS::AccountId
+
+  # ============================================================================
+  # Origin Access Control (OAC)
+  # ============================================================================
+  # OAC e o metodo recomendado pela AWS para controlar acesso do CloudFront ao S3.
+  # Substitui o legado OAI (Origin Access Identity) com melhor seguranca via SigV4.
+  # ============================================================================
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${ProjectName}-${ApplicationName}-${Environment}-oac"
+        Description: !Sub "OAC para CloudFront distribution ${ProjectName}-${ApplicationName}-${Environment}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ============================================================================
+  # CloudFront Function - Index Redirect
+  # ============================================================================
+  # Funcao executada em edge locations para:
+  # - Redirecionar requisicoes a diretorios para index.html
+  # - Normalizar URIs com multiplas barras
+  # - Suportar Single Page Applications (SPAs)
+  # ============================================================================
+  CloudFrontIndexFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "${ProjectName}-${ApplicationName}-${Environment}-index-redirect"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: !Sub "Index redirect function for ${ProjectName}-${ApplicationName}"
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+            var request = event.request;
+            var uri = request.uri;
+            
+            // Normaliza multiplas barras consecutivas
+            uri = uri.replace(/\/+/g, '/');
+            
+            // Se o URI termina com '/', adiciona index.html
+            if (uri.endsWith('/')) {
+                request.uri = uri + 'index.html';
+            }
+            // Se nao tem extensao de arquivo, trata como diretorio (SPA support)
+            else if (!uri.includes('.') || uri.lastIndexOf('.') < uri.lastIndexOf('/')) {
+                // Verifica se parece ser um path de SPA (nao tem extensao)
+                var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);
+                if (!lastSegment.includes('.')) {
+                    request.uri = uri + '/index.html';
+                }
+            }
+            
+            return request;
+        }
+
+  # ============================================================================
+  # Response Headers Policy
+  # ============================================================================
+  # Politica de headers de seguranca aplicada a todas as respostas.
+  # Implementa best practices de seguranca web (OWASP).
+  # ============================================================================
+  ResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Condition: ShouldEnableSecurityHeaders
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub "${ProjectName}-${ApplicationName}-${Environment}-security-headers"
+        Comment: !Sub "Security headers policy for ${ProjectName}-${ApplicationName}"
+        
+        SecurityHeadersConfig:
+          # HSTS - Force HTTPS por 1 ano
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Preload: true
+            Override: true
+          
+          # X-Content-Type-Options - Previne MIME type sniffing
+          ContentTypeOptions:
+            Override: true
+          
+          # X-Frame-Options - Protecao contra clickjacking
+          FrameOptions:
+            FrameOption: !Ref FrameOption
+            Override: true
+          
+          # Referrer-Policy - Controla informacoes enviadas no header Referer
+          ReferrerPolicy:
+            ReferrerPolicy: "strict-origin-when-cross-origin"
+            Override: true
+          
+          # X-XSS-Protection - Protecao basica contra XSS (navegadores antigos)
+          XSSProtection:
+            ModeBlock: true
+            Protection: true
+            Override: true
+          
+          # Content-Security-Policy - Controle de fontes de conteudo
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: !Ref ContentSecurityPolicy
+            Override: true
+        
+        # Headers customizados (nao podem incluir headers de seguranca nativos)
+        CustomHeadersConfig:
+          Items:
+            # Permissions-Policy (antigo Feature-Policy)
+            - Header: "Permissions-Policy"
+              Value: "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+              Override: true
+        
+        # Configuracao de CORS (opcional, ajuste conforme necessario)
+        CorsConfig:
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders:
+            Items:
+              - "*"
+          AccessControlAllowMethods:
+            Items:
+              - GET
+              - HEAD
+              - OPTIONS
+          AccessControlAllowOrigins:
+            Items:
+              - "*"
+          AccessControlMaxAgeSec: 86400
+          OriginOverride: true
+
+  # ============================================================================
+  # Cache Policy Customizada
+  # ============================================================================
+  # Politica de cache customizada para controle granular de TTL.
+  # ============================================================================
+  CustomCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cache-policy"
+        Comment: !Sub "Custom cache policy for ${ProjectName}-${ApplicationName}"
+        DefaultTTL: !Ref DefaultTTL
+        MaxTTL: !Ref MaxTTL
+        MinTTL: !Ref MinTTL
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+
+  # ============================================================================
+  # CloudFront Distribution
+  # ============================================================================
+  # Distribuicao CloudFront principal com todas as configuracoes de cache,
+  # seguranca e comportamento de origem.
+  # ============================================================================
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${ProjectName}-${ApplicationName}-${Environment} CloudFront Distribution"
+        DefaultRootObject: !Ref DefaultRootObject
+        HttpVersion: !Ref HttpVersion
+        IPV6Enabled: !If [ShouldEnableIPv6, true, false]
+        PriceClass: !Ref PriceClass
+        
+        # Associacao com WAF Web ACL (se configurado)
+        WebACLId: !If [HasWebACL, !Ref WebACLId, !Ref "AWS::NoValue"]
+        
+        # Configuracao de origem (S3 Bucket)
+        Origins:
+          - Id: !Sub "${ProjectName}-${ApplicationName}-s3-origin"
+            DomainName: !If 
+              - ShouldCreateBucket
+              - !GetAtt S3Bucket.RegionalDomainName
+              - !Sub "${ExistingBucketName}.s3.${AWS::Region}.amazonaws.com"
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+            # Origin Shield para melhor cache hit ratio (production only)
+            OriginShield: !If
+              - IsProduction
+              - Enabled: true
+                OriginShieldRegion: !Ref AWS::Region
+              - !Ref "AWS::NoValue"
+            # Connection settings
+            ConnectionAttempts: 3
+            ConnectionTimeout: 10
+        
+        # Comportamento de cache padrao
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub "${ProjectName}-${ApplicationName}-s3-origin"
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachePolicyId: !Ref CustomCachePolicy
+          OriginRequestPolicyId: "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # Managed-CORS-S3Origin
+          ResponseHeadersPolicyId: !If 
+            - ShouldEnableSecurityHeaders
+            - !Ref ResponseHeadersPolicy
+            - !Ref "AWS::NoValue"
+          Compress: !If [ShouldEnableCompression, true, false]
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt CloudFrontIndexFunction.FunctionARN
+        
+        # Nota: Behaviors individuais por extensao removidos por serem desnecessarios.
+        # O DefaultCacheBehavior com Compress:true e suficiente - CloudFront nao 
+        # comprime arquivos ja comprimidos (imagens, fontes) automaticamente.
+        
+        # Certificado SSL/TLS
+        # Sem certificado: usa certificado padrão CloudFront (*.cloudfront.net)
+        # Com certificado: usa ACM + aliases customizados
+        ViewerCertificate: !If
+          - HasCertificate
+          - AcmCertificateArn: !Ref AcmCertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: !Ref MinimumTLSVersion
+          - CloudFrontDefaultCertificate: true
+        
+        # Dominios alternativos (CNAMEs) — apenas se tiver certificado
+        Aliases: !If
+          - HasCertificate
+          - !Ref CloudFrontAliases
+          - !Ref "AWS::NoValue"
+        
+        # Configuracao de logs (condicional)
+        Logging: !If
+          - ShouldEnableCloudFrontLogging
+          - Bucket: !GetAtt CloudFrontLogsBucket.DomainName
+            Prefix: !Sub "access-logs/${Environment}/"
+            IncludeCookies: false
+          - !Ref "AWS::NoValue"
+        
+        # Restricao geografica (condicional)
+        Restrictions:
+          GeoRestriction: !If
+            - ShouldEnableGeoRestriction
+            - RestrictionType: !Ref GeoRestrictionType
+              Locations: !Ref GeoRestrictionLocations
+            - RestrictionType: none
+        
+        # Paginas de erro customizadas
+        CustomErrorResponses:
+          # 403 Forbidden -> 404 Not Found (para SPAs)
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+            ErrorCachingMinTTL: 10
+          # 404 Not Found -> SPA fallback
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+            ErrorCachingMinTTL: 10
+          # 500 Internal Server Error
+          - ErrorCode: 500
+            ResponseCode: 500
+            ResponsePagePath: "/500.html"
+            ErrorCachingMinTTL: 60
+          # 502 Bad Gateway
+          - ErrorCode: 502
+            ResponseCode: 502
+            ResponsePagePath: "/500.html"
+            ErrorCachingMinTTL: 60
+          # 503 Service Unavailable
+          - ErrorCode: 503
+            ResponseCode: 503
+            ResponsePagePath: "/500.html"
+            ErrorCachingMinTTL: 60
+          # 504 Gateway Timeout
+          - ErrorCode: 504
+            ResponseCode: 504
+            ResponsePagePath: "/500.html"
+            ErrorCachingMinTTL: 60
+      
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cloudfront"
+        - Key: "Project"
+          Value: !Ref ProjectName
+        - Key: "Application"
+          Value: !Ref ApplicationName
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "CostCenter"
+          Value: !Ref CostCenter
+        - Key: "Owner"
+          Value: !Ref Owner
+        - Key: "ManagedBy"
+          Value: "CloudFormation"
+
+  # ============================================================================
+  # Route 53 DNS Records
+  # ============================================================================
+  # Cria registros DNS (A e AAAA alias) para cada dominio customizado,
+  # apontando para a distribuicao CloudFront.
+  # Criados apenas quando HostedZoneId e AcmCertificateArn sao fornecidos.
+  # ============================================================================
+  DNSRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: ShouldCreateDNS
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Select [0, !Ref CloudFrontAliases]
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt CloudFrontDistribution.DomainName
+            HostedZoneId: Z2FDTNDATAQYW2  # Hosted Zone ID fixo do CloudFront (global)
+            EvaluateTargetHealth: false
+
+  # ============================================================================
+  # CloudWatch Alarms - Monitoramento
+  # ============================================================================
+  # Alarmes para monitorar taxas de erro e latencia da distribuicao.
+  # Criados apenas em ambientes production e staging.
+  # ============================================================================
+  
+  # Alarme para taxa de erros 4xx alta
+  CloudFront4xxErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ShouldCreateAlarms
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cloudfront-4xx-error-rate"
+      AlarmDescription: !Sub "Taxa de erros 4xx acima do limite para ${ProjectName}-${ApplicationName}"
+      MetricName: "4xxErrorRate"
+      Namespace: "AWS/CloudFront"
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: "DistributionId"
+          Value: !Ref CloudFrontDistribution
+        - Name: "Region"
+          Value: "Global"
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - ShouldNotifySNS
+        - - !Ref AlarmSNSTopicArn
+        - !Ref "AWS::NoValue"
+      OKActions: !If
+        - ShouldNotifySNS
+        - - !Ref AlarmSNSTopicArn
+        - !Ref "AWS::NoValue"
+
+  # Alarme para taxa de erros 5xx alta
+  CloudFront5xxErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ShouldCreateAlarms
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cloudfront-5xx-error-rate"
+      AlarmDescription: !Sub "Taxa de erros 5xx acima do limite para ${ProjectName}-${ApplicationName}"
+      MetricName: "5xxErrorRate"
+      Namespace: "AWS/CloudFront"
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: "DistributionId"
+          Value: !Ref CloudFrontDistribution
+        - Name: "Region"
+          Value: "Global"
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - ShouldNotifySNS
+        - - !Ref AlarmSNSTopicArn
+        - !Ref "AWS::NoValue"
+      OKActions: !If
+        - ShouldNotifySNS
+        - - !Ref AlarmSNSTopicArn
+        - !Ref "AWS::NoValue"
+
+  # Alarme para requests totais (monitoramento de trafego)
+  CloudFrontTotalRequestsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: ShouldCreateAlarms
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cloudfront-high-requests"
+      AlarmDescription: !Sub "Volume alto de requests para ${ProjectName}-${ApplicationName}"
+      MetricName: "Requests"
+      Namespace: "AWS/CloudFront"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1000000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: "DistributionId"
+          Value: !Ref CloudFrontDistribution
+        - Name: "Region"
+          Value: "Global"
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - ShouldNotifySNS
+        - - !Ref AlarmSNSTopicArn
+        - !Ref "AWS::NoValue"
+
+  # ============================================================================
+  # CloudWatch Dashboard (Opcional - Production e Staging)
+  # ============================================================================
+  CloudFrontDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: ShouldCreateDashboard
+    Properties:
+      DashboardName: !Sub "${ProjectName}-${ApplicationName}-${Environment}-cloudfront-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Requests",
+                "metrics": [
+                  ["AWS/CloudFront", "Requests", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Sum", "period": 300}]
+                ],
+                "view": "timeSeries",
+                "region": "us-east-1"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Error Rates",
+                "metrics": [
+                  ["AWS/CloudFront", "4xxErrorRate", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Average", "period": 300}],
+                  ["AWS/CloudFront", "5xxErrorRate", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Average", "period": 300}]
+                ],
+                "view": "timeSeries",
+                "region": "us-east-1"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Bytes Downloaded/Uploaded",
+                "metrics": [
+                  ["AWS/CloudFront", "BytesDownloaded", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Sum", "period": 300}],
+                  ["AWS/CloudFront", "BytesUploaded", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Sum", "period": 300}]
+                ],
+                "view": "timeSeries",
+                "region": "us-east-1"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Cache Hit Rate",
+                "metrics": [
+                  ["AWS/CloudFront", "CacheHitRate", "DistributionId", "${CloudFrontDistribution}", "Region", "Global", {"stat": "Average", "period": 300}]
+                ],
+                "view": "timeSeries",
+                "region": "us-east-1"
+              }
+            }
+          ]
+        }
+
+################################################################################
+# Outputs - Valores exportados para uso em outros stacks
+################################################################################
+Outputs:
+  # ============================================================================
+  # CloudFront Outputs
+  # ============================================================================
+  DistributionId:
+    Description: "ID da distribuicao CloudFront"
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionId"
+
+  DistributionDomainName:
+    Description: "Domain name da distribuicao CloudFront (*.cloudfront.net)"
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionDomainName"
+
+  DistributionARN:
+    Description: "ARN da distribuicao CloudFront"
+    Value: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionARN"
+
+  CloudFrontURL:
+    Condition: HasCertificate
+    Description: "URL completa do CloudFront (primeiro alias configurado)"
+    Value: !Join
+      - ""
+      - - "https://"
+        - !Select [0, !Ref CloudFrontAliases]
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFrontURL"
+
+  # ============================================================================
+  # S3 Bucket Outputs
+  # ============================================================================
+  BucketName:
+    Condition: ShouldCreateBucket
+    Description: "Nome do bucket S3 de origem"
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+
+  BucketArn:
+    Condition: ShouldCreateBucket
+    Description: "ARN do bucket S3 de origem"
+    Value: !GetAtt S3Bucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketArn"
+
+  BucketDomainName:
+    Condition: ShouldCreateBucket
+    Description: "Domain name regional do bucket S3"
+    Value: !GetAtt S3Bucket.RegionalDomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketDomainName"
+
+  # ============================================================================
+  # OAC Outputs
+  # ============================================================================
+  OACId:
+    Description: "ID do Origin Access Control"
+    Value: !Ref CloudFrontOAC
+    Export:
+      Name: !Sub "${AWS::StackName}-OACId"
+
+  # ============================================================================
+  # Logs Outputs
+  # ============================================================================
+  LogsBucketName:
+    Condition: ShouldEnableCloudFrontLogging
+    Description: "Nome do bucket de logs do CloudFront"
+    Value: !Ref CloudFrontLogsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-LogsBucketName"
+
+  # ============================================================================
+  # Cache Policy Outputs
+  # ============================================================================
+  CachePolicyId:
+    Description: "ID da Cache Policy customizada"
+    Value: !Ref CustomCachePolicy
+    Export:
+      Name: !Sub "${AWS::StackName}-CachePolicyId"
+
+  # ============================================================================
+  # Response Headers Policy Outputs
+  # ============================================================================
+  ResponseHeadersPolicyId:
+    Condition: ShouldEnableSecurityHeaders
+    Description: "ID da Response Headers Policy"
+    Value: !Ref ResponseHeadersPolicy
+    Export:
+      Name: !Sub "${AWS::StackName}-ResponseHeadersPolicyId"
+
+  # ============================================================================
+  # Function Outputs
+  # ============================================================================
+  CloudFrontFunctionARN:
+    Description: "ARN da CloudFront Function de redirecionamento"
+    Value: !GetAtt CloudFrontIndexFunction.FunctionARN
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFrontFunctionARN"
+
+  # ============================================================================
+  # Dashboard Outputs
+  # ============================================================================
+  DashboardURL:
+    Condition: ShouldCreateDashboard
+    Description: "URL do CloudWatch Dashboard"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${ApplicationName}-${Environment}-cloudfront-dashboard"
+    Export:
+      Name: !Sub "${AWS::StackName}-DashboardURL"
+
+  # ============================================================================
+  # Deployment Info
+  # ============================================================================
+  DeploymentInfo:
+    Description: "Informacoes do deployment"
+    Value: !Sub |
+      Project: ${ProjectName}
+      Application: ${ApplicationName}
+      Environment: ${Environment}
+      Region: ${AWS::Region}
+      AccountId: ${AWS::AccountId}
+      StackName: ${AWS::StackName}
+
+  # ============================================================================
+  # Route 53 DNS Outputs
+  # ============================================================================
+  DNSRecordName:
+    Condition: ShouldCreateDNS
+    Description: "Nome do registro DNS criado no Route 53"
+    Value: !Select [0, !Ref CloudFrontAliases]
+    Export:
+      Name: !Sub "${AWS::StackName}-DNSRecordName"

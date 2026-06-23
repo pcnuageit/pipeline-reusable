@@ -79,7 +79,7 @@ const columns = [
     },
   },
   {
-    headerText: "Agendamento",
+    headerText: "Data do Pagamento",
     key: "pagamento_pix.data_agendamento",
     CustomValue: (date) => {
       return (
@@ -106,7 +106,11 @@ const columns = [
   },
   {
     headerText: "Taxa",
-    key: "taxa",
+    key: "estabelecimento_conta.reembolso.taxa_administracao ",
+  },
+  {
+    headerText: "Chave Pix",
+    key: "pagamento_pix.chave_recebedor",
   },
   {
     headerText: "Credenciado",
@@ -337,6 +341,7 @@ export default function PagamentosRecebidos() {
                           getData={getData}
                           row={row}
                           JSONResponse={row?.pagamento_pix?.response}
+                          printType={"pagamentos_recebidos"}
                         />
                       )}
                     />

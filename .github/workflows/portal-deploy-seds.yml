@@ -1,0 +1,21 @@
+name: "Portal — Deploy SEDS"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "seds"
+      environment: "production"
+      s3_bucket: "portal-seds-prod-385697366782"
+      cloudfront_distribution_id: "EE6A3FM15LBF4"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "seds"
+      react_app_title: "Seds"
+      react_app_description: "Dashboard da Secretaria de Estado de Desenvolvimento Social - SEDS"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

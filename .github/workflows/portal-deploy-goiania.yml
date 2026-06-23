@@ -1,0 +1,21 @@
+name: "Portal — Deploy Goiânia"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-s3-cloudfront.yml
+    with:
+      client_name: "goiania"
+      environment: "production"
+      s3_bucket: "portal-goiania-prod-385697366782"
+      cloudfront_distribution_id: "E342Z3EAX2NNGS"
+      aws_region: "sa-east-1"
+      react_app_api_url: "https://api.go.inttegrasocial.com.br/api"
+      react_app_front_app: "goiania"
+      react_app_title: "goiania"
+      react_app_description: "Dashboard da Secretaria Goiânia"
+      react_app_sga_api_base_url: "https://sandbox.sga.integrapay.com.br/api"
+    secrets: inherit

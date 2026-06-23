@@ -1038,6 +1038,7 @@ function AlterarSelecionadosModal({
                 fullWidth
               >
                 <MenuItem value={"aguardando"}>Aguardando</MenuItem>
+                <MenuItem value={"pendente"}>Pendente</MenuItem>
                 <MenuItem value={"bloqueado"}>Bloqueado</MenuItem>
               </Select>
             </>

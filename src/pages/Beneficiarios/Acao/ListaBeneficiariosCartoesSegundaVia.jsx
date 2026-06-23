@@ -596,7 +596,7 @@ function AlterarSelecionadosModal({
 
           {show === "solicitar" && (
             <>
-              <Typography>Digie sua senha para confirmar.</Typography>
+              <Typography>Digite sua senha para confirmar.</Typography>
               <TextField
                 fullWidth
                 placeholder="Senha"
